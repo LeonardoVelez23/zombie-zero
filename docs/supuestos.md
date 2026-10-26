@@ -1,7 +1,7 @@
 # Supuestos y de dónde salen los números
 
 Leyenda: **Fuente** = número tomado de literatura o datos abiertos ·
-**Supuesto** = decisión del equipo, razonada · ⚠️ = cifra a verificar antes de entregar.
+**Supuesto** = decisión del equipo, razonada. Las referencias [n] están al final.
 
 ## La plaga (inspirada en COVID-19, variante original)
 
@@ -23,13 +23,14 @@ número de contactos.
 
 | Parámetro | Valor | Tipo | Justificación |
 |---|---|---|---|
-| Personas simuladas | 10.000 | Supuesto | Escala de Manta (⚠️ unos 270.000 habitantes, verificar en el Censo INEC 2022). Los resultados se leen como proporciones. |
-| Barrios | Tarqui 30 %, Manta 25 %, Los Esteros 18 %, Eloy Alfaro 15 %, San Mateo 7 %, Rural 5 % | ⚠️ Supuesto | Parroquias de Manta. Hay que reemplazar los porcentajes por la población de cada parroquia según el INEC. |
-| Edades | 0-4: 8 %, 5-17: 20 %, 18-64: 63 %, 65+: 9 % | ⚠️ Supuesto | Hay que verificarlas con la pirámide del Censo INEC 2022 para Manabí. |
-| Personas por hogar | 3,5 en promedio | ⚠️ Supuesto | Hay que verificarlo con el Censo INEC 2022. |
+| Personas simuladas | 10.000 | Supuesto | Manta tiene **271.145 habitantes** según el Censo 2022 [1]. Se simula a escala 1:27 y los resultados se leen como proporciones. |
+| Zona rural | 4,6 % | Fuente | 12.448 personas viven en el área rural (parroquias San Lorenzo y Santa Marianita) y 258.697 en el área urbana [1]. |
+| Parroquias urbanas | Tarqui 30,1 %, Manta 25,1 %, Los Esteros 18,1 %, Eloy Alfaro 15,1 %, San Mateo 7,0 % | Supuesto | El INEC publica la ciudad como un solo bloque urbano; no encontramos datos públicos del Censo 2022 por parroquia urbana. El reparto refleja que Tarqui es la parroquia más poblada [4] y se puede reemplazar con los tabulados por parroquia del INEC. |
+| Edades | 0-4: 8,1 %, 5-17: 20,4 %, 18-64: 63,5 %, 65+: 8,0 % | Fuente | Manta, Censo 2022: 0-14 años = 66.266 (24,4 %), 15-64 = 183.270 (67,6 %), 65+ = 21.609 (8,0 %) [1]. Para pasar a nuestros grupos se supone un reparto uniforme dentro de cada grupo del censo: 0-4 = 5/15 de 0-14; 5-17 = 10/15 de 0-14 más 3/50 de 15-64; 18-64 = 47/50 de 15-64. |
+| Personas por hogar | 3,3 en promedio | Fuente | Tamaño medio del hogar en Manabí, Censo 2022 (bajó de 4,0 en 2010) [2]. |
 | Tamaño de aula | 30 | Supuesto | Aula pública típica. |
 | Tamaño de grupo de trabajo | 8 | Supuesto | Contactos laborales cercanos. |
-| Adultos con trabajo fuera de casa | 60 % | ⚠️ Supuesto | Hay que verificarlo con la ENEMDU del INEC (tasa de empleo). |
+| Adultos con trabajo fuera de casa | 56 % | Fuente | Tasa de empleo bruto de Manabí en 2025: 55,9 % (personas con empleo / población en edad de trabajar), ENEMDU anual 2025, Tabla 4 [3]. Incluye el empleo informal, que también genera contactos. |
 | Usan bus a diario | 50 % de escolares y adultos, 4 contactos cercanos | Supuesto | |
 | Van al Mercado Central (Tarqui) | 30 % de adultos y mayores, 6 contactos | Supuesto | |
 
@@ -53,6 +54,13 @@ del hogar son más largos y cercanos, como muestran los estudios de contactos
 | Duración de un cierre | 14 días | Supuesto | Dos periodos de latencia más infeccioso. |
 | Cumplimiento del cierre | 80 % | Supuesto | Fracción de contactos de ese lugar que realmente se evitan. |
 | Visibilidad | Solo se ven los zombies detectados | Supuesto | Por eso una vacuna puede "perderse" en alguien ya mordido o no detectado. El sistema lo reporta. |
+
+## Referencias de datos abiertos
+
+1. INEC, Censo de Población y Vivienda 2022: población del cantón Manta por área y grupos de edad, vía [citypopulation.de](https://www.citypopulation.de/en/ecuador/admin/manab%C3%AD/1308__manta/) y [ecuadorencifras.gob.ec](https://www.ecuadorencifras.gob.ec/institucional/201-279-personas-mas-viven-en-manabi/).
+2. INEC, "201.279 personas más viven en Manabí" (resultados del Censo 2022 para Manabí): [ecuadorencifras.gob.ec](https://www.ecuadorencifras.gob.ec/institucional/201-279-personas-mas-viven-en-manabi/).
+3. INEC, Boletín técnico ENEMDU anual enero-diciembre 2025, Tabla 4: [PDF](https://www.ecuadorencifras.gob.ec/documentos/web-inec/EMPLEO/2025/anual/Boletin_tecnico_anual_enero-diciembre_2025.pdf).
+4. El Diario, "La Parroquia Tarqui está de fiesta…" (2025): [eldiario.ec](https://www.eldiario.ec/manta/la-parroquia-tarqui-esta-de-fiesta-este-9-de-octubre-celebra-96-anos-de-historia-y-empuje-26092025/).
 
 ## Reproducibilidad
 

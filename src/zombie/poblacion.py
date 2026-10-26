@@ -10,20 +10,22 @@ from dataclasses import dataclass
 import numpy as np
 
 BARRIOS = ("Tarqui", "Manta", "Los Esteros", "Eloy Alfaro", "San Mateo", "Rural")
-PESO_BARRIO = np.array([0.30, 0.25, 0.18, 0.15, 0.07, 0.05])
+# Rural = 12.448 / 271.145 (Censo 2022). El reparto entre parroquias urbanas es un supuesto.
+PESO_BARRIO = np.array([0.3013, 0.2511, 0.1808, 0.1506, 0.0703, 0.0459])
 
 EDADES = ("menor", "escolar", "adulto", "mayor")   # 0-4, 5-17, 18-64, 65+
-PESO_EDAD = np.array([0.08, 0.20, 0.63, 0.09])
+# Derivado de Manta, Censo 2022: 0-14 = 24,4 %, 15-64 = 67,6 %, 65+ = 8,0 % (ver docs/supuestos.md).
+PESO_EDAD = np.array([0.081, 0.204, 0.635, 0.080])
 MENOR, ESCOLAR, ADULTO, MAYOR = range(4)
 
 CAPAS = ("hogar", "colegio", "trabajo", "bus", "mercado")
 PESO_CAPA = np.array([1.0, 0.5, 0.4, 0.2, 0.15])
 HOGAR, COLEGIO, TRABAJO, BUS, MERCADO = range(5)
 
-TAM_HOGAR = 3.5          # personas por hogar en promedio
+TAM_HOGAR = 3.3          # personas por hogar en Manabí (Censo 2022)
 TAM_AULA = 30
 TAM_TRABAJO = 8
-FRAC_EMPLEO = 0.6        # adultos con trabajo fuera de casa
+FRAC_EMPLEO = 0.56       # empleo bruto de Manabí 2025: 55,9 % (ENEMDU)
 FRAC_BUS = 0.5           # escolares y adultos que usan bus a diario
 CONTACTOS_BUS = 4
 FRAC_MERCADO = 0.3       # adultos y mayores que van al Mercado Central
