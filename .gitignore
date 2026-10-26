@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+resultado*.json
+
+# Credenciales: nunca al repositorio
+.env
+.aws/
+*.pem
