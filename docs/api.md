@@ -113,3 +113,51 @@ Todo es opcional: lo que no se envía toma el valor por defecto.
 Unos 12 s con 50 repeticiones y 10.000 personas (10 planes × 50 brotes). Escala
 lineal con `repeticiones` y con `n_personas`. En AWS conviene una Lambda Function
 URL (hasta 15 min) en vez de API Gateway (corta a los 30 s).
+
+## `POST /api/edp`
+
+Modelo de contraste: SEIR zombie con difusión espacial (EDP) sobre una cuadrícula
+de Manta. No decide la recomendación; sirve para comparar con el modelo de red.
+Ver `backend/src/zombie/edp.py`.
+
+### Petición
+
+El mismo `escenario` que `/api/simular` (se ignora `repeticiones`), más los
+parámetros propios de la EDP. Todo es opcional.
+
+```json
+{
+  "escenario": { "inicio": "aeropuerto", "plaga": { "r0": 2.5 } },
+  "edp": { "d_sanos": 0.1, "d_zombies": 0.05, "alfa": 0.02 }
+}
+```
+
+| Campo | Unidad | Límites |
+|---|---|---|
+| `d_sanos` | km²/día | 0 – 5 |
+| `d_zombies` | km²/día | 0 – 5 |
+| `alfa` | 1/día | 0 – 1 |
+
+### Respuesta
+
+```json
+{
+  "modelo": "edp",
+  "parametros": { "d_sanos": 0.1, "d_zombies": 0.05, "alfa": 0.02, "beta": 0.55, "sigma": 0.3333, "gamma": 0.2 },
+  "malla": { "lon_min": -80.92, "lon_max": -80.64, "lat_min": -1.08, "lat_max": -0.92, "dx_km": 0.5, "filas": 36, "columnas": 62 },
+  "aeropuerto": [-80.6788, -0.9461],
+  "escenarios": [
+    { "id": "ninguna", "nombre": "Sin intervención",
+      "serie": { "S": [...], "E": [...], "Z": [...], "R": [...] },
+      "infectados_total": 7961.0, "pico": 974.9, "dia_pico": 64, "vacunas_usadas": 0,
+      "fotogramas": [ { "dia": 0, "zombies": [[...], ...] }, { "dia": 10, "zombies": [[...], ...] } ] },
+    { "id": "vacunacion_zonal", "nombre": "Vacunar por zonas", "...": "..." }
+  ]
+}
+```
+
+- `serie`: personas en cada estado por día (suman `n_personas`).
+- `fotogramas`: zombies por celda cada 10 días; la fila 0 es el borde norte y la
+  columna 0 el oeste, según `malla`. Sirve para el mapa de calor.
+
+Tarda alrededor de 1,5 s y responde unos 450 KB.

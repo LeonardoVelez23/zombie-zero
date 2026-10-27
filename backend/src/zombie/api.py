@@ -6,9 +6,10 @@ Ver docs/api.md.
 """
 import base64
 import json
-from dataclasses import fields, replace
+from dataclasses import asdict, fields, replace
 
 from .config import Escenario, Plaga, Recursos
+from .edp import Difusion, resolver
 from .montecarlo import comparar
 from .poblacion import BARRIOS
 
@@ -39,6 +40,11 @@ LIMITES = {
         "cumplimiento_cierre": (0.0, 1.0),
         "costo_cierre_mercado": (0.0, 1_000_000.0),
         "costo_cierre_colegio": (0.0, 1_000_000.0),
+    },
+    "edp": {
+        "d_sanos": (0.0, 5.0),
+        "d_zombies": (0.0, 5.0),
+        "alfa": (0.0, 1.0),
     },
 }
 REPETICIONES = (5, 200)
@@ -99,10 +105,18 @@ def parametros() -> dict:
     """Valores por defecto y límites, para que la interfaz arme sus controles."""
     return {
         "por_defecto": Escenario().a_dict(),
+        "edp_por_defecto": asdict(Difusion()),
         "limites": {g: {k: list(v) for k, v in campos.items()} for g, campos in LIMITES.items()},
         "inicios": list(INICIOS),
         "repeticiones": {"por_defecto": REPETICIONES_POR_DEFECTO, "limites": list(REPETICIONES)},
     }
+
+
+def _json(cuerpo: str | None):
+    try:
+        return json.loads(cuerpo or "{}")
+    except json.JSONDecodeError:
+        raise PeticionInvalida("El cuerpo no es JSON válido") from None
 
 
 def atender(metodo: str, ruta: str, cuerpo: str | None) -> tuple[int, dict]:
@@ -114,12 +128,12 @@ def atender(metodo: str, ruta: str, cuerpo: str | None) -> tuple[int, dict]:
         if metodo == "GET" and ruta in ("/api/salud", "/salud"):
             return 200, {"estado": "ok"}
         if metodo == "POST" and ruta in ("/api/simular", "/simular"):
-            try:
-                datos = json.loads(cuerpo or "{}")
-            except json.JSONDecodeError:
-                raise PeticionInvalida("El cuerpo no es JSON válido") from None
-            esc, repeticiones = leer_peticion(datos)
+            esc, repeticiones = leer_peticion(_json(cuerpo))
             return 200, comparar(esc, repeticiones)
+        if metodo == "POST" and ruta in ("/api/edp", "/edp"):
+            datos = _json(cuerpo)
+            esc, _ = leer_peticion(datos)
+            return 200, resolver(esc, _grupo(Difusion(), "edp", datos.get("edp", {})))
         return 404, {"error": f"No existe {metodo} {ruta}"}
     except PeticionInvalida as e:
         return 400, {"error": str(e)}

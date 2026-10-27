@@ -19,6 +19,19 @@ def test_lee_parametros_anidados():
     assert (esc.inicio, esc.plaga.r0, esc.recursos.vacunas_disponibles) == ("mercado", 5.0, 500)
 
 
+def test_edp_responde_con_parametros_propios():
+    cuerpo = {"escenario": {"inicio": "aeropuerto", "dias": 60}, "edp": {"d_zombies": 0.2}}
+    codigo, res = atender("POST", "/api/edp", json.dumps(cuerpo))
+    assert codigo == 200
+    assert res["parametros"]["d_zombies"] == 0.2
+    assert {e["id"] for e in res["escenarios"]} == {"ninguna", "vacunacion_zonal"}
+
+
+def test_edp_rechaza_movilidad_fuera_de_rango():
+    codigo, res = atender("POST", "/api/edp", json.dumps({"edp": {"d_sanos": 50}}))
+    assert codigo == 400 and "d_sanos" in res["error"]
+
+
 def test_acepta_inicio_en_el_aeropuerto():
     esc, _ = leer_peticion({"escenario": {"inicio": "aeropuerto"}})
     assert esc.inicio == "aeropuerto"

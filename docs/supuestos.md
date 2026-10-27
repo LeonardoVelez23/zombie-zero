@@ -56,12 +56,36 @@ del hogar son más largos y cercanos, como muestran los estudios de contactos
 | Cumplimiento del cierre | 80 % | Supuesto | Fracción de contactos de ese lugar que realmente se evitan. |
 | Visibilidad | Solo se ven los zombies detectados | Supuesto | Por eso una vacuna puede "perderse" en alguien ya mordido o no detectado. El sistema lo reporta. |
 
+## Modelo de contraste (EDP espacial)
+
+El modelo de red decide la recomendación. Para compararlo con un modelo clásico
+resolvemos además el sistema SEIR zombie con difusión
+(`backend/src/zombie/edp.py`, `POST /api/edp`), en la línea de
+Munz et al. (2009) [5].
+
+| Parámetro | Valor | Tipo | Justificación |
+|---|---|---|---|
+| β, σ, γ | Calibrados con R0, latencia y días infeccioso | Fuente | Los mismos de la tabla de la plaga: R0 = β / (γ + α). |
+| Contagio por frecuencia (β S Z / N) | — | Supuesto | Así R0 no depende de la densidad de cada celda y se compara con la red. |
+| α (zombies eliminados por la población) | 0,02 por día | Supuesto | Término de Munz et al. (2009). Los eliminados pasan a R para que la población se conserve. |
+| D_S (sanos, mordidos, exorcizados) | 0,1 km²/día | Supuesto | Movilidad neta: la gente se mueve de día pero vuelve a casa. Ajustable. |
+| D_Z (zombies) | 0,05 km²/día | Supuesto | Los zombies se mueven más lento que los sanos. Ajustable. |
+| Cuadrícula | Celdas de 0,5 km | Supuesto | La población de cada sector se reparte como una mancha gaussiana de 1 km (3 km en la zona rural) alrededor de su centro aproximado. No distingue mar y tierra dentro de la zona poblada. |
+| Vacunar por zonas | Dosis del día repartidas según los zombies de cada celda | Supuesto | La EDP no distingue personas: la dosis llega a todos los de la celda y solo protege a los sanos. Es el equivalente continuo de la vacunación en anillo. |
+
+**Lo que muestra el contraste:** la EDP mezcla a todos los de una celda, así que
+contagia más que la red (sin intervención, unos 7.960 contra unos 4.000 desde el
+aeropuerto) y vacunar por zonas salva poco. La red sabe quién es contacto de quién
+y por eso la vacunación en anillo es mucho más eficaz con las mismas dosis.
+
 ## Referencias de datos abiertos
 
 1. INEC, Censo de Población y Vivienda 2022: población del cantón Manta por área y grupos de edad, vía [citypopulation.de](https://www.citypopulation.de/en/ecuador/admin/manab%C3%AD/1308__manta/) y [ecuadorencifras.gob.ec](https://www.ecuadorencifras.gob.ec/institucional/201-279-personas-mas-viven-en-manabi/).
 2. INEC, "201.279 personas más viven en Manabí" (resultados del Censo 2022 para Manabí): [ecuadorencifras.gob.ec](https://www.ecuadorencifras.gob.ec/institucional/201-279-personas-mas-viven-en-manabi/).
 3. INEC, Boletín técnico ENEMDU anual enero-diciembre 2025, Tabla 4: [PDF](https://www.ecuadorencifras.gob.ec/documentos/web-inec/EMPLEO/2025/anual/Boletin_tecnico_anual_enero-diciembre_2025.pdf).
 4. El Diario, "La Parroquia Tarqui está de fiesta…" (2025): [eldiario.ec](https://www.eldiario.ec/manta/la-parroquia-tarqui-esta-de-fiesta-este-9-de-octubre-celebra-96-anos-de-historia-y-empuje-26092025/).
+
+5. Munz, P., Hudea, I., Imad, J. y Smith?, R. J. (2009). "When zombies attack!: Mathematical modelling of an outbreak of zombie infection". En *Infectious Disease Modelling Research Progress*, Nova Science, pp. 133-150.
 
 ## Reproducibilidad
 
