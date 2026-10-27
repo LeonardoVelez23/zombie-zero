@@ -67,4 +67,4 @@ del hogar son más largos y cercanos, como muestran los estudios de contactos
 La semilla fija la red de Manta y cada repetición `r` usa
 `SeedSequence([semilla, r])`. Todas las estrategias comparten los mismos números
 aleatorios del brote, así que con la misma configuración y la misma semilla el
-resultado es idéntico (lo prueba `tests/test_simulador.py`).
+resultado es idéntico (lo prueba `backend/tests/test_simulador.py`).

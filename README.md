@@ -30,7 +30,13 @@ _Pendiente: se completa al subir el motor (etapas 3 a 6)._
 
 ## Cómo probarlo
 
+El repositorio tiene dos partes independientes que se comunican por HTTP:
+
+- `backend/`: motor de simulación y API en Python.
+- `frontend/`: interfaz web.
+
 ```bash
+cd backend
 python -m venv .venv
 .venv/bin/pip install -e ".[dev]"
 .venv/bin/python -m pytest -q
@@ -80,4 +86,4 @@ _Pendiente: captura `docs/budget.png` del AWS Budget con alerta._
 | _Pendiente_ | Interfaz, AWS y documentación |
 
 Cada integrante trabaja en una rama (`feat/...`, `docs/...`, `fix/...`) y la
-integra a `main` con un pull request. Antes de cada push: `pytest` en verde.
+integra a `develop` con un pull request. Antes de cada push: `pytest` en verde.
