@@ -5,9 +5,9 @@ import pytest
 
 from zombie.config import Escenario
 from zombie.estrategias import Estrategia, crear
-from zombie.modelo import calibrar_beta, casos_iniciales, estimar_r0, simular
+from zombie.modelo import E, I, calibrar_beta, casos_iniciales, estimar_r0, simular
 from zombie.montecarlo import comparar
-from zombie.poblacion import BARRIOS, BUS, HOGAR, construir_red
+from zombie.poblacion import TRABAJO, construir_red
 
 ESC = Escenario(n_personas=3000, dias=120)
 
@@ -107,15 +107,19 @@ def test_cerrar_todo_por_completo_frena_el_contagio(red, beta):
     assert cerrados < abiertos
 
 
-def test_paciente_cero_llega_al_aeropuerto_y_contagia_en_el_trayecto(red):
+def test_aeropuerto_muerde_a_un_equipo_de_rescate(red):
     aeropuerto = replace(ESC, inicio="aeropuerto", casos_iniciales=5)
-    casos = casos_iniciales(red, aeropuerto, np.random.default_rng(0))
-    cero, otros = casos[0], casos[1:]
-    aristas = red.aristas_de(np.array([cero]))
-    assert BARRIOS[red.barrio[cero]] == "Tarqui"
-    assert (red.capa[aristas] == BUS).any()
-    contactos = red.destino[aristas][np.isin(red.capa[aristas], (BUS, HOGAR))]
-    assert 0 < len(otros) <= 4 and np.isin(otros, contactos).all()
+    equipo = casos_iniciales(red, aeropuerto, np.random.default_rng(0))
+    assert len(equipo) == 5
+    # Todos se conocen del trabajo: son el mismo equipo.
+    trabajo = set(zip(red.origen[red.capa == TRABAJO].tolist(), red.destino[red.capa == TRABAJO].tolist()))
+    assert all((a, b) in trabajo for a in equipo for b in equipo if a != b)
+
+
+def test_aeropuerto_empieza_con_mordidos_sin_detectar(red, beta):
+    aeropuerto = replace(ESC, inicio="aeropuerto", casos_iniciales=5)
+    res = simular(red, aeropuerto, crear("anillo", red), beta, 0)
+    assert res.serie[0, E] == 5 and res.serie[0, I] == 0
 
 
 def test_brote_sorpresa_cambia_parametros():

@@ -13,7 +13,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from .config import Escenario, Plaga
-from .poblacion import BARRIOS, BUS, CAPAS, ESCOLAR, HOGAR, Red
+from .poblacion import BARRIOS, CAPAS, ESCOLAR, TAM_TRABAJO, TRABAJO, Red
 
 S, E, I, R = 0, 1, 2, 3
 CERRABLES = {"mercado": CAPAS.index("mercado"), "colegio": CAPAS.index("colegio")}
@@ -90,19 +90,19 @@ def calibrar_beta(red: Red, plaga: Plaga) -> float:
 
 
 def _desde_aeropuerto(red: Red, casos: int, rng: np.random.Generator) -> np.ndarray:
-    """Paciente cero: llega en avión y va en bus a su casa en Tarqui.
+    """Un avión llega lleno de zombies y muerden al equipo de rescate que lo abre.
 
-    Los demás casos iniciales son contactos suyos del bus y del hogar, es decir,
-    los que contagió en el trayecto. Si tiene menos contactos que casos, se usan todos.
+    El equipo (bomberos y médicos) es un grupo de trabajo de la red: se conocen
+    entre sí, viven en barrios distintos y vuelven a casa sin saber que fueron
+    mordidos. Los pasajeros quedan aislados en el aeropuerto y no entran a la red.
     """
-    en_bus = np.zeros(red.n, dtype=bool)
-    en_bus[red.origen[red.capa == BUS]] = True
-    viajeros = np.flatnonzero(en_bus & (red.barrio == BARRIOS.index("Tarqui")))
-    cero = rng.choice(viajeros)
-    aristas = red.aristas_de(np.array([cero]))
-    trayecto = np.unique(red.destino[aristas][np.isin(red.capa[aristas], (BUS, HOGAR))])
-    otros = rng.choice(trayecto, size=min(casos - 1, len(trayecto)), replace=False)
-    return np.concatenate([[cero], otros]).astype(np.int64)
+    casos = min(casos, TAM_TRABAJO)
+    companeros = np.bincount(red.origen[red.capa == TRABAJO], minlength=red.n)
+    jefe = rng.choice(np.flatnonzero(companeros >= casos - 1))
+    aristas = red.aristas_de(np.array([jefe]))
+    equipo = red.destino[aristas][red.capa[aristas] == TRABAJO]
+    otros = rng.choice(equipo, size=casos - 1, replace=False)
+    return np.concatenate([[jefe], otros]).astype(np.int64)
 
 
 def casos_iniciales(red: Red, esc: Escenario, rng: np.random.Generator) -> np.ndarray:
@@ -145,9 +145,13 @@ def simular(red: Red, esc: Escenario, estrategia, beta: float, repeticion: int =
 
     estado = np.full(red.n, S, dtype=np.int8)
     iniciales = casos_iniciales(red, esc, rng_inicio)
-    estado[iniciales] = I
     detectado = np.zeros(red.n, dtype=bool)
-    detectado[iniciales] = rng_inicio.random(len(iniciales)) < plaga.deteccion
+    if esc.inicio == "aeropuerto":
+        # Recién mordidos: nadie sabe que lo están hasta que se vuelven zombies.
+        estado[iniciales] = E
+    else:
+        estado[iniciales] = I
+        detectado[iniciales] = rng_inicio.random(len(iniciales)) < plaga.deteccion
     vacunado = np.zeros(red.n, dtype=bool)
     usadas = perdidas = 0
 
