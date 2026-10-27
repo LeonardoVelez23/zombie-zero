@@ -89,7 +89,39 @@ _Pendiente: tabla de parámetros por defecto y semilla para reproducir los resul
 
 ## Cómo desplegarlo
 
-_Pendiente: pasos de despliegue en AWS (región us-east-1)._
+Todo está en `infra/` y se despliega en `us-east-1` con una sola plantilla
+(`infra/template.yaml`):
+
+| Recurso | Para qué |
+|---|---|
+| Lambda (Python 3.13, 2 GB, 60 s) + **Function URL** | La API. Function URL en vez de API Gateway porque una simulación puede pasar de los 30 s que permite API Gateway |
+| S3 privado + CloudFront | La interfaz web en Angular |
+| AWS Budget | Alerta por correo al 80 % del gasto mensual y si el pronóstico pasa del 100 % |
+| CloudWatch Logs | Logs de la API, guardados 7 días |
+
+Requisitos: [AWS CLI v2](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html),
+[SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html)
+y [uv](https://docs.astral.sh/uv/). Las credenciales nunca van en el repositorio:
+
+```bash
+aws configure sso                  # una vez; región us-east-1
+aws sso login                      # cada vez que expire la sesión
+aws sts get-caller-identity        # comprueba la cuenta
+
+CORREO_ALERTA=equipo@ejemplo.com infra/desplegar.sh
+```
+
+`desplegar.sh` arma el paquete de la Lambda (`infra/empaquetar.sh` descarga
+numpy compilado para Lambda, sin Docker), despliega la pila `zombie-zero` e
+imprime `ApiUrl` y `FrontendUrl`. Para publicar la interfaz después de
+compilarla:
+
+```bash
+infra/publicar-frontend.sh frontend/dist/<proyecto>/browser
+```
+
+Para borrar todo: `aws cloudformation delete-stack --stack-name zombie-zero`
+(antes hay que vaciar el bucket del frontend).
 
 ## Arquitectura
 
