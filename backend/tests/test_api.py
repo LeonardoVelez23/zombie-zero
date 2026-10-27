@@ -19,6 +19,11 @@ def test_lee_parametros_anidados():
     assert (esc.inicio, esc.plaga.r0, esc.recursos.vacunas_disponibles) == ("mercado", 5.0, 500)
 
 
+def test_acepta_inicio_en_el_aeropuerto():
+    esc, _ = leer_peticion({"escenario": {"inicio": "aeropuerto"}})
+    assert esc.inicio == "aeropuerto"
+
+
 @pytest.mark.parametrize("cuerpo", [
     {"escenario": {"plaga": {"r0": 99}}},
     {"escenario": {"n_personas": 10_000_000}},

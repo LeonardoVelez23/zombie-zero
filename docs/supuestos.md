@@ -13,6 +13,7 @@ Leyenda: **Fuente** = número tomado de literatura o datos abiertos ·
 | Transmisión | Por contacto en la red | Supuesto | Enfermedad respiratoria, de persona a persona. No usamos el dengue porque necesita un vector (el mosquito). |
 | Mortalidad | No se modela | Supuesto | El objetivo es minimizar los contagiados. Los exorcizados quedan inmunes. |
 | Zombies detectados | 70 % | Supuesto | Parte de los casos no se detecta (por ejemplo, los asintomáticos). Un zombie no detectado no activa la vacunación en anillo. Ajustable en la interfaz. |
+| Inicio "aeropuerto" (paciente cero) | 1 viajero + contactos del trayecto | Supuesto | El paciente cero llega en avión y va en bus a su casa en Tarqui (ejemplo acordado por el equipo). Los demás casos iniciales son contactos suyos del bus y del hogar. No modelamos la ruta calle por calle: no hay datos de movilidad de Manta. |
 
 **Calibración:** el usuario elige R0 y el sistema busca la tasa de contagio
 (`beta`) que produce ese R0 en la red (`modelo.calibrar_beta`). R0 se estima como

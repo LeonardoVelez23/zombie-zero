@@ -13,7 +13,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from .config import Escenario, Plaga
-from .poblacion import BARRIOS, CAPAS, ESCOLAR, Red
+from .poblacion import BARRIOS, BUS, CAPAS, ESCOLAR, HOGAR, Red
 
 S, E, I, R = 0, 1, 2, 3
 CERRABLES = {"mercado": CAPAS.index("mercado"), "colegio": CAPAS.index("colegio")}
@@ -89,7 +89,25 @@ def calibrar_beta(red: Red, plaga: Plaga) -> float:
     return (bajo + alto) / 2
 
 
+def _desde_aeropuerto(red: Red, casos: int, rng: np.random.Generator) -> np.ndarray:
+    """Paciente cero: llega en avión y va en bus a su casa en Tarqui.
+
+    Los demás casos iniciales son contactos suyos del bus y del hogar, es decir,
+    los que contagió en el trayecto. Si tiene menos contactos que casos, se usan todos.
+    """
+    en_bus = np.zeros(red.n, dtype=bool)
+    en_bus[red.origen[red.capa == BUS]] = True
+    viajeros = np.flatnonzero(en_bus & (red.barrio == BARRIOS.index("Tarqui")))
+    cero = rng.choice(viajeros)
+    aristas = red.aristas_de(np.array([cero]))
+    trayecto = np.unique(red.destino[aristas][np.isin(red.capa[aristas], (BUS, HOGAR))])
+    otros = rng.choice(trayecto, size=min(casos - 1, len(trayecto)), replace=False)
+    return np.concatenate([[cero], otros]).astype(np.int64)
+
+
 def casos_iniciales(red: Red, esc: Escenario, rng: np.random.Generator) -> np.ndarray:
+    if esc.inicio == "aeropuerto":
+        return _desde_aeropuerto(red, esc.casos_iniciales, rng)
     if esc.inicio == "aleatorio":
         candidatos = np.arange(red.n)
     elif esc.inicio == "mercado":

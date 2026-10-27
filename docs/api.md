@@ -23,7 +23,7 @@ Valores por defecto y límites de cada parámetro, para armar los controles de l
   "limites": { "escenario": {"n_personas": [1000, 20000], ...},
                "plaga": {"r0": [0.5, 10.0], ...},
                "recursos": {...} },
-  "inicios": ["aleatorio", "mercado", "colegio", "Tarqui", "Manta", "Los Esteros", "Eloy Alfaro", "San Mateo", "Rural"],
+  "inicios": ["aleatorio", "aeropuerto", "mercado", "colegio", "Tarqui", "Manta", "Los Esteros", "Eloy Alfaro", "San Mateo", "Rural"],
   "repeticiones": {"por_defecto": 50, "limites": [5, 200]}
 }
 ```

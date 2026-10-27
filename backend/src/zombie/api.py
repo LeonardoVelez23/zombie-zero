@@ -12,7 +12,7 @@ from .config import Escenario, Plaga, Recursos
 from .montecarlo import comparar
 from .poblacion import BARRIOS
 
-INICIOS = ("aleatorio", "mercado", "colegio", *BARRIOS)
+INICIOS = ("aleatorio", "aeropuerto", "mercado", "colegio", *BARRIOS)
 
 # Límites de cada parámetro: protegen el costo y el tiempo de cómputo.
 LIMITES = {

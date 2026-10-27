@@ -5,9 +5,9 @@ import pytest
 
 from zombie.config import Escenario
 from zombie.estrategias import Estrategia, crear
-from zombie.modelo import calibrar_beta, estimar_r0, simular
+from zombie.modelo import calibrar_beta, casos_iniciales, estimar_r0, simular
 from zombie.montecarlo import comparar
-from zombie.poblacion import construir_red
+from zombie.poblacion import BARRIOS, BUS, HOGAR, construir_red
 
 ESC = Escenario(n_personas=3000, dias=120)
 
@@ -105,6 +105,17 @@ def test_cerrar_todo_por_completo_frena_el_contagio(red, beta):
     cerrados = np.mean([simular(red, estricto, nada, beta, r, ("mercado", "colegio")).infectados_total
                         for r in range(10)])
     assert cerrados < abiertos
+
+
+def test_paciente_cero_llega_al_aeropuerto_y_contagia_en_el_trayecto(red):
+    aeropuerto = replace(ESC, inicio="aeropuerto", casos_iniciales=5)
+    casos = casos_iniciales(red, aeropuerto, np.random.default_rng(0))
+    cero, otros = casos[0], casos[1:]
+    aristas = red.aristas_de(np.array([cero]))
+    assert BARRIOS[red.barrio[cero]] == "Tarqui"
+    assert (red.capa[aristas] == BUS).any()
+    contactos = red.destino[aristas][np.isin(red.capa[aristas], (BUS, HOGAR))]
+    assert 0 < len(otros) <= 4 and np.isin(otros, contactos).all()
 
 
 def test_brote_sorpresa_cambia_parametros():
