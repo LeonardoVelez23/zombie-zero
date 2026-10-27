@@ -35,14 +35,53 @@ El repositorio tiene dos partes independientes que se comunican por HTTP:
 - `backend/`: motor de simulación y API en Python.
 - `frontend/`: interfaz web.
 
+### Requisitos
+
+- Python 3.11 o superior
+- Node.js 20 o superior (para el frontend)
+
+### 1. Backend
+
+Una sola vez, para crear el entorno e instalar las dependencias:
+
 ```bash
 cd backend
 python -m venv .venv
 .venv/bin/pip install -e ".[dev]"
+```
+
+Pruebas (deben pasar todas antes de cada push):
+
+```bash
 .venv/bin/python -m pytest -q
 ```
 
-_Pendiente: agregar el comando de la CLI y la URL pública._
+Levantar la API en `http://127.0.0.1:8000`, que es la que usa el frontend:
+
+```bash
+.venv/bin/python -m zombie.servidor
+```
+
+Para comprobar que responde: `http://127.0.0.1:8000/api/salud` devuelve
+`{"estado": "ok"}`. Los endpoints están en [docs/api.md](docs/api.md).
+
+Simular desde la terminal, sin interfaz (útil para el Brote Sorpresa):
+
+```bash
+.venv/bin/python -m zombie.cli                                   # escenario por defecto
+.venv/bin/python -m zombie.cli --r0 5 --vacunas 500 --inicio mercado
+.venv/bin/python -m zombie.cli --help                            # todos los parámetros
+```
+
+En Windows, cambia `.venv/bin/python` por `.venv\Scripts\python`.
+
+### 2. Frontend
+
+_Pendiente: el frontend en Angular está en construcción (ver
+[frontend/README.md](frontend/README.md)). Se levantará con `npm install` y
+`npm start` dentro de `frontend/`, con la API corriendo en otra terminal._
+
+_Pendiente: URL pública en AWS._
 
 ## Parámetros por defecto y semilla
 
