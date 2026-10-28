@@ -59,14 +59,6 @@ export interface Veredicto {
   salvadosVsAzar: number;
 }
 
-// Informe para el alcalde: el motor calcula y la IA (Amazon Bedrock) solo lo redacta.
-// Si la IA está apagada o falla, el backend responde con una plantilla fija (fuente "local").
-export interface InformeIa {
-  fuente: 'bedrock' | 'local';
-  modelo: string | null;
-  texto: string;
-}
-
 export interface ResultadoSimulacion {
   escenario: Escenario;
   repeticiones: number;

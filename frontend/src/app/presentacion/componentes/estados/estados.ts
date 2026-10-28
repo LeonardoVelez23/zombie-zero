@@ -1,13 +1,11 @@
-import { Component, computed, inject, input, signal } from '@angular/core';
+import { Component, computed, input, signal } from '@angular/core';
 
 import { EstadoSeir, Plan, ResultadoSimulacion } from '../../../dominio/modelos/resultado';
 import { comparacion } from '../../../dominio/reglas/planes';
-import { RelojBrote } from '../../servicios/reloj-brote';
 import { numero, numeroCorto } from '../../utilidades/formato';
-import { Area, banda, diaEnPunto, escala, trazo } from '../../utilidades/grafica';
+import { Area, banda, escala, trazo } from '../../utilidades/grafica';
 
 const AREA: Area = { izquierda: 55, derecha: 675, arriba: 20, abajo: 250 };
-const ANCHO = 700;
 
 type Opcion = 'recomendado' | 'azar' | 'ninguna';
 // Líneas: una curva por estado en número de personas (como el gráfico "Populations" de NetLogo).
@@ -53,8 +51,8 @@ export class Estados {
     { id: 'lineas', nombre: 'Líneas' },
     { id: 'areas', nombre: 'Áreas' },
   ];
-  // El día lo marca la línea de tiempo del panel: el mismo para todas las pantallas.
-  private readonly reloj = inject(RelojBrote);
+  // null = el día del pico sin intervención: un mismo día para comparar los tres planes.
+  protected readonly diaElegido = signal<number | null>(null);
 
   protected readonly plan = computed<Plan | null>(() => {
     const r = this.resultado();
@@ -68,12 +66,12 @@ export class Estados {
 
   protected readonly dias = computed(() => this.resultado()?.escenario.dias ?? 0);
 
-  protected readonly dia = computed(() => Math.min(this.reloj.dia(), this.dias()));
-
-  // Día del pico sin intervención: el mismo que usan los indicadores y la línea de tiempo.
-  protected readonly diaPico = computed(() => {
+  protected readonly dia = computed(() => {
     const r = this.resultado();
-    return r ? Math.min(Math.round(comparacion(r).sinIntervencion.diaPico), this.dias()) : 0;
+    const elegido = this.diaElegido();
+    if (elegido !== null || !r) return Math.min(elegido ?? 0, this.dias());
+    const zombies = comparacion(r).sinIntervencion.estados?.I.media ?? [0];
+    return zombies.indexOf(Math.max(...zombies));
   });
 
   private readonly poblacion = computed(() => {
@@ -178,15 +176,5 @@ export class Estados {
 
   protected elegirPlan(opcion: Opcion): void {
     this.opcion.set(opcion);
-  }
-
-  protected irAlPico(): void {
-    this.reloj.irA(this.diaPico());
-  }
-
-  // Clic o arrastre sobre una gráfica: todas las pantallas saltan a ese día.
-  protected elegirDia(evento: PointerEvent): void {
-    if (evento.type === 'pointermove' && !evento.buttons) return;
-    this.reloj.irA(diaEnPunto(evento, AREA, this.dias(), ANCHO));
   }
 }

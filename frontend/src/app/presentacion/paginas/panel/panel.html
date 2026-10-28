@@ -79,8 +79,6 @@
       <p class="error" role="alert">{{ mensaje }}</p>
     }
 
-    <app-linea-tiempo [resultado]="resultado()" />
-
     <section class="metrics-grid" aria-label="Indicadores del brote">
       @for (indicador of indicadores(); track indicador.etiqueta) {
         <article class="metric-card" [class]="indicador.color">
@@ -136,7 +134,7 @@
           }
         </div>
         @if (modeloMapa() === 'red') {
-          <app-mapa-barrios [resultado]="resultado()" />
+          <app-mapa-barrios [resultado]="resultado()" [(dia)]="diaVivo" />
         } @else {
           <app-mapa
             [resultado]="difusion()"

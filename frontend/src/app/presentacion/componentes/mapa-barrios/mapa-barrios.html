@@ -6,8 +6,8 @@
   <span class="chart-tag">MODELO DE RED</span>
 </div>
 <p class="panel-description">
-  Porcentaje de cada barrio que ya fue mordido, día a día (promedio de los brotes simulados). El día
-  lo marca la línea de tiempo de arriba; cambia de plan para ver qué zonas protege.
+  Porcentaje de cada barrio que ya fue mordido, día a día (promedio de los brotes simulados). Cambia
+  de plan para ver qué zonas protege.
 </p>
 
 @if (resultado()) {
@@ -26,7 +26,37 @@
         </button>
       }
     </div>
+    <div class="reproduccion">
+      <button
+        type="button"
+        class="boton"
+        [attr.aria-pressed]="reproduciendo()"
+        [disabled]="totalDias() < 1"
+        (click)="alternarReproduccion()"
+      >
+        {{ reproduciendo() ? '❚❚ Pausa' : '▶ Reproducir' }}
+      </button>
+      <select
+        aria-label="Velocidad de la animación"
+        [value]="velocidad()"
+        (change)="cambiarVelocidad(+$any($event.target).value)"
+      >
+        @for (v of velocidades; track v.ms) {
+          <option [value]="v.ms">{{ v.nombre }}</option>
+        }
+      </select>
+    </div>
   </div>
+  <label class="deslizador">
+    <span>Día {{ dia() }} de {{ totalDias() }}</span>
+    <input
+      type="range"
+      min="0"
+      [max]="totalDias()"
+      [value]="dia()"
+      (input)="elegirDia(+$any($event.target).value)"
+    />
+  </label>
 }
 
 <div class="mapa-contenedor">

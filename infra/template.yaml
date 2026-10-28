@@ -29,7 +29,7 @@ Resources:
   ApiFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Description: API del simulador (POST /api/simular, POST /api/edp, POST /api/informe)
+      Description: API del simulador (POST /api/simular, POST /api/edp)
       CodeUri: .build/lambda/     # lo arma empaquetar.sh (código + numpy para Linux)
       Handler: zombie.api.lambda_handler
       Runtime: python3.13
@@ -41,19 +41,6 @@ Resources:
       ReservedConcurrentExecutions: !If [LimitarConcurrencia, !Ref ConcurrenciaMaxima, !Ref AWS::NoValue]
       LoggingConfig:
         LogGroup: !Ref ApiLogs
-      # Informe para el alcalde (POST /api/informe): Bedrock solo redacta lo que ya calculó el motor.
-      # Con IA_ACTIVA en 'false', o si Bedrock falla, se responde con una plantilla fija sin IA.
-      Environment:
-        Variables:
-          IA_ACTIVA: 'true'
-          MODELO_IA: amazon.nova-micro-v1:0
-          # Tope de gasto: llamadas a Bedrock por minuto en cada contenedor; pasado eso, plantilla sin IA.
-          IA_LLAMADAS_POR_MINUTO: '4'
-      Policies:
-        - Statement:
-            - Effect: Allow             # mínimo privilegio: solo invocar este modelo
-              Action: bedrock:InvokeModel
-              Resource: !Sub arn:aws:bedrock:${AWS::Region}::foundation-model/amazon.nova-micro-v1:0
       FunctionUrlConfig:          # Function URL: sin el corte de 30 s de API Gateway
         AuthType: NONE
         Cors:
