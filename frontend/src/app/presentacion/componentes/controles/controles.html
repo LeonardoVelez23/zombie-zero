@@ -37,24 +37,25 @@
     }
   </select>
 
-  @for (seccion of secciones; track seccion.titulo) {
+  @for (seccion of principales; track seccion.titulo) {
     <fieldset>
       <legend>{{ seccion.titulo }}</legend>
       <div class="field-grid">
         @for (campo of seccion.campos; track campo.nombre) {
-          @let limite = limites(campo);
+          <ng-container *ngTemplateOutlet="entrada; context: { $implicit: campo }" />
+        }
+        @if (seccion.conRepeticiones) {
+          @let limiteRepeticiones = parametros().repeticiones.limites;
           <div>
-            <label class="field-label" [for]="campo.nombre">
-              {{ campo.etiqueta }} <span>{{ campo.unidad }}</span>
-            </label>
+            <label class="field-label" for="repeticiones">Repeticiones <span>BROTES</span></label>
             <input
+              id="repeticiones"
               type="number"
-              [id]="campo.nombre"
-              [formControlName]="campo.nombre"
-              [attr.min]="limite[0]"
-              [attr.max]="limite[1]"
-              [step]="campo.paso"
-              [title]="'Entre ' + limite[0] + ' y ' + limite[1]"
+              formControlName="repeticiones"
+              [attr.min]="limiteRepeticiones[0]"
+              [attr.max]="limiteRepeticiones[1]"
+              step="5"
+              [title]="'Entre ' + limiteRepeticiones[0] + ' y ' + limiteRepeticiones[1]"
             />
           </div>
         }
@@ -62,26 +63,40 @@
     </fieldset>
   }
 
-  @let limiteRepeticiones = parametros().repeticiones.limites;
-  <label class="field-label" for="repeticiones">
-    Repeticiones Monte Carlo <span>BROTES</span>
-  </label>
-  <input
-    id="repeticiones"
-    type="number"
-    formControlName="repeticiones"
-    [attr.min]="limiteRepeticiones[0]"
-    [attr.max]="limiteRepeticiones[1]"
-    step="5"
-  />
+  <details class="avanzado" [open]="verAvanzado()" (toggle)="verAvanzado.set($any($event.target).open)">
+    <summary>
+      Más parámetros
+      <small>población, duración, casos iniciales y corte de vacunas</small>
+    </summary>
+    @for (seccion of avanzadas; track seccion.titulo) {
+      <fieldset>
+        <legend>{{ seccion.titulo }}</legend>
+        <div class="field-grid">
+          @for (campo of seccion.campos; track campo.nombre) {
+            <ng-container *ngTemplateOutlet="entrada; context: { $implicit: campo }" />
+          }
+        </div>
+      </fieldset>
+    }
+  </details>
 
-  <div class="resource-note">
-    <span aria-hidden="true">ⓘ</span>
+  <ng-template #entrada let-campo>
+    @let limite = limites(campo);
     <div>
-      <strong>Comparación justa</strong>
-      <p>Todos los planes se simulan con el mismo presupuesto y los mismos brotes.</p>
+      <label class="field-label" [for]="campo.nombre">
+        {{ campo.etiqueta }} <span>{{ campo.unidad }}</span>
+      </label>
+      <input
+        type="number"
+        [id]="campo.nombre"
+        [formControlName]="campo.nombre"
+        [attr.min]="limite[0]"
+        [attr.max]="limite[1]"
+        [step]="campo.paso"
+        [title]="'Entre ' + limite[0] + ' y ' + limite[1]"
+      />
     </div>
-  </div>
+  </ng-template>
 
   <button class="run-button" type="submit" [disabled]="formulario.invalid || cargando()">
     <span aria-hidden="true">▶</span>
@@ -92,7 +107,7 @@
     @if (formulario.invalid) {
       Hay valores fuera de rango: pasa el cursor sobre el campo para ver sus límites.
     } @else {
-      Tarda unos 10 s con 100 repeticiones y 5.000 personas.
+      Todos los planes usan el mismo presupuesto y los mismos brotes. Tarda unos 10 s.
     }
   </p>
 </form>

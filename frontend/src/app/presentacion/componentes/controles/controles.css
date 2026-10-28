@@ -106,31 +106,41 @@ input.ng-invalid {
   border-color: var(--red);
 }
 
-.resource-note {
-  display: flex;
-  gap: 9px;
+/* Parámetros secundarios, plegados por defecto. */
+.avanzado {
   margin-top: 18px;
-  padding: 12px;
   border: 1px solid rgba(168, 85, 247, .2);
   border-radius: 4px;
   background: rgba(168, 85, 247, .055);
 }
 
-.resource-note > span {
-  color: #c084fc;
-  font-size: 15px;
-}
-
-.resource-note strong {
+.avanzado summary {
+  padding: 11px 12px;
   color: #d8b4fe;
-  font-size: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
 }
 
-.resource-note p {
-  margin: 5px 0 0;
+.avanzado summary small {
+  display: block;
+  margin-top: 3px;
   color: #969abb;
   font-size: 9px;
-  line-height: 1.6;
+  font-weight: 400;
+}
+
+.avanzado summary:focus-visible {
+  outline: 2px solid var(--violet);
+  outline-offset: 2px;
+}
+
+.avanzado[open] {
+  padding: 0 12px 12px;
+}
+
+.avanzado[open] summary {
+  margin: 0 -12px;
 }
 
 .run-button {
