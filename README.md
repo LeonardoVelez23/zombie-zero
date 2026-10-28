@@ -293,7 +293,17 @@ cómputo de Lambda. Gasto real durante el evento: **0,00 USD**. El cálculo comp
 
 ## AWS Budget
 
-_Pendiente: captura `docs/budget.png` del AWS Budget con alerta._
+La cuenta tiene presupuestos con alerta por correo desde el 1 de octubre de 2026, antes de desplegar nada:
+
+| Presupuesto | Límite mensual | Alertas |
+|---|---|---|
+| `Costo-Mensual` (captura) | 5 USD | Gasto real al 85 % y al 100 %; gasto previsto al 100 % |
+| `zombie-zero-mensual` (creado por `infra/template.yaml`) | 10 USD | Gasto real al 80 %; gasto previsto al 100 % |
+| `Alerta-Gasto` | 1 USD | Cualquier gasto real (0,01 %) |
+
+![AWS Budget Costo-Mensual con sus alertas](docs/budget.png)
+
+El correo verificado que recibe las alertas está difuminado en la captura.
 
 ## Equipo y flujo de trabajo
 
