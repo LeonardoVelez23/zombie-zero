@@ -15,7 +15,7 @@ import type { ImageSource, Map as MapaLibre, Marker } from 'maplibre-gl';
 
 import { ResultadoDifusion } from '../../../dominio/modelos/resultado';
 import { numero } from '../../utilidades/formato';
-import { LIMITES_MANTA, SECTORES, VISTAS, VistaId, estiloBase } from './vistas';
+import { LIMITES_MANTA, SECTORES, VISTAS, VistaId, estiloBase, urlDelWorker } from './vistas';
 
 // Velocidades de la animación del mapa: milisegundos entre un fotograma y el siguiente
 // (uno por día: 180 días duran ~22 s a 1×).
@@ -263,13 +263,6 @@ export class Mapa {
 
 // El worker de MapLibre se copia junto al build (angular.json, "assets"). Se carga como Blob
 // para no depender del tipo MIME con que S3/CloudFront sirvan los archivos .mjs.
-async function urlDelWorker(): Promise<string> {
-  const respuesta = await fetch('maplibre-gl-worker.mjs');
-  if (!respuesta.ok) throw new Error(`No se pudo cargar el worker del mapa (${respuesta.status})`);
-  const codigo = new Blob([await respuesta.text()], { type: 'text/javascript' });
-  return URL.createObjectURL(codigo);
-}
-
 function marca(tipo: 'sector' | 'aeropuerto', texto: string): HTMLElement {
   const elemento = document.createElement('div');
   elemento.className = `marca-mapa marca-${tipo}`;

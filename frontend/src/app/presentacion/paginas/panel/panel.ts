@@ -8,6 +8,7 @@ import { ResultadoDifusion, ResultadoSimulacion } from '../../../dominio/modelos
 import { comparacion } from '../../../dominio/reglas/planes';
 import { Controles } from '../../componentes/controles/controles';
 import { Grafica } from '../../componentes/grafica/grafica';
+import { MapaBarrios } from '../../componentes/mapa-barrios/mapa-barrios';
 import { Informe } from '../../componentes/informe/informe';
 import { Estados } from '../../componentes/estados/estados';
 import { Mapa } from '../../componentes/mapa/mapa';
@@ -25,7 +26,7 @@ interface Indicador {
 
 @Component({
   selector: 'app-panel',
-  imports: [Controles, Grafica, Estados, Informe, Mapa, Tabla],
+  imports: [Controles, Grafica, Estados, Informe, Mapa, MapaBarrios, Tabla],
   templateUrl: './panel.html',
   styleUrl: './panel.css',
 })

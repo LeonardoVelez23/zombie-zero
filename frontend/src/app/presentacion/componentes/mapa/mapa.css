@@ -75,6 +75,8 @@ input[type='range'] {
 
 .vistas {
   display: inline-flex;
+  flex-wrap: wrap;
+  max-width: 100%;
   align-self: end;
   border: 1px solid #282b4d;
   border-radius: 4px;
