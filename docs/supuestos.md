@@ -138,6 +138,11 @@ y por eso la vacunación en anillo es mucho más eficaz con las mismas dosis.
 
 ## Calibración con datos reales (COVID-19 en Manta, 2020)
 
+![Casos semanales de COVID-19 en Manta en 2020, con la segunda ola ajustada](calibracion.png)
+
+En violeta, las semanas de la segunda ola que se ajustan; la línea es el crecimiento exponencial estimado.
+La API devuelve estos datos y el ajuste en `GET /api/parametros` (campo `calibracion`).
+
 **Datos:** casos positivos confirmados de COVID-19 en el cantón Manta, de los informes de situación de la
 SNGRE, recopilados en el repositorio abierto [ecuacovid](https://github.com/andrab/ecuacovid)
 (`datos_crudos/positivas/2020/cantones.csv`). Se guardan sumados por semana ISO en
