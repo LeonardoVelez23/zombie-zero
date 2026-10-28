@@ -584,6 +584,13 @@
   min-width: 0;
 }
 
+.graficas {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  scroll-margin-top: 16px;
+}
+
 .selector-modelo {
   display: inline-flex;
   align-self: flex-start;

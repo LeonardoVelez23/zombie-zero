@@ -25,12 +25,12 @@
       <a class="nav-item" href="#selector-modelo" [class.active]="seccionActiva() === 'mapa-brote'"
         [attr.aria-current]="seccionActiva() === 'mapa-brote' ? 'location' : null"
         (click)="seccionActiva.set('mapa-brote')"><span>⬢</span> Mapa del brote</a>
-      <a class="nav-item" href="#resultados" [class.active]="seccionActiva() === 'resultados'"
+      <a class="nav-item" href="#graficas" [class.active]="seccionActiva() === 'resultados'"
         [attr.aria-current]="seccionActiva() === 'resultados' ? 'location' : null"
-        (click)="seccionActiva.set('resultados')"><span>▥</span> Resultados</a>
-      <a class="nav-item" href="#estados" [class.active]="seccionActiva() === 'estados'"
+        (click)="seccionActiva.set('resultados'); grafica.set('curva')"><span>▥</span> Resultados</a>
+      <a class="nav-item" href="#graficas" [class.active]="seccionActiva() === 'estados'"
         [attr.aria-current]="seccionActiva() === 'estados' ? 'location' : null"
-        (click)="seccionActiva.set('estados')"><span>◐</span> Estados SEIR</a>
+        (click)="seccionActiva.set('estados'); grafica.set('estados')"><span>◐</span> Estados SEIR</a>
       <a class="nav-item" href="#estrategias" [class.active]="seccionActiva() === 'estrategias'"
         [attr.aria-current]="seccionActiva() === 'estrategias' ? 'location' : null"
         (click)="seccionActiva.set('estrategias')"><span>⇄</span> Estrategias</a>
@@ -176,17 +176,31 @@
       </div>
     </section>
 
-    <section class="full-grid">
-      <app-grafica [resultado]="resultado()" />
-    </section>
-
-    <section class="full-grid">
-      <app-estados [resultado]="resultado()" />
-    </section>
-
     <section class="bottom-grid">
       <app-tabla [resultado]="resultado()" />
       <app-informe [resultado]="resultado()" />
+    </section>
+
+    <section class="full-grid graficas" id="graficas">
+      <div class="selector-modelo" role="tablist" aria-label="Gráficas del brote">
+        @for (g of graficas; track g.id) {
+          <button
+            type="button"
+            role="tab"
+            class="modelo"
+            [class.activo]="grafica() === g.id"
+            [attr.aria-selected]="grafica() === g.id"
+            (click)="grafica.set(g.id)"
+          >
+            {{ g.nombre }}
+          </button>
+        }
+      </div>
+      @if (grafica() === 'curva') {
+        <app-grafica [resultado]="resultado()" />
+      } @else {
+        <app-estados [resultado]="resultado()" />
+      }
     </section>
 
     <footer class="page-footer">

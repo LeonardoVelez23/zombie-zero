@@ -30,6 +30,12 @@ interface Indicador {
 }
 
 type ModeloMapa = 'red' | 'edp';
+type GraficaId = 'curva' | 'estados';
+
+const GRAFICAS: { id: GraficaId; nombre: string }[] = [
+  { id: 'curva', nombre: 'Curva de contagios' },
+  { id: 'estados', nombre: 'Estados SEIR' },
+];
 
 const MODELOS: { id: ModeloMapa; nombre: string }[] = [
   { id: 'red', nombre: 'Modelo de red' },
@@ -88,6 +94,10 @@ export class Panel implements OnInit {
   // Modelo que muestra el mapa principal: el de red (el que decide) o la EDP de contraste.
   protected readonly modelos = MODELOS;
   protected readonly modeloMapa = signal<ModeloMapa>('red');
+
+  // Las dos gráficas grandes comparten lugar: se ve una a la vez.
+  protected readonly graficas = GRAFICAS;
+  protected readonly grafica = signal<GraficaId>('curva');
 
   // El mismo escenario en los dos modelos: infectados sin intervenir y con la intervención de cada uno.
   protected readonly contraste = computed(() => {
