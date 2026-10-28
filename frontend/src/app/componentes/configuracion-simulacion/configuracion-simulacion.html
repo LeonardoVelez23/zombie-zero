@@ -1,0 +1,107 @@
+<article class="panel config-panel" id="simulacion">
+  <div class="panel-heading">
+    <div><span class="section-index">01 / CONFIGURACIÓN</span>
+      <h2>Parámetros del brote</h2>
+    </div>
+    <span class="gear">⚙</span>
+  </div>
+  <p class="panel-description">Define las condiciones para una nueva simulación.</p>
+
+  @if (errorCarga; as error) {
+    <div class="resource-note error-note">
+      <span>⚠</span>
+      <div><strong>Estado de sincronización</strong><p>{{ error }}</p></div>
+    </div>
+  }
+
+  @if (errorSimulacion; as errSim) {
+    <div class="resource-note error-note">
+      <span>⚠</span>
+      <div><strong>Error de simulación</strong><p>{{ errSim }}</p></div>
+    </div>
+  }
+
+  <label class="field-label" for="population">Población total <span>PERSONAS</span></label>
+  <input id="population" type="number" [value]="poblacion" (input)="actualizarPoblacion($event)"
+    [min]="parametros?.limites?.escenario?.n_personas?.[0] ?? 1000"
+    [max]="parametros?.limites?.escenario?.n_personas?.[1] ?? 20000" step="1000">
+
+  <div class="field-row">
+    <div>
+      <label class="field-label" for="days">Duración <span>DÍAS</span></label>
+      <input id="days" type="number" [value]="duracion" (input)="actualizarDuracion($event)"
+        [min]="parametros?.limites?.escenario?.dias?.[0] ?? 30"
+        [max]="parametros?.limites?.escenario?.dias?.[1] ?? 365">
+    </div>
+    <div>
+      <label class="field-label" for="seed">Semilla <span>SEED</span></label>
+      <input id="seed" type="number" [value]="semilla" (input)="actualizarSemilla($event)"
+        [min]="parametros?.limites?.escenario?.semilla?.[0] ?? 0"
+        [max]="parametros?.limites?.escenario?.semilla?.[1] ?? 2147483647">
+    </div>
+  </div>
+
+  <label class="field-label" for="origin">Punto de origen del brote</label>
+  <select id="origin" [value]="origen" (change)="actualizarOrigen($event)">
+    @if (parametros?.inicios; as inicios) {
+      @for (inicio of inicios; track inicio) {
+        <option [value]="inicio">{{ inicio === 'aleatorio' ? 'Aleatorio' : inicio }}</option>
+      }
+    } @else {
+      <option value="aleatorio">Aleatorio</option>
+      <option value="aeropuerto">Aeropuerto</option>
+      <option value="mercado">Mercado</option>
+      <option value="colegio">Colegio</option>
+      <option value="Tarqui">Tarqui</option>
+      <option value="Manta">Manta</option>
+      <option value="Los Esteros">Los Esteros</option>
+      <option value="Eloy Alfaro">Eloy Alfaro</option>
+      <option value="San Mateo">San Mateo</option>
+      <option value="Rural">Rural</option>
+    }
+  </select>
+
+  <label class="field-label" for="strategy">Estrategia de intervención</label>
+  <select id="strategy" [value]="estrategia" (change)="actualizarEstrategia($event)">
+    <option value="auto">Recomendación óptima del motor</option>
+    <option value="anillo">Vacunación en anillo</option>
+    <option value="centralidad">Vacunación por centralidad</option>
+    <option value="azar">Intervención aleatoria</option>
+    <option value="ninguna">Sin intervención (referencia)</option>
+  </select>
+
+  <label class="field-label" for="iterations">Repeticiones Monte Carlo <span>ITERACIONES</span></label>
+  <select id="iterations" [value]="repeticiones" (change)="actualizarRepeticiones($event)">
+    <option value="10">10 repeticiones</option>
+    <option value="50">50 repeticiones</option>
+    <option value="100">100 repeticiones</option>
+  </select>
+
+  <div class="resource-note"><span>ⓘ</span>
+    <div><strong>Comparación justa</strong>
+      <p>Las estrategias deben compararse con los mismos recursos disponibles.</p>
+    </div>
+  </div>
+
+  <button class="run-button" type="button" [disabled]="estadoConexion !== 'online' || simulando"
+    (click)="ejecutar.emit()"
+    [title]="estadoConexion === 'online' ? 'Lanzar simulación Monte Carlo' : 'Se habilitará al conectar la API'">
+    @if (simulando) {
+      <span class="spinner">⚙</span> Ejecutando simulación...
+    } @else {
+      <span>▶</span> Ejecutar simulación <span class="button-arrow">↗</span>
+    }
+  </button>
+
+  <p class="button-hint">
+    @if (simulando) {
+      Ejecutando {{ repeticiones }} repeticiones pareadas en el motor Monte Carlo...
+    } @else if (respuestaSimulacion) {
+      Simulación Monte Carlo completada para {{ respuestaSimulacion.escenario.n_personas | number }} habitantes.
+    } @else if (parametros) {
+      Listo para simular con parámetros oficiales del backend.
+    } @else {
+      La ejecución estará disponible al conectar el backend.
+    }
+  </p>
+</article>

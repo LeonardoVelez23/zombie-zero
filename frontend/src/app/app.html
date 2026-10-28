@@ -23,13 +23,12 @@
         <span class="status-dot" [class.status-online]="estadoConexion() === 'online'"
           [class.status-offline]="estadoConexion() === 'offline'"
           [class.status-connecting]="estadoConexion() === 'conectando'"></span>
-
         <div>
           <strong>
             @switch (estadoConexion()) {
-            @case ('conectando') { Conectando API... }
-            @case ('online') { API conectada }
-            @case ('offline') { API desconectada }
+              @case ('conectando') { Conectando API... }
+              @case ('online') { API conectada }
+              @case ('offline') { API desconectada }
             }
           </strong>
           <small>
@@ -45,7 +44,6 @@
           </small>
         </div>
       </div>
-
       <div class="version">MANTA, ECUADOR <span>v0.1.0</span></div>
     </div>
   </aside>
@@ -69,369 +67,43 @@
       }
     </section>
 
-    <section class="metrics-grid" aria-label="Indicadores epidemiológicos de ejemplo">
-      <article class="metric-card">
-        <div class="metric-top"><span>POBLACIÓN SIMULADA</span><span class="metric-icon violet">⌂</span></div>
-        @if (respuestaSimulacion(); as resp) {
-          <div class="metric-value">{{ resp.escenario.n_personas | number:'1.0-0' }} <span>hab.</span></div>
-          <div class="metric-foot"><span class="mini-square violet-bg"></span> Población sintética en Manta</div>
-        } @else {
-          <div class="metric-value">10.000 <span>hab.</span></div>
-          <div class="metric-foot"><span class="mini-square violet-bg"></span> Población sintética de ejemplo</div>
-        }
-      </article>
-
-      <article class="metric-card">
-        <div class="metric-top"><span>INFECTADOS ACTIVOS</span><span class="metric-icon red">⌁</span></div>
-        @if (planVisualizado(); as plan) {
-          <div class="metric-value">{{ plan.infectados.media | number:'1.0-0' }}</div>
-          <div class="metric-foot"><span class="mini-square red-bg"></span> Rango p5–p95: {{ plan.infectados.p5 | number:'1.0-0' }} - {{ plan.infectados.p95 | number:'1.0-0' }}</div>
-        } @else {
-          <div class="metric-value">1.284</div>
-          <div class="metric-foot"><span class="mini-square red-bg"></span> Dato visual de demostración</div>
-        }
-      </article>
-
-      <article class="metric-card">
-        <div class="metric-top"><span>RECUPERADOS</span><span class="metric-icon green">✓</span></div>
-        @if (respuestaSimulacion(); as resp) {
-          <div class="metric-value">{{ (planVisualizado()?.salvados_vs_ninguna?.media ?? (resp.escenario.n_personas - (planVisualizado()?.infectados?.media ?? 0))) | number:'1.0-0' }}</div>
-          <div class="metric-foot"><span class="mini-square green-bg"></span> Personas salvadas vs no intervenir</div>
-        } @else {
-          <div class="metric-value">3.692</div>
-          <div class="metric-foot"><span class="mini-square green-bg"></span> Dato visual de demostración</div>
-        }
-      </article>
-
-      <article class="metric-card">
-        <div class="metric-top"><span>TIEMPO SIMULADO</span><span class="metric-icon orange">◷</span></div>
-        @if (respuestaSimulacion(); as resp) {
-          <div class="metric-value">{{ resp.escenario.dias }} <span>días</span></div>
-          <div class="metric-foot"><span class="mini-square orange-bg"></span> Día pico estimado: {{ planVisualizado()?.dia_pico | number:'1.1-1' }}</div>
-        } @else {
-          <div class="metric-value">45 <span>días</span></div>
-          <div class="metric-foot"><span class="mini-square orange-bg"></span> Horizonte ilustrativo</div>
-        }
-      </article>
-    </section>
+    <app-metricas [respuesta]="respuestaSimulacion()" [plan]="planVisualizado()"></app-metricas>
 
     <section class="workspace-grid">
-      <article class="panel config-panel" id="simulacion">
-        <div class="panel-heading">
-          <div><span class="section-index">01 / CONFIGURACIÓN</span>
-            <h2>Parámetros del brote</h2>
-          </div>
-          <span class="gear">⚙</span>
-        </div>
-        <p class="panel-description">Define las condiciones para una nueva simulación.</p>
-
-        @if (errorCarga(); as error) {
-        <div class="resource-note error-note">
-          <span>⚠</span>
-          <div>
-            <strong>Estado de sincronización</strong>
-            <p>{{ error }}</p>
-          </div>
-        </div>
-        }
-
-        @if (errorSimulacion(); as errSim) {
-        <div class="resource-note error-note">
-          <span>⚠</span>
-          <div>
-            <strong>Error de simulación</strong>
-            <p>{{ errSim }}</p>
-          </div>
-        </div>
-        }
-
-        <label class="field-label" for="population">Población total <span>PERSONAS</span></label>
-        <input id="population" type="number"
-          [value]="poblacion()"
-          (input)="actualizarPoblacion($event)"
-          [min]="parametros()?.limites?.escenario?.n_personas?.[0] ?? 1000"
-          [max]="parametros()?.limites?.escenario?.n_personas?.[1] ?? 20000"
-          step="1000">
-
-        <div class="field-row">
-          <div>
-            <label class="field-label" for="days">Duración <span>DÍAS</span></label>
-            <input id="days" type="number"
-              [value]="duracion()"
-              (input)="actualizarDuracion($event)"
-              [min]="parametros()?.limites?.escenario?.dias?.[0] ?? 30"
-              [max]="parametros()?.limites?.escenario?.dias?.[1] ?? 365">
-          </div>
-          <div>
-            <label class="field-label" for="seed">Semilla <span>SEED</span></label>
-            <input id="seed" type="number"
-              [value]="semilla()"
-              (input)="actualizarSemilla($event)"
-              [min]="parametros()?.limites?.escenario?.semilla?.[0] ?? 0"
-              [max]="parametros()?.limites?.escenario?.semilla?.[1] ?? 2147483647">
-          </div>
-        </div>
-
-        <label class="field-label" for="origin">Punto de origen del brote</label>
-        <select id="origin" (change)="actualizarOrigen($event)">
-          @if (parametros()?.inicios; as inicios) {
-            @for (inicio of inicios; track inicio) {
-              <option [value]="inicio" [selected]="inicio === origen()">
-                {{ inicio === 'aleatorio' ? 'Aleatorio' : inicio }}
-              </option>
-            }
-          } @else {
-            <option value="aleatorio" selected>Aleatorio</option>
-            <option value="aeropuerto">Aeropuerto</option>
-            <option value="mercado">Mercado</option>
-            <option value="colegio">Colegio</option>
-            <option value="Tarqui">Tarqui</option>
-            <option value="Manta">Manta</option>
-            <option value="Los Esteros">Los Esteros</option>
-            <option value="Eloy Alfaro">Eloy Alfaro</option>
-            <option value="San Mateo">San Mateo</option>
-            <option value="Rural">Rural</option>
-          }
-        </select>
-
-        <label class="field-label" for="strategy">Estrategia de intervención</label>
-        <select id="strategy" (change)="actualizarEstrategia($event)">
-          <option value="auto" [selected]="estrategia() === 'auto'">Recomendación óptima del motor</option>
-          <option value="anillo" [selected]="estrategia() === 'anillo'">Vacunación en anillo</option>
-          <option value="centralidad" [selected]="estrategia() === 'centralidad'">Vacunación por centralidad</option>
-          <option value="azar" [selected]="estrategia() === 'azar'">Intervención aleatoria</option>
-          <option value="ninguna" [selected]="estrategia() === 'ninguna'">Sin intervención (referencia)</option>
-        </select>
-
-        <label class="field-label" for="iterations">Repeticiones Monte Carlo <span>ITERACIONES</span></label>
-        <select id="iterations" (change)="actualizarRepeticiones($event)">
-          <option value="10" [selected]="repeticiones() === 10">10 repeticiones</option>
-          <option value="50" [selected]="repeticiones() === 50">50 repeticiones</option>
-          <option value="100" [selected]="repeticiones() === 100">100 repeticiones</option>
-        </select>
-
-        <div class="resource-note"><span>ⓘ</span>
-          <div><strong>Comparación justa</strong>
-            <p>Las estrategias deben compararse con los mismos recursos disponibles.</p>
-          </div>
-        </div>
-
-        <button class="run-button" type="button"
-          [disabled]="estadoConexion() !== 'online' || simulando()"
-          (click)="ejecutarSimulacion()"
-          [title]="estadoConexion() === 'online' ? 'Lanzar simulación Monte Carlo' : 'Se habilitará al conectar la API'">
-          @if (simulando()) {
-            <span class="spinner">⚙</span> Ejecutando simulación...
-          } @else {
-            <span>▶</span> Ejecutar simulación <span class="button-arrow">↗</span>
-          }
-        </button>
-
-        <p class="button-hint">
-          @if (simulando()) {
-            Ejecutando {{ repeticiones() }} repeticiones pareadas en el motor Monte Carlo...
-          } @else if (respuestaSimulacion()) {
-            Simulación Monte Carlo completada para {{ respuestaSimulacion()?.escenario?.n_personas | number }} habitantes.
-          } @else if (parametros()) {
-            Listo para simular con parámetros oficiales del backend.
-          } @else {
-            La ejecución estará disponible al conectar el backend.
-          }
-        </p>
-      </article>
-
-      <article class="panel chart-panel" id="resultados">
-        <div class="panel-heading chart-heading">
-          <div><span class="section-index">02 / PROPAGACIÓN</span>
-            <h2>Curva epidemiológica</h2>
-          </div>
-          @if (respuestaSimulacion()) {
-            <span class="chart-tag live-tag">SIMULACIÓN REAL</span>
-          } @else {
-            <span class="chart-tag">VISTA PREVIA</span>
-          }
-        </div>
-
-        <p class="panel-description">
-          @if (planVisualizado(); as plan) {
-            Evolución de zombies activos: {{ plan.nombre }}
-          } @else {
-            Evolución ilustrativa de los estados de la población a lo largo del tiempo.
-          }
-        </p>
-
-        <div class="chart-legend">
-          @if (respuestaSimulacion()) {
-            <span><i class="legend-dot infected"></i> Media zombies activos</span>
-            <span><i class="legend-dot range-band"></i> Rango percentil p5–p95</span>
-            <span><i class="legend-dot orange-dot"></i> Pico promedio: {{ planVisualizado()?.pico?.media | number:'1.0-0' }} zombies</span>
-          } @else {
-            <span><i class="legend-dot infected"></i> Infectados</span>
-            <span><i class="legend-dot recovered"></i> Recuperados</span>
-            <span><i class="legend-dot susceptible"></i> Susceptibles</span>
-          }
-        </div>
-
-        <div class="chart-wrap">
-          <svg class="epidemic-chart" viewBox="0 0 700 300" role="img"
-            aria-label="Gráfica ilustrativa de la evolución epidemiológica">
-            <defs>
-              <linearGradient id="infectedFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#fb4b69" stop-opacity=".27" />
-                <stop offset="100%" stop-color="#fb4b69" stop-opacity="0" />
-              </linearGradient>
-              <linearGradient id="recoveredFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#22c55e" stop-opacity=".14" />
-                <stop offset="100%" stop-color="#22c55e" stop-opacity="0" />
-              </linearGradient>
-            </defs>
-
-            <g class="grid-lines">
-              <line x1="55" y1="30" x2="675" y2="30" />
-              <line x1="55" y1="85" x2="675" y2="85" />
-              <line x1="55" y1="140" x2="675" y2="140" />
-              <line x1="55" y1="195" x2="675" y2="195" />
-              <line x1="55" y1="250" x2="675" y2="250" />
-            </g>
-
-            @if (graficaCalculada(); as g) {
-              <g class="axis-labels">
-                @for (lbl of g.ejeY; track lbl.y) {
-                  <text x="43" [attr.y]="lbl.y" text-anchor="end">{{ lbl.label }}</text>
-                }
-                @for (lbl of g.ejeX; track lbl.x) {
-                  <text [attr.x]="lbl.x" y="278" [attr.text-anchor]="lbl.x === 675 ? 'end' : 'start'">{{ lbl.label }}</text>
-                }
-              </g>
-
-              <path class="area-band" [attr.d]="g.pathBandaP5P95" />
-              <path class="area-infected" [attr.d]="g.pathAreaMedia" />
-              <path class="line-infected" [attr.d]="g.pathMedia" />
-            } @else {
-              <g class="axis-labels">
-                <text x="43" y="34" text-anchor="end">10k</text>
-                <text x="43" y="89" text-anchor="end">7.5k</text>
-                <text x="43" y="144" text-anchor="end">5k</text>
-                <text x="43" y="199" text-anchor="end">2.5k</text>
-                <text x="43" y="254" text-anchor="end">0</text>
-                <text x="55" y="278">Día 0</text>
-                <text x="245" y="278">Día 60</text>
-                <text x="440" y="278">Día 120</text>
-                <text x="675" y="278" text-anchor="end">Día 180</text>
-              </g>
-
-              <path class="area-recovered"
-                d="M55 248 C140 246 195 234 260 205 S390 135 455 95 S570 48 675 42 L675 250 L55 250 Z" />
-              <path class="line-recovered" d="M55 248 C140 246 195 234 260 205 S390 135 455 95 S570 48 675 42" />
-              <path class="area-infected"
-                d="M55 247 C115 245 155 205 210 128 S290 65 335 108 S405 195 470 222 S590 244 675 247 L675 250 L55 250 Z" />
-              <path class="line-infected"
-                d="M55 247 C115 245 155 205 210 128 S290 65 335 108 S405 195 470 222 S590 244 675 247" />
-              <path class="line-susceptible" d="M55 35 C120 45 175 76 230 115 S350 177 420 195 S560 220 675 232" />
-            }
-          </svg>
-        </div>
-
-        <div class="chart-foot">
-          @if (respuestaSimulacion()) {
-            <span><i class="tiny-dot"></i> Plan activo: {{ planVisualizado()?.nombre }} (Monte Carlo)</span>
-            <span>Horizonte: {{ respuestaSimulacion()?.escenario?.dias }} días</span>
-          } @else {
-            <span><i class="tiny-dot"></i> Datos ilustrativos, no generados por el modelo</span>
-            <span>Horizonte: 180 días</span>
-          }
-        </div>
-      </article>
+      <app-configuracion-simulacion
+        [parametros]="parametros()"
+        [poblacion]="poblacion()"
+        [duracion]="duracion()"
+        [semilla]="semilla()"
+        [origen]="origen()"
+        [estrategia]="estrategia()"
+        [repeticiones]="repeticiones()"
+        [estadoConexion]="estadoConexion()"
+        [errorCarga]="errorCarga()"
+        [errorSimulacion]="errorSimulacion()"
+        [simulando]="simulando()"
+        [respuestaSimulacion]="respuestaSimulacion()"
+        (poblacionChange)="actualizarPoblacion($event)"
+        (duracionChange)="actualizarDuracion($event)"
+        (semillaChange)="actualizarSemilla($event)"
+        (origenChange)="actualizarOrigen($event)"
+        (estrategiaChange)="actualizarEstrategia($event)"
+        (repeticionesChange)="actualizarRepeticiones($event)"
+        (ejecutar)="ejecutarSimulacion()">
+      </app-configuracion-simulacion>
+      <app-grafica-epidemiologica
+        [respuesta]="respuestaSimulacion()"
+        [plan]="planVisualizado()"
+        [dias]="duracion()">
+      </app-grafica-epidemiologica>
     </section>
 
-    <section class="bottom-grid" id="estrategias">
-      <article class="panel strategy-panel">
-        <div class="panel-heading">
-          <div><span class="section-index">03 / RESPUESTA</span>
-            <h2>Comparativa de estrategias</h2>
-          </div>
-          @if (respuestaSimulacion(); as resp) {
-            <span class="chart-tag live-tag">{{ resp.planes.length }} PLANES EVALUADOS</span>
-          } @else {
-            <span class="chart-tag">PENDIENTE DE API</span>
-          }
-        </div>
-
-        @if (respuestaSimulacion(); as resp) {
-          @for (plan of resp.planes; track plan.id) {
-            <div class="strategy-row"
-              [class.selected]="plan.id === planVisualizado()?.id"
-              (click)="seleccionarPlan(plan.id)"
-              style="cursor: pointer;"
-              [title]="'Clic para ver curva de: ' + plan.nombre">
-              <div class="strategy-symbol"
-                [ngClass]="plan.vacunacion === 'anillo' ? 'green' : plan.vacunacion === 'centralidad' ? 'violet' : plan.vacunacion === 'azar' ? 'orange' : 'neutral'">
-                {{ plan.vacunacion === 'anillo' ? '⌾' : plan.vacunacion === 'centralidad' ? '◎' : plan.vacunacion === 'azar' ? '↗' : '○' }}
-              </div>
-              <div class="strategy-info">
-                <strong>{{ plan.nombre }}</strong>
-                <small>{{ plan.infectados.media | number:'1.0-0' }} infectados media (p5–p95: {{ plan.infectados.p5 | number:'1.0-0' }}–{{ plan.infectados.p95 | number:'1.0-0' }}) · ${{ plan.costo | number:'1.0-0' }}</small>
-              </div>
-              @if (plan.id === resp.recomendado) {
-                <span class="strategy-state strategy-recommended">★ RECOMENDADO</span>
-              } @else if (plan.gana_a_azar !== undefined) {
-                <span class="strategy-state">GANA AZAR: {{ (plan.gana_a_azar * 100) | number:'1.0-0' }}%</span>
-              } @else {
-                <span class="strategy-state">{{ plan.tipo === 'linea_base' ? 'LÍNEA BASE' : 'CANDIDATO' }}</span>
-              }
-            </div>
-          }
-        } @else {
-          <div class="strategy-row">
-            <div class="strategy-symbol neutral">○</div>
-            <div class="strategy-info"><strong>Sin intervención</strong><small>Escenario de referencia</small></div><span
-              class="strategy-state">BASELINE</span>
-          </div>
-          <div class="strategy-row">
-            <div class="strategy-symbol orange">↗</div>
-            <div class="strategy-info"><strong>Intervención aleatoria</strong><small>Asignación al azar</small></div><span
-              class="strategy-state">ALEATORIA</span>
-          </div>
-          <div class="strategy-row">
-            <div class="strategy-symbol violet">◎</div>
-            <div class="strategy-info"><strong>Vacunación por centralidad</strong><small>Prioriza nodos conectados</small>
-            </div><span class="strategy-state">DIRIGIDA</span>
-          </div>
-          <div class="strategy-row">
-            <div class="strategy-symbol green">⌾</div>
-            <div class="strategy-info"><strong>Vacunación en anillo</strong><small>Actúa alrededor de los casos</small>
-            </div><span class="strategy-state">DIRIGIDA</span>
-          </div>
-        }
-      </article>
-
-      <article class="panel insight-panel">
-        <span class="section-index">04 / OBJETIVO DEL PROYECTO</span>
-        <div class="insight-icon">✳</div>
-
-        @if (respuestaSimulacion()?.veredicto; as veredicto) {
-          <h2>{{ planRecomendado()?.nombre }}</h2>
-          <p>
-            Recomendación oficial del motor con confiabilidad <strong>{{ veredicto.nivel }}</strong>.
-            Salva a una media de <strong>{{ veredicto.salvados_vs_ninguna | number:'1.0-0' }} personas</strong> frente al escenario sin intervención,
-            y <strong>{{ veredicto.salvados_vs_azar | number:'1.0-0' }} personas más</strong> que vacunar al azar
-            (superando al azar en el {{ (veredicto.gana_a_azar * 100) | number:'1.0-0' }}% de los brotes).
-          </p>
-          <div class="insight-footer">
-            <span class="status-dot"
-              [class.status-online]="veredicto.nivel === 'solida'"
-              [class.status-connecting]="veredicto.nivel === 'debil'"
-              [class.status-offline]="veredicto.nivel === 'insuficiente'"></span>
-            VEREDICTO: {{ veredicto.nivel | uppercase }}
-          </div>
-        } @else {
-          <h2>Decidir antes de que el brote avance.</h2>
-          <p>Zombie Zero permite explorar escenarios epidemiológicos sintéticos y evaluar cómo cambia la propagación al
-            asignar recursos a distintas intervenciones.</p>
-          <div class="insight-footer"><span class="status-dot"></span> MODELO EN DESARROLLO</div>
-        }
-      </article>
-    </section>
+    <app-comparacion-estrategias
+      [respuesta]="respuestaSimulacion()"
+      [planVisualizado]="planVisualizado()"
+      [planRecomendado]="planRecomendado()"
+      (seleccionarPlan)="seleccionarPlan($event)">
+    </app-comparacion-estrategias>
 
     <footer class="page-footer">
       <span>ZOMBIE ZERO <span class="footer-separator">/</span> PROTOTIPO ACADÉMICO</span>

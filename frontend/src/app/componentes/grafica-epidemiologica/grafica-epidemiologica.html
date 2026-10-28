@@ -1,0 +1,101 @@
+<article class="panel chart-panel" id="resultados">
+  <div class="panel-heading chart-heading">
+    <div><span class="section-index">02 / PROPAGACIÓN</span>
+      <h2>Curva epidemiológica</h2>
+    </div>
+    @if (respuesta()) {
+      <span class="chart-tag live-tag">SIMULACIÓN REAL</span>
+    } @else {
+      <span class="chart-tag">VISTA PREVIA</span>
+    }
+  </div>
+
+  <p class="panel-description">
+    @if (plan(); as seleccionado) {
+      Evolución de zombies activos: {{ seleccionado.nombre }}
+    } @else {
+      Evolución ilustrativa de los estados de la población a lo largo del tiempo.
+    }
+  </p>
+
+  <div class="chart-legend">
+    @if (respuesta()) {
+      <span><i class="legend-dot infected"></i> Media zombies activos</span>
+      <span><i class="legend-dot range-band"></i> Rango percentil p5–p95</span>
+      <span><i class="legend-dot orange-dot"></i> Pico promedio: {{ plan()?.pico?.media | number:'1.0-0' }} zombies</span>
+    } @else {
+      <span><i class="legend-dot infected"></i> Infectados</span>
+      <span><i class="legend-dot recovered"></i> Recuperados</span>
+      <span><i class="legend-dot susceptible"></i> Susceptibles</span>
+    }
+  </div>
+
+  <div class="chart-wrap">
+    <svg class="epidemic-chart" viewBox="0 0 700 300" role="img"
+      aria-label="Gráfica de la evolución epidemiológica">
+      <defs>
+        <linearGradient id="infectedFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#fb4b69" stop-opacity=".27" />
+          <stop offset="100%" stop-color="#fb4b69" stop-opacity="0" />
+        </linearGradient>
+        <linearGradient id="recoveredFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#22c55e" stop-opacity=".14" />
+          <stop offset="100%" stop-color="#22c55e" stop-opacity="0" />
+        </linearGradient>
+      </defs>
+
+      <g class="grid-lines">
+        <line x1="55" y1="30" x2="675" y2="30" />
+        <line x1="55" y1="85" x2="675" y2="85" />
+        <line x1="55" y1="140" x2="675" y2="140" />
+        <line x1="55" y1="195" x2="675" y2="195" />
+        <line x1="55" y1="250" x2="675" y2="250" />
+      </g>
+
+      @if (graficaCalculada(); as grafica) {
+        <g class="axis-labels">
+          @for (etiqueta of grafica.ejeY; track etiqueta.y) {
+            <text x="43" [attr.y]="etiqueta.y" text-anchor="end">{{ etiqueta.label }}</text>
+          }
+          @for (etiqueta of grafica.ejeX; track etiqueta.x) {
+            <text [attr.x]="etiqueta.x" y="278"
+              [attr.text-anchor]="etiqueta.x === 675 ? 'end' : 'start'">{{ etiqueta.label }}</text>
+          }
+        </g>
+        <path class="area-band" [attr.d]="grafica.pathBandaP5P95" />
+        <path class="area-infected" [attr.d]="grafica.pathAreaMedia" />
+        <path class="line-infected" [attr.d]="grafica.pathMedia" />
+      } @else {
+        <g class="axis-labels">
+          <text x="43" y="34" text-anchor="end">10k</text>
+          <text x="43" y="89" text-anchor="end">7.5k</text>
+          <text x="43" y="144" text-anchor="end">5k</text>
+          <text x="43" y="199" text-anchor="end">2.5k</text>
+          <text x="43" y="254" text-anchor="end">0</text>
+          <text x="55" y="278">Día 0</text>
+          <text x="245" y="278">Día 60</text>
+          <text x="440" y="278">Día 120</text>
+          <text x="675" y="278" text-anchor="end">Día 180</text>
+        </g>
+        <path class="area-recovered"
+          d="M55 248 C140 246 195 234 260 205 S390 135 455 95 S570 48 675 42 L675 250 L55 250 Z" />
+        <path class="line-recovered" d="M55 248 C140 246 195 234 260 205 S390 135 455 95 S570 48 675 42" />
+        <path class="area-infected"
+          d="M55 247 C115 245 155 205 210 128 S290 65 335 108 S405 195 470 222 S590 244 675 247 L675 250 L55 250 Z" />
+        <path class="line-infected"
+          d="M55 247 C115 245 155 205 210 128 S290 65 335 108 S405 195 470 222 S590 244 675 247" />
+        <path class="line-susceptible" d="M55 35 C120 45 175 76 230 115 S350 177 420 195 S560 220 675 232" />
+      }
+    </svg>
+  </div>
+
+  <div class="chart-foot">
+    @if (respuesta()) {
+      <span><i class="tiny-dot"></i> Plan activo: {{ plan()?.nombre }} (Monte Carlo)</span>
+      <span>Horizonte: {{ respuesta()?.escenario?.dias }} días</span>
+    } @else {
+      <span><i class="tiny-dot"></i> Datos ilustrativos, no generados por el modelo</span>
+      <span>Horizonte: 180 días</span>
+    }
+  </div>
+</article>

@@ -1,0 +1,88 @@
+<section class="bottom-grid" id="estrategias">
+  <article class="panel strategy-panel">
+    <div class="panel-heading">
+      <div><span class="section-index">03 / RESPUESTA</span>
+        <h2>Comparativa de estrategias</h2>
+      </div>
+      @if (respuesta; as resp) {
+        <span class="chart-tag live-tag">{{ resp.planes.length }} PLANES EVALUADOS</span>
+      } @else {
+        <span class="chart-tag">PENDIENTE DE API</span>
+      }
+    </div>
+
+    @if (respuesta; as resp) {
+      @for (plan of resp.planes; track plan.id) {
+        <div class="strategy-row" [class.selected]="plan.id === planVisualizado?.id"
+          (click)="seleccionar(plan.id)" style="cursor: pointer;"
+          [title]="'Clic para ver curva de: ' + plan.nombre">
+          <div class="strategy-symbol"
+            [ngClass]="plan.vacunacion === 'anillo' ? 'green' : plan.vacunacion === 'centralidad' ? 'violet' : plan.vacunacion === 'azar' ? 'orange' : 'neutral'">
+            {{ plan.vacunacion === 'anillo' ? '⌾' : plan.vacunacion === 'centralidad' ? '◎' : plan.vacunacion === 'azar' ? '↗' : '○' }}
+          </div>
+          <div class="strategy-info">
+            <strong>{{ plan.nombre }}</strong>
+            <small>{{ plan.infectados.media | number:'1.0-0' }} infectados media (p5–p95:
+              {{ plan.infectados.p5 | number:'1.0-0' }}–{{ plan.infectados.p95 | number:'1.0-0' }}) ·
+              ${{ plan.costo | number:'1.0-0' }}</small>
+          </div>
+          @if (plan.id === resp.recomendado) {
+            <span class="strategy-state strategy-recommended">★ RECOMENDADO</span>
+          } @else if (plan.gana_a_azar !== undefined) {
+            <span class="strategy-state">GANA AZAR: {{ (plan.gana_a_azar * 100) | number:'1.0-0' }}%</span>
+          } @else {
+            <span class="strategy-state">{{ plan.tipo === 'linea_base' ? 'LÍNEA BASE' : 'CANDIDATO' }}</span>
+          }
+        </div>
+      }
+    } @else {
+      <div class="strategy-row">
+        <div class="strategy-symbol neutral">○</div>
+        <div class="strategy-info"><strong>Sin intervención</strong><small>Escenario de referencia</small></div>
+        <span class="strategy-state">BASELINE</span>
+      </div>
+      <div class="strategy-row">
+        <div class="strategy-symbol orange">↗</div>
+        <div class="strategy-info"><strong>Intervención aleatoria</strong><small>Asignación al azar</small></div>
+        <span class="strategy-state">ALEATORIA</span>
+      </div>
+      <div class="strategy-row">
+        <div class="strategy-symbol violet">◎</div>
+        <div class="strategy-info"><strong>Vacunación por centralidad</strong><small>Prioriza nodos conectados</small></div>
+        <span class="strategy-state">DIRIGIDA</span>
+      </div>
+      <div class="strategy-row">
+        <div class="strategy-symbol green">⌾</div>
+        <div class="strategy-info"><strong>Vacunación en anillo</strong><small>Actúa alrededor de los casos</small></div>
+        <span class="strategy-state">DIRIGIDA</span>
+      </div>
+    }
+  </article>
+
+  <article class="panel insight-panel">
+    <span class="section-index">04 / OBJETIVO DEL PROYECTO</span>
+    <div class="insight-icon">✳</div>
+
+    @if (respuesta?.veredicto; as veredicto) {
+      <h2>{{ planRecomendado?.nombre }}</h2>
+      <p>
+        Recomendación oficial del motor con confiabilidad <strong>{{ veredicto.nivel }}</strong>.
+        Salva a una media de <strong>{{ veredicto.salvados_vs_ninguna | number:'1.0-0' }} personas</strong>
+        frente al escenario sin intervención, y
+        <strong>{{ veredicto.salvados_vs_azar | number:'1.0-0' }} personas más</strong> que vacunar al azar
+        (superando al azar en el {{ (veredicto.gana_a_azar * 100) | number:'1.0-0' }}% de los brotes).
+      </p>
+      <div class="insight-footer">
+        <span class="status-dot" [class.status-online]="veredicto.nivel === 'solida'"
+          [class.status-connecting]="veredicto.nivel === 'debil'"
+          [class.status-offline]="veredicto.nivel === 'insuficiente'"></span>
+        VEREDICTO: {{ veredicto.nivel | uppercase }}
+      </div>
+    } @else {
+      <h2>Decidir antes de que el brote avance.</h2>
+      <p>Zombie Zero permite explorar escenarios epidemiológicos sintéticos y evaluar cómo cambia la propagación al
+        asignar recursos a distintas intervenciones.</p>
+      <div class="insight-footer"><span class="status-dot"></span> MODELO EN DESARROLLO</div>
+    }
+  </article>
+</section>

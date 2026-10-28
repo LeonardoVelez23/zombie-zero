@@ -1,0 +1,45 @@
+<section class="metrics-grid" aria-label="Indicadores epidemiológicos">
+  <article class="metric-card">
+    <div class="metric-top"><span>POBLACIÓN SIMULADA</span><span class="metric-icon violet">⌂</span></div>
+    @if (respuesta; as resp) {
+      <div class="metric-value">{{ resp.escenario.n_personas | number:'1.0-0' }} <span>hab.</span></div>
+      <div class="metric-foot"><span class="mini-square violet-bg"></span> Población sintética en Manta</div>
+    } @else {
+      <div class="metric-value">10.000 <span>hab.</span></div>
+      <div class="metric-foot"><span class="mini-square violet-bg"></span> Población sintética de ejemplo</div>
+    }
+  </article>
+
+  <article class="metric-card">
+    <div class="metric-top"><span>INFECTADOS ACTIVOS</span><span class="metric-icon red">⌁</span></div>
+    @if (plan; as seleccionado) {
+      <div class="metric-value">{{ seleccionado.infectados.media | number:'1.0-0' }}</div>
+      <div class="metric-foot"><span class="mini-square red-bg"></span> Rango p5–p95: {{ seleccionado.infectados.p5 | number:'1.0-0' }} - {{ seleccionado.infectados.p95 | number:'1.0-0' }}</div>
+    } @else {
+      <div class="metric-value">1.284</div>
+      <div class="metric-foot"><span class="mini-square red-bg"></span> Dato visual de demostración</div>
+    }
+  </article>
+
+  <article class="metric-card">
+    <div class="metric-top"><span>RECUPERADOS</span><span class="metric-icon green">✓</span></div>
+    @if (respuesta; as resp) {
+      <div class="metric-value">{{ (plan?.salvados_vs_ninguna?.media ?? (resp.escenario.n_personas - (plan?.infectados.media ?? 0))) | number:'1.0-0' }}</div>
+      <div class="metric-foot"><span class="mini-square green-bg"></span> Personas salvadas vs no intervenir</div>
+    } @else {
+      <div class="metric-value">3.692</div>
+      <div class="metric-foot"><span class="mini-square green-bg"></span> Dato visual de demostración</div>
+    }
+  </article>
+
+  <article class="metric-card">
+    <div class="metric-top"><span>TIEMPO SIMULADO</span><span class="metric-icon orange">◷</span></div>
+    @if (respuesta; as resp) {
+      <div class="metric-value">{{ resp.escenario.dias }} <span>días</span></div>
+      <div class="metric-foot"><span class="mini-square orange-bg"></span> Día pico estimado: {{ plan?.dia_pico | number:'1.1-1' }}</div>
+    } @else {
+      <div class="metric-value">45 <span>días</span></div>
+      <div class="metric-foot"><span class="mini-square orange-bg"></span> Horizonte ilustrativo</div>
+    }
+  </article>
+</section>

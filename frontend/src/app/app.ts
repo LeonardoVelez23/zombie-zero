@@ -1,26 +1,27 @@
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Api } from './servicios/api';
+import { ComparacionEstrategiasComponent } from './componentes/comparacion-estrategias/comparacion-estrategias';
+import { ConfiguracionSimulacionComponent } from './componentes/configuracion-simulacion/configuracion-simulacion';
+import { GraficaEpidemiologicaComponent } from './componentes/grafica-epidemiologica/grafica-epidemiologica';
+import { MetricasComponent } from './componentes/metricas/metricas';
 import {
-  CurvaZombies,
   ParametrosRespuesta,
   PlanResultado,
   SimulacionPeticion,
   SimulacionRespuesta,
 } from './modelos/parametros';
 
-export interface GraficaCalculada {
-  pathMedia: string;
-  pathBandaP5P95: string;
-  pathAreaMedia: string;
-  ejeX: { x: number; label: string }[];
-  ejeY: { y: number; label: string }[];
-  maximo: number;
-}
-
 @Component({
   selector: 'app-root',
-  imports: [CommonModule],
+  imports: [
+    CommonModule,
+    ComparacionEstrategiasComponent,
+    ConfiguracionSimulacionComponent,
+    GraficaEpidemiologicaComponent,
+    MetricasComponent,
+  ],
+  encapsulation: ViewEncapsulation.None,
   styleUrl: './app.css',
   templateUrl: './app.html',
 })
@@ -67,13 +68,6 @@ export class App implements OnInit {
     return this.planRecomendado();
   });
 
-  // Cálculo SVG reactivo para la curva epidemiológica
-  protected readonly graficaCalculada = computed<GraficaCalculada | null>(() => {
-    const plan = this.planVisualizado();
-    const dias = this.respuestaSimulacion()?.escenario?.dias ?? this.duracion();
-    return this.calcularGrafica(plan?.curva_zombies, dias);
-  });
-
   ngOnInit(): void {
     this.verificarYcargar();
   }
@@ -82,36 +76,32 @@ export class App implements OnInit {
     this.verificarYcargar();
   }
 
-  protected actualizarPoblacion(event: Event): void {
-    const val = Number((event.target as HTMLInputElement).value);
-    if (!isNaN(val)) this.poblacion.set(val);
+  protected actualizarPoblacion(value: number): void {
+    this.poblacion.set(value);
   }
 
-  protected actualizarDuracion(event: Event): void {
-    const val = Number((event.target as HTMLInputElement).value);
-    if (!isNaN(val)) this.duracion.set(val);
+  protected actualizarDuracion(value: number): void {
+    this.duracion.set(value);
   }
 
-  protected actualizarSemilla(event: Event): void {
-    const val = Number((event.target as HTMLInputElement).value);
-    if (!isNaN(val)) this.semilla.set(val);
+  protected actualizarSemilla(value: number): void {
+    this.semilla.set(value);
   }
 
-  protected actualizarOrigen(event: Event): void {
-    this.origen.set((event.target as HTMLSelectElement).value);
+  protected actualizarOrigen(value: string): void {
+    this.origen.set(value);
   }
 
-  protected actualizarEstrategia(event: Event): void {
-    this.estrategia.set((event.target as HTMLSelectElement).value);
+  protected actualizarEstrategia(value: string): void {
+    this.estrategia.set(value);
   }
 
   protected seleccionarPlan(idPlan: string): void {
     this.estrategia.set(idPlan);
   }
 
-  protected actualizarRepeticiones(event: Event): void {
-    const val = Number((event.target as HTMLSelectElement).value);
-    if (!isNaN(val)) this.repeticiones.set(val);
+  protected actualizarRepeticiones(value: number): void {
+    this.repeticiones.set(value);
   }
 
   protected ejecutarSimulacion(): void {
@@ -253,82 +243,4 @@ export class App implements OnInit {
     });
   }
 
-  private calcularGrafica(
-    curva: CurvaZombies | null | undefined,
-    diasTotales: number
-  ): GraficaCalculada | null {
-    if (!curva || !curva.media || curva.media.length === 0) return null;
-
-    const n = curva.media.length;
-    const p95Max = Math.max(...curva.p95, ...curva.media, 10);
-
-    let escalaY = 10;
-    if (p95Max <= 25) escalaY = 25;
-    else if (p95Max <= 50) escalaY = 50;
-    else if (p95Max <= 100) escalaY = 100;
-    else if (p95Max <= 200) escalaY = 200;
-    else if (p95Max <= 300) escalaY = 300;
-    else if (p95Max <= 500) escalaY = 500;
-    else if (p95Max <= 1000) escalaY = 1000;
-    else if (p95Max <= 2500) escalaY = 2500;
-    else if (p95Max <= 5000) escalaY = 5000;
-    else if (p95Max <= 10000) escalaY = 10000;
-    else escalaY = Math.ceil(p95Max / 1000) * 1000;
-
-    const xMin = 55;
-    const xMax = 675;
-    const xSpan = xMax - xMin;
-
-    const yTop = 30;
-    const yBottom = 250;
-    const yHeight = yBottom - yTop;
-
-    const getX = (i: number): number => {
-      return Math.round((xMin + (i / (n - 1)) * xSpan) * 10) / 10;
-    };
-
-    const getY = (val: number): number => {
-      const clamped = Math.max(0, Math.min(escalaY, val));
-      return Math.round((yBottom - (clamped / escalaY) * yHeight) * 10) / 10;
-    };
-
-    const ptsMedia = curva.media.map((v, i) => `${getX(i)} ${getY(v)}`);
-    const pathMedia = `M ${ptsMedia.join(' L ')}`;
-
-    const pathAreaMedia = `M ${xMin} ${yBottom} L ${ptsMedia.join(' L ')} L ${xMax} ${yBottom} Z`;
-
-    const ptsP95 = curva.p95.map((v, i) => `${getX(i)} ${getY(v)}`);
-    const ptsP5Rev = [...curva.p5].map((v, i) => `${getX(i)} ${getY(v)}`).reverse();
-    const pathBandaP5P95 = `M ${ptsP95[0]} L ${ptsP95.slice(1).join(' L ')} L ${ptsP5Rev.join(' L ')} Z`;
-
-    const fmtY = (val: number) => {
-      if (val >= 1000) return `${(val / 1000).toFixed(val % 1000 === 0 ? 0 : 1)}k`;
-      return Math.round(val).toString();
-    };
-
-    const ejeY = [
-      { y: 34, label: fmtY(escalaY) },
-      { y: 89, label: fmtY(escalaY * 0.75) },
-      { y: 144, label: fmtY(escalaY * 0.5) },
-      { y: 199, label: fmtY(escalaY * 0.25) },
-      { y: 254, label: '0' },
-    ];
-
-    const dias = diasTotales > 0 ? diasTotales : n - 1;
-    const ejeX = [
-      { x: 55, label: 'Día 0' },
-      { x: 245, label: `Día ${Math.round(dias / 3)}` },
-      { x: 440, label: `Día ${Math.round((2 * dias) / 3)}` },
-      { x: 675, label: `Día ${dias}` },
-    ];
-
-    return {
-      pathMedia,
-      pathBandaP5P95,
-      pathAreaMedia,
-      ejeX,
-      ejeY,
-      maximo: escalaY,
-    };
-  }
 }

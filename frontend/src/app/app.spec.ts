@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { App } from './app';
 import { Api } from './servicios/api';
 import { ParametrosRespuesta, SimulacionRespuesta } from './modelos/parametros';
@@ -131,6 +131,7 @@ describe('App', () => {
   };
 
   beforeEach(async () => {
+    apiMock.simular = () => of(mockSimulacion);
     await TestBed.configureTestingModule({
       imports: [App],
       providers: [{ provide: Api, useValue: apiMock }],
@@ -150,7 +151,7 @@ describe('App', () => {
     expect(compiled.querySelector('h1')?.textContent).toContain('Centro de control');
   });
 
-  it('should execute simulation and update results', async () => {
+  it('should execute simulation and render the API results and recommendation', async () => {
     const fixture = TestBed.createComponent(App);
     const app = fixture.componentInstance;
     fixture.detectChanges();
@@ -162,6 +163,26 @@ describe('App', () => {
 
     expect(app['respuestaSimulacion']()).toBeTruthy();
     expect(app['planRecomendado']()?.id).toBe('anillo');
-    expect(app['graficaCalculada']()).toBeTruthy();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('.chart-tag')?.textContent).toContain('SIMULACIÓN REAL');
+    expect(compiled.querySelector('.line-infected')?.getAttribute('d')).toContain('M ');
+    expect(compiled.querySelector('.strategy-recommended')?.textContent).toContain('RECOMENDADO');
+    expect(compiled.querySelector('.insight-panel h2')?.textContent).toContain('anillo');
+  });
+
+  it('should show a simulation error returned by the API', async () => {
+    apiMock.simular = () => throwError(() => new Error('fallo de prueba'));
+
+    const fixture = TestBed.createComponent(App);
+    const app = fixture.componentInstance;
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    app['ejecutarSimulacion']();
+    fixture.detectChanges();
+
+    expect(app['simulando']()).toBe(false);
+    expect(fixture.nativeElement.textContent).toContain('Error al simular: fallo de prueba');
   });
 });
