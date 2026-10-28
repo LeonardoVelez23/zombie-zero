@@ -78,6 +78,12 @@ o se mantiene, y sus infectados, personas salvadas y porcentaje de brotes en que
    reales con el ajuste, y el botón **R de Manta 2020** simula la plaga con ese valor. Detalle en
    [docs/supuestos.md](docs/supuestos.md#calibración-con-datos-reales-covid-19-en-manta-2020).
 
+10. **Explica el resultado al alcalde:** el botón **Explicar al alcalde** del panel de recomendación pide a
+    Amazon Bedrock (Nova Micro) un párrafo en lenguaje simple con el plan, cuántos salva, qué tan sólido es y
+    la cifra llevada a toda Manta. **El motor calcula y la IA solo redacta:** recibe las cifras ya calculadas,
+    no vuelve a simular ni cambia la recomendación. Si Bedrock no responde, el informe sale igual con una
+    plantilla fija, marcada «Texto automático (sin IA)». Detalle en [docs/api.md](docs/api.md#post-apiinforme).
+
 ## Cómo probarlo
 
 El repositorio tiene dos partes independientes que se comunican por HTTP:
@@ -144,7 +150,7 @@ La versión desplegada está en https://dehwt6pb3rwca.cloudfront.net. La API res
 ```bash
 curl https://dehwt6pb3rwca.cloudfront.net/api/salud
 curl -X POST https://dehwt6pb3rwca.cloudfront.net/api/simular \
-     -H 'content-type: application/json' -d '{}'      # escenario por defecto, ~10 s
+     -H 'content-type: application/json' -d '{}'      # escenario por defecto, ~14 s
 ```
 
 ## Parámetros por defecto y semilla
@@ -201,13 +207,13 @@ Todo está en `infra/` y se despliega en `us-east-1` con una sola plantilla
 | CloudWatch Logs | Logs de la API, guardados 7 días |
 | CloudWatch (alarmas + dashboard) y SNS | Correo si la API da errores, si una simulación pasa de 50 s o si se llega al límite de concurrencia; un dashboard `zombie-zero` con simulaciones, duración, errores y llamadas a Bedrock (salida `TableroUrl`) |
 | S3 de resultados + Glue + Athena | Un resumen por simulación: la interfaz muestra las últimas en «Resultados anteriores» y se pueden consultar con SQL ([`docs/resultados.md`](docs/resultados.md)) |
-| Bedrock (`amazon.nova-micro-v1:0`) | Redacta el informe para el alcalde con las cifras que ya calculó el motor |
+| Bedrock (`amazon.nova-micro-v1:0`) | Redacta el informe para el alcalde con las cifras que ya calculó el motor. La Lambda solo puede invocar ese modelo (política `zombie-zero-invocar-bedrock`, creada por `infra/github-oidc.yaml`) |
 
 ### Servicios sugeridos por el reto: cuáles usamos y por qué
 
 | Sugerido | Decisión | Por qué |
 |---|---|---|
-| Lambda / ECS Fargate / Batch | **Lambda** | Una simulación completa (100 repeticiones × 10 planes) tarda ~10 s con 2 vCPU: cabe de sobra en una Lambda y se paga solo por uso. Fargate o Batch cobran por tener capacidad lista |
+| Lambda / ECS Fargate / Batch | **Lambda** | Una simulación completa (100 repeticiones × 14 planes) tarda 13 a 15 s con 2 vCPU (medido en AWS): cabe de sobra en una Lambda y se paga solo por uso. Fargate o Batch cobran por tener capacidad lista |
 | Step Functions (Distributed Map) / Batch | No | Repartir el Monte Carlo entre muchas Lambdas sumaría costo por transición y arranques en frío para ahorrar segundos; el paralelismo está dentro de la Lambda (2 procesos) |
 | S3 + Athena / DynamoDB | **S3 + Athena** | Cada simulación guarda un resumen de ~3 kB (sin curvas: se recalculan con la semilla). Athena responde, por ejemplo, qué plan se recomendó más en todos los Brote Sorpresa; con tope de 100 MB por consulta y borrado a los 90 días ([detalle](docs/resultados.md)). DynamoDB no hace falta: no hay lecturas por clave |
 | Amplify / S3 + CloudFront | **S3 + CloudFront** | Bucket privado con OAC; la API sale por el mismo dominio (`/api/*`) |
@@ -225,6 +231,16 @@ aws sso login                      # cada vez que expire la sesión
 aws sts get-caller-identity        # comprueba la cuenta
 
 CORREO_ALERTA=equipo@ejemplo.com infra/desplegar.sh
+```
+
+Antes, un administrador despliega una vez la pila de permisos (rol de GitHub por OIDC, política de Bedrock y
+corte de gasto de Bedrock). Tras el primer despliegue de la aplicación se vuelve a desplegar con el nombre del
+rol de la Lambda, que es el que recibe el corte:
+
+```bash
+aws cloudformation deploy --region us-east-1 --template-file infra/github-oidc.yaml \
+  --stack-name zombie-zero-github-oidc --capabilities CAPABILITY_NAMED_IAM \
+  --parameter-overrides CorreoAlerta=equipo@ejemplo.com RolLambda=<nombre del ApiFunctionRole>
 ```
 
 `desplegar.sh` arma el paquete de la Lambda (`infra/empaquetar.sh` descarga
@@ -293,10 +309,11 @@ Archivo fuente editable: [`docs/arquitectura.drawio`](docs/arquitectura.drawio) 
 - **Planes que combinan intervenciones con un presupuesto.** Cada estrategia de vacunación se prueba sola y con
   cada combinación de cierres que cabe en el presupuesto; lo que sobra tras los cierres se gasta en vacunas.
 - **Motor vectorizado con numpy.** Simula muchas repeticiones a la vez, sin un bucle por repetición. Así
-  1.400 brotes (100 repeticiones × 14 planes) caben en unos 10 s.
+  1.400 brotes (100 repeticiones × 14 planes) caben en unos 14 s en la Lambda.
 - **Serverless y sin base de datos.** Lambda con Function URL (API Gateway corta a los 30 s) detrás de
-  CloudFront, en el mismo dominio que la web. No se guardan resultados porque cada simulación es reproducible
-  con su semilla: no hay datos que respaldar y, si nadie la usa, cuesta casi cero.
+  CloudFront, en el mismo dominio que la web. Cada simulación es reproducible con su semilla, así que solo se
+  guarda un resumen de ~3 kB en S3 (sin curvas ni mapas) para el historial y para consultarlo con Athena; no
+  hace falta una base de datos encendida y, si nadie la usa, cuesta casi cero.
 - **Despliegue automático y seguro.** Cada merge a `main` corre las pruebas y despliega con un rol de IAM por
   OIDC, sin llaves guardadas y con permisos solo sobre los recursos de esta aplicación.
 
@@ -328,13 +345,19 @@ las intervenciones, la calibración de la dificultad y la reproducibilidad.
   CLI no tiene ese límite y usa 1.000 por defecto.
 - **API sin autenticación:** la Function URL es pública. El costo está acotado por los límites de cada
   parámetro, el tiempo máximo de 60 s y la alerta del AWS Budget, pero no hay un límite de peticiones por
-  usuario.
+  usuario. Para Bedrock sí hay un corte automático: 1 llamada por minuto por contenedor y un Budget de 3 USD
+  que le quita el permiso a la Lambda si se supera.
+- **Informe con IA sin cuota todavía:** AWS le asignó a la cuenta nueva una cuota de 0 solicitudes por minuto
+  para Nova Micro (y también para los modelos Claude Haiku), así que hoy Bedrock responde `ThrottlingException`
+  y el informe sale con la plantilla sin IA. El aumento de cuota se pide a AWS Support; cuando se aprueba, el
+  informe pasa a redactarse con Bedrock sin cambiar código ni volver a desplegar.
 
 ## Costos
 
-Operar la herramienta cuesta **≈ 1,46 USD al mes** en uso normal (3.000 simulaciones) y **≈ 14,57 USD** en un
-mes de brote activo (30.000), sin contar la capa gratuita de AWS; con ella, 0 USD y ≈ 7,35 USD. Casi todo es
-cómputo de Lambda. Gasto real durante el evento: **0,01 USD** (medido el 28/10/2026). El cálculo completo y las mediciones están en
+Operar la herramienta cuesta **≈ 2,52 USD al mes** en uso normal (3.000 simulaciones) y **≈ 25,13 USD** en un
+mes de brote activo (30.000), sin contar la capa gratuita de AWS; con ella, ≈ 0,02 USD y ≈ 16,99 USD. Casi todo es
+cómputo de Lambda (14 s facturados por simulación, medidos en AWS). El informe con IA tiene su propio tope de
+3 USD al mes. Gasto real durante el evento: **0,01 USD** (medido el 28/10/2026 a las 14:53). El cálculo completo y las mediciones están en
 [docs/costos.md](docs/costos.md); `infra/costos.sh` agrega una medición nueva del gasto real.
 
 ## AWS Budget
@@ -346,6 +369,7 @@ La cuenta tiene presupuestos con alerta por correo desde el 1 de octubre de 2026
 | `Costo-Mensual` (captura) | 5 USD | Gasto real al 85 % y al 100 %; gasto previsto al 100 % |
 | `zombie-zero-mensual` (creado por `infra/template.yaml`) | 10 USD | Gasto real al 80 %; gasto previsto al 100 % |
 | `Alerta-Gasto` | 1 USD | Cualquier gasto real (0,01 %) |
+| `zombie-zero-bedrock` (creado por `infra/github-oidc.yaml`) | 3 USD, solo Bedrock | Al 100 % del gasto real avisa por correo y le niega Bedrock a la Lambda (acción automática) |
 
 ![AWS Budget Costo-Mensual con sus alertas](docs/budget.png)
 
