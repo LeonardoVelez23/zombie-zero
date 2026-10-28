@@ -77,16 +77,37 @@ se reportan rangos y no una sola simulación. "Gana al azar" se cuenta solo entr
 diferencia: en un empate la plaga se apagó sola antes del día en que se empieza a actuar y ningún plan
 llegó a influir.
 
-Con el Brote Sorpresa "el doble de contagiosa" (R0 = 5) ningún plan supera al azar: con R0 = 5 haría falta
-inmunizar a cerca del 80 % de la población (1 − 1/R0) y solo hay vacunas para el 10 %. El sistema lo informa
-como "recursos insuficientes" en vez de presentar un plan como ganador.
+Con el Brote Sorpresa "el doble de contagiosa" (R0 = 5), el anillo y los superpropagadores quedaban por
+debajo del azar: para el día 21 los vecinos de los zombies y las personas con más contactos ya suelen estar
+mordidos sin que se sepa, y se desperdician vacunas en ellos (129 de 500 con anillo + cerrar colegio, frente a
+35 con el azar). Por eso existe la **estrategia adaptativa**: hace anillo mientras el brote es chico y, cuando
+los zombies detectados superan el 1 % de la población, protege a quienes probablemente siguen sanos (primero
+los barrios con menos casos detectados, dentro de ellos los de más contactos, y nunca a un contacto de un
+zombie conocido).
+
+| R0 = 5 (semilla 42, 100 repeticiones) | Infectados | Vacunas desperdiciadas | Gana al azar |
+|---|---|---|---|
+| Sin intervenir | 4.093 | — | — |
+| Vacunas al azar | 3.739 | 35 | — |
+| Superpropagadores + cerrar colegio | 3.770 | 53 | 14 % |
+| Anillo + cerrar colegio | 3.775 | 129 | 24 % |
+| **Adaptativa + cerrar mercado (recomendado)** | **3.647** | 27 | **88 %** |
+
+Aun así la mejora es chica (92 personas frente al azar): con R0 = 5 haría falta inmunizar a cerca del 80 %
+de la población (1 − 1/R0) y solo hay vacunas para el 10 %. Si en otro escenario ningún plan supera al azar,
+el sistema lo informa como "recursos insuficientes" y calcula qué haría falta para ganar.
+
+**Umbral del 1 %** (supuesto): por debajo, el anillo rinde igual o mejor (escenario por defecto: 546 con anillo
+y 546 con adaptativa); probado en 11 escenarios (semillas 7 y 2026, mitad de vacunas, inicio en el mercado,
+variante con la mitad de eficacia, R0 × 1,5, detección del 20 % y R0 doble con y sin mercado), la adaptativa
+nunca quedó por debajo del azar.
 
 Con el imprevisto de un corte de vacunas (semilla 42, 100 repeticiones):
 
 | Corte | Recomendación | Infectados | Salvados frente a no intervenir | Gana al azar |
 |---|---|---|---|---|
 | Sin corte | anillo + cerrar colegio | 546 | 1.658 | 100 % |
-| Desde el día 30, durante 21 días | anillo + cerrar colegio | 591 | 1.613 | 100 % |
+| Desde el día 30, durante 21 días | adaptativa + cerrar colegio | 585 | 1.619 | 100 % |
 | Desde el día 21, durante 30 días | centralidad + cerrar colegio | 995 | 1.209 | 100 % |
 
 Si el corte llega justo cuando se empieza a actuar, el anillo pierde su ventaja: cuando vuelven las
