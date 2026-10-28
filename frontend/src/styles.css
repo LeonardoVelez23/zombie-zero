@@ -67,6 +67,7 @@ select {
 
 .panel-heading {
   display: flex;
+  flex-wrap: wrap;   /* en pantallas angostas la etiqueta baja de línea */
   justify-content: space-between;
   align-items: flex-start;
   gap: 12px;

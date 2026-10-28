@@ -34,8 +34,10 @@ Resources:
       Handler: zombie.api.lambda_handler
       Runtime: python3.13
       Architectures: [x86_64]
-      MemorySize: 2048            # en Lambda más memoria también da más CPU
-      Timeout: 60                 # 50 repeticiones tardan unos 12 s
+      # En Lambda la CPU crece con la memoria: 3.008 MB dan 2 vCPU y los planes se simulan en 2 procesos.
+      # Es el máximo que admiten las cuentas nuevas; con el límite levantado, 10.240 MB dan 6 vCPU.
+      MemorySize: 3008
+      Timeout: 60                 # 100 repeticiones x 10 planes tardan unos 10 s
       ReservedConcurrentExecutions: !If [LimitarConcurrencia, !Ref ConcurrenciaMaxima, !Ref AWS::NoValue]
       LoggingConfig:
         LogGroup: !Ref ApiLogs

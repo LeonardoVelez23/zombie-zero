@@ -8,6 +8,28 @@
 <p class="panel-description">Define las condiciones del brote y los recursos disponibles.</p>
 
 <form [formGroup]="formulario" (ngSubmit)="enviar()">
+  <fieldset class="sorpresas">
+    <legend>🎃 Brote Sorpresa en un clic</legend>
+    <div class="sorpresas-botones">
+      @for (s of sorpresas; track s.nombre) {
+        <button
+          type="button"
+          class="sorpresa"
+          [class.activa]="activa(s)"
+          [attr.aria-pressed]="activa(s)"
+          [title]="s.detalle"
+          [disabled]="cargando()"
+          (click)="aplicarSorpresa(s)"
+        >
+          {{ s.nombre }}
+        </button>
+      }
+      <button type="button" class="sorpresa restablecer" [disabled]="cargando()" (click)="restablecer()">
+        ↺ Restablecer
+      </button>
+    </div>
+  </fieldset>
+
   <label class="field-label" for="inicio">Punto de origen del brote</label>
   <select id="inicio" formControlName="inicio">
     @for (inicio of parametros().inicios; track inicio) {

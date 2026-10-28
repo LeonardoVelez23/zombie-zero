@@ -21,6 +21,10 @@ class Recursos:
     vacunas_disponibles: int = 500    # stock máximo, aunque sobre dinero (10 % de la población)
     vacunas_por_dia: int = 50         # capacidad diaria de vacunación
     dia_inicio: int = 21              # días hasta que se detecta el brote y se puede actuar
+    # Imprevisto: se bloquea la vía y no llegan vacunas desde `corte_desde` durante `corte_dias`
+    # días (0 = sin corte). Las estrategias vuelven a decidir con lo que haya al reanudarse.
+    corte_desde: int = 0
+    corte_dias: int = 0
     eficacia: float = 0.9             # reducción de la probabilidad de ser mordido
     dias_cierre: int = 14             # duración de un cierre
     cumplimiento_cierre: float = 0.8  # fracción de contactos del lugar que se evitan al cerrar

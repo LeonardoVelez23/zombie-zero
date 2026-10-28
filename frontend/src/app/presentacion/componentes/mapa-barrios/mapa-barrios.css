@@ -1,0 +1,266 @@
+:host {
+  display: flex;
+  flex-direction: column;
+}
+
+.controles-mapa {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.planes {
+  display: inline-flex;
+  flex-wrap: wrap;
+  max-width: 100%;
+  border: 1px solid #282b4d;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.plan {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 0;
+  border-right: 1px solid #282b4d;
+  background: #070a1d;
+  color: #b7bad3;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.plan:last-child {
+  border-right: 0;
+}
+
+.plan.activo {
+  background: rgba(168, 85, 247, 0.22);
+  color: #f3e8ff;
+}
+
+.plan:focus-visible {
+  outline: 2px solid var(--violet);
+  outline-offset: -2px;
+}
+
+.reproduccion {
+  display: flex;
+  gap: 6px;
+}
+
+.boton {
+  padding: 9px 12px;
+  border: 1px solid #6b399e;
+  border-radius: 4px;
+  background: rgba(168, 85, 247, 0.12);
+  color: #e9d5ff;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.boton:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+select {
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid #282b4d;
+  border-radius: 4px;
+  background: #070a1d;
+  color: #e6e7f5;
+  font-size: 11px;
+}
+
+.deslizador {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 10px;
+  color: #d8daeb;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+input[type='range'] {
+  width: 100%;
+  accent-color: var(--violet);
+}
+
+.mapa-contenedor {
+  position: relative;
+  flex: 1;
+}
+
+.mapa {
+  width: 100%;
+  height: 100%;
+  min-height: clamp(300px, 46vh, 460px);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  background: #070a1d;
+}
+
+.mapa-aviso {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  max-width: calc(100% - 32px);
+  padding: 8px 12px;
+  border: 1px solid #282b4d;
+  border-radius: 4px;
+  background: rgba(7, 10, 29, 0.88);
+  color: #d8daeb;
+  font-size: 11px;
+  text-align: center;
+  pointer-events: none;
+}
+
+.leyenda {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 8px 10px;
+  list-style: none;
+  border: 1px solid #282b4d;
+  border-radius: 4px;
+  background: rgba(7, 10, 29, 0.86);
+  color: #d8daeb;
+  font-size: 10px;
+  pointer-events: none;
+}
+
+.leyenda small {
+  margin-left: 6px;
+  color: #8f94b3;
+}
+
+.punto {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-right: 6px;
+  border-radius: 50%;
+}
+
+.resumen {
+  margin: 12px 0 8px;
+  color: #b7bad3;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.resumen strong {
+  color: #fff;
+}
+
+.barrios {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 6px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.barrios li {
+  display: grid;
+  grid-template-columns: 76px 1fr 36px;
+  align-items: center;
+  gap: 8px;
+  color: #d8daeb;
+  font-size: 10px;
+}
+
+.barra {
+  height: 6px;
+  border-radius: 3px;
+  background: #1a1d3d;
+  overflow: hidden;
+}
+
+.barra span {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+}
+
+.valor {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Barrios del mapa: MapLibre crea estos elementos fuera de la plantilla y los ubica con
+   position: absolute. El marcador mide lo mismo que el círculo, así queda centrado en el barrio;
+   el nombre va al costado que indica su clase. */
+:host ::ng-deep .barrio-mapa {
+  pointer-events: none;
+}
+
+:host ::ng-deep .barrio-circulo {
+  width: var(--diametro);
+  height: var(--diametro);
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--color);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color) 30%, transparent);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--color) 55%, transparent);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  text-shadow: 0 1px 2px #000;
+  transition:
+    background 0.2s,
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+:host ::ng-deep .barrio-nombre {
+  position: absolute;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: rgba(7, 10, 29, 0.82);
+  color: #f1f2fb;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+:host ::ng-deep .etiqueta-abajo .barrio-nombre {
+  top: calc(100% + 3px);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+:host ::ng-deep .etiqueta-arriba .barrio-nombre {
+  bottom: calc(100% + 3px);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+:host ::ng-deep .etiqueta-izquierda .barrio-nombre {
+  right: calc(100% + 4px);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+:host ::ng-deep .etiqueta-derecha .barrio-nombre {
+  left: calc(100% + 4px);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+:host ::ng-deep .maplibregl-ctrl-attrib {
+  font-size: 9px;
+}

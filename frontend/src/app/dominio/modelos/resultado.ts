@@ -35,6 +35,8 @@ export interface Plan {
   // Opcional: las respuestas de versiones anteriores de la API no lo traen.
   estados?: Record<EstadoSeir, Serie>;
   mapa: number[][];
+  // Mordidos acumulados por barrio y día (promedio). Opcional: versiones anteriores de la API no lo traen.
+  mapaAfectados?: number[][];
   vacunasPerdidas: number;
   salvadosVsNinguna?: Estadistico;
   salvadosVsAzar?: Estadistico;

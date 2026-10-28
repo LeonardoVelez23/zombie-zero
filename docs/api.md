@@ -46,11 +46,14 @@ Todo es opcional: lo que no se envía toma el valor por defecto.
     "plaga":    { "r0": 2.5, "dias_latencia": 3, "dias_infeccioso": 5, "deteccion": 0.7 },
     "recursos": { "presupuesto": 20000, "costo_vacuna": 10, "vacunas_disponibles": 1000,
                   "vacunas_por_dia": 100, "dia_inicio": 3, "eficacia": 0.9,
+                  "corte_desde": 0, "corte_dias": 0,
                   "dias_cierre": 14, "cumplimiento_cierre": 0.8,
                   "costo_cierre_mercado": 600, "costo_cierre_colegio": 800 }
   }
 }
 ```
+
+`corte_desde` y `corte_dias` simulan un imprevisto: no llegan vacunas desde ese día durante esos días (0 = sin corte).
 
 **Brote Sorpresa típico:** `{"escenario": {"inicio": "mercado", "plaga": {"r0": 5}, "recursos": {"vacunas_disponibles": 500, "eficacia": 0.5}}}`.
 
@@ -91,6 +94,7 @@ Todo es opcional: lo que no se envía toma el valor por defecto.
         "E": { ... }, "I": { ... }, "R": { ... }
       },
       "mapa": [[zombies promedio por barrio el día 0], [día 1], ...],   // (dias+1) × 6
+      "mapa_afectados": [[mordidos acumulados por barrio el día 0], ...], // (dias+1) × 6, lo pinta el mapa por barrio
       "vacunas_perdidas": 12.3,
       "salvados_vs_ninguna": { "media": ..., "mediana": ..., "p5": ..., "p95": ... },
       "salvados_vs_azar":    { "media": ..., "mediana": ..., "p5": ..., "p95": ... },
@@ -134,7 +138,11 @@ de 2,8 GHz; la Lambda de 2 GB es unas 2,4 veces más lenta (con el motor anterio
 | 300 | 3.000 | ~29 s | ~70 s: no cabe en 60 s |
 | 1.000 (CLI) | 10.000 | ~95 s | — |
 
-Por eso la API usa 100 repeticiones por defecto y acepta hasta 200: el reto pide
+Esa tabla es de la versión en serie. Ahora los planes se reparten entre procesos (2 en la Lambda de
+3.008 MB, todos los núcleos en la CLI) y los lotes son de 50 repeticiones: en local, con 6 procesos,
+300 repeticiones tardan 5,6 s. Falta medirlo en AWS después del despliegue.
+
+Por eso la API usa 100 repeticiones por defecto y acepta hasta 300: el reto pide
 1.000 por defecto, pero con 10 planes no caben en los 60 s de la Lambda. La CLI
 (`python -m zombie.cli`, sin límite de tiempo) sí usa 1.000. Escala lineal con
 `repeticiones` y con `n_personas`. Se puede verificar en AWS con la métrica
@@ -183,7 +191,7 @@ parámetros propios de la EDP. Todo es opcional.
 ```
 
 - `serie`: personas en cada estado por día (suman `n_personas`).
-- `fotogramas`: zombies por celda cada 10 días; la fila 0 es el borde norte y la
+- `fotogramas`: zombies por celda cada día (cada 2 días o más si `dias` pasa de 180, para no superar los 6 MB de respuesta de Lambda); la fila 0 es el borde norte y la
   columna 0 el oeste, según `malla`. Sirve para el mapa de calor.
 
 Tarda alrededor de 1,5 s y responde unos 450 KB.

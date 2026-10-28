@@ -42,11 +42,25 @@ Central. El Comité de Contención tiene pocas vacunas, un presupuesto limitado 
    la mediana y el rango p5–p95 de infectados, cuántas personas se salvan y en qué porcentaje de los brotes el
    plan le gana al azar.
 5. **Recomienda un plan en lenguaje simple** y dice qué tan sólida es la recomendación.
-6. **Muestra el avance en un mapa de Manta** (modelo de difusión espacial) que se recorre día por día.
+6. **Muestra el brote barrio por barrio** en un mapa de Manta junto a los controles: qué porcentaje de cada barrio
+   ya fue mordido, día a día, con el mismo modelo de red que hace la recomendación. Se elige el plan (sin
+   intervenir, al azar o el recomendado) y se reproduce con ▶; cada barrio cambia de color según esté
+   contenido (< 5 %), en alerta (5–20 %) o fuera de control (≥ 20 %).
+7. **Lo contrasta con un mapa de difusión continua** (modelo EDP, abajo en la página): se reproduce día por día
+   con ▶ y tres velocidades, o se recorre a mano con el deslizador (en simulaciones de más de 180 días,
+   un fotograma cada 2 días o más, por el límite de 6 MB de respuesta de Lambda).
 
 Todo se calcula en vivo con cada cambio de parámetros, sin resultados guardados de antemano. En la interfaz se
 cambian el punto de origen del brote, el R0, la detección, el presupuesto, las vacunas, su eficacia, el día
 en que se empieza a actuar, las vacunas por día, la población, la duración y la semilla.
+Para la prueba de fuego, los botones **Brote Sorpresa en un clic** aplican los cambios típicos del jurado
+(R0 doble, mitad de vacunas, inicio en el mercado, variante con la mitad de eficacia y un corte de vacunas de
+30 días), se pueden combinar y simulan de inmediato; **Restablecer** vuelve al escenario por defecto.
+
+8. **Recalcula ante imprevistos:** se puede simular un corte en la entrega de vacunas (por ejemplo, un bloqueo
+   de la vía desde el día 21 durante 30 días). Al reanudarse la entrega, cada plan vuelve a decidir con el brote
+   de ese día, y la recomendación puede cambiar: con ese corte pasa de *anillo + cerrar colegio* a
+   *centralidad + cerrar colegio*.
 
 ## Cómo probarlo
 
@@ -137,6 +151,7 @@ justificado en [docs/supuestos.md](docs/supuestos.md).
 | | Vacunas disponibles | 500 (10 % de la población) |
 | | Vacunas por día | 50 |
 | | Día en que se empieza a actuar | 21 |
+| | Corte de vacunas (imprevisto) | Sin corte (0 días) |
 | | Eficacia de la vacuna | 90 % |
 | | Cierre de mercado / colegios | 600 / 800 USD por día, 14 días, 80 % de cumplimiento |
 | Monte Carlo | Repeticiones por plan | 100 en la web y la API (límite de 60 s), 1.000 en la CLI |
@@ -164,7 +179,7 @@ Todo está en `infra/` y se despliega en `us-east-1` con una sola plantilla
 
 | Recurso | Para qué |
 |---|---|
-| Lambda (Python 3.13, 2 GB, 60 s) + **Function URL** | La API. Function URL en vez de API Gateway porque una simulación puede pasar de los 30 s que permite API Gateway |
+| Lambda (Python 3.13, 3.008 MB = 2 vCPU, 60 s) + **Function URL** | La API. Function URL en vez de API Gateway porque una simulación puede pasar de los 30 s que permite API Gateway |
 | S3 privado + CloudFront | La interfaz web en Angular |
 | AWS Budget | Alerta por correo al 80 % del gasto mensual y si el pronóstico pasa del 100 % |
 | CloudWatch Logs | Logs de la API, guardados 7 días |
@@ -205,8 +220,8 @@ Archivo fuente editable: [`docs/arquitectura.drawio`](docs/arquitectura.drawio) 
 - **Flujo de una visita:** el navegador pide la página a CloudFront, que la toma de S3. Las simulaciones van
   a `/api/*` en el mismo dominio y CloudFront las pasa a la Lambda sin caché (hasta 60 s). La Lambda arma la
   red de contactos, corre el Monte Carlo y devuelve el resultado; no hay base de datos, porque con la misma
-  semilla el resultado es siempre el mismo. Los mosaicos del mapa los pide el navegador directamente a Esri,
-  OpenStreetMap y CARTO.
+  semilla el resultado es siempre el mismo. Los mosaicos del mapa los pide el navegador directamente a Esri y
+  OpenStreetMap.
 - **Despliegue:** cada merge a `main` corre las pruebas en GitHub Actions y, si pasan, despliega con un rol de
   IAM que se obtiene por OIDC. No hay llaves de AWS guardadas en GitHub y el rol solo puede tocar los recursos
   de esta aplicación ([`infra/github-oidc.yaml`](infra/github-oidc.yaml)).
@@ -263,7 +278,7 @@ las intervenciones, la calibración de la dificultad y la reproducibilidad.
 - **No se modela la mortalidad:** el objetivo es minimizar los contagios.
 - **El mapa usa otro modelo:** la difusión espacial (EDP) es un modelo de contraste y no sale de la misma red
   de contactos que el Monte Carlo.
-- **Límite de cómputo en la web:** hasta 200 repeticiones por petición, por el corte de 60 s de CloudFront. La
+- **Límite de cómputo en la web:** hasta 300 repeticiones por petición (3.000 brotes, en procesos paralelos), por el corte de 60 s de CloudFront. La
   CLI no tiene ese límite y usa 1.000 por defecto.
 - **API sin autenticación:** la Function URL es pública. El costo está acotado por los límites de cada
   parámetro, el tiempo máximo de 60 s y la alerta del AWS Budget, pero no hay un límite de peticiones por

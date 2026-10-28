@@ -103,19 +103,9 @@
 .brand-mark {
   width: 43px;
   height: 43px;
-  display: grid;
-  place-items: center;
-  border: 1px solid var(--violet);
-  background: rgba(168, 85, 247, 0.12);
-  color: #fff;
-  font-size: 20px;
-  font-weight: 900;
-  letter-spacing: -3px;
-  box-shadow: 3px 3px 0 rgba(168, 85, 247, 0.22);
-}
-
-.brand-mark span {
-  color: var(--orange);
+  flex: none;
+  border-radius: 9px;
+  box-shadow: 3px 3px 0 rgba(168, 85, 247, .22);
 }
 
 .brand strong {
@@ -552,10 +542,21 @@
   .topbar {
     min-height: 52px;
   }
+  /* La ruta se recorta para que la insignia y el avatar quepan sin desbordar la página. */
   .breadcrumb {
+    min-width: 0;
     font-size: 8px;
   }
+  .topbar-right {
+    flex: none;
+    gap: 8px;
+  }
+  .production-badge {
+    padding: 6px 8px;
+    letter-spacing: 0.5px;
+  }
   .breadcrumb strong {
+    min-width: 0;
     max-width: 130px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -623,5 +624,11 @@
   }
   .metric-value {
     font-size: 27px;
+  }
+  /* En pantallas muy angostas la insignia queda solo con el punto (el texto sigue para lectores). */
+  .production-badge {
+    gap: 0;
+    padding: 7px;
+    font-size: 0;
   }
 }

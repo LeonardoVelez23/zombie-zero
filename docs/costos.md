@@ -11,12 +11,29 @@ el 28/10/2026. No se cuentan los créditos del plan gratuito.
 | Mapa EDP (`POST /api/edp`) | Lambda de 2 GB | 1,7 s facturados → usamos **2 s = 4 GB-s**. Respuesta de 27,5 KB |
 | Parámetros y salud (`GET /api/...`) | Lambda | 2 ms (despreciable) |
 | Primera visita a la web | CloudFront + S3 | 8 archivos, **0,52 MB** comprimidos (el código de MapLibre es la mayor parte) |
-| Mosaicos del mapa | Esri, OpenStreetMap, CARTO | Fuera de AWS y sin costo para nosotros |
+| Mosaicos del mapa | Esri, OpenStreetMap | Fuera de AWS y sin costo para nosotros |
 
 Las duraciones salen de las líneas `REPORT` de CloudWatch Logs; los tamaños, de descargar cada recurso por
 la URL pública. La Lambda usa solo ~120 MB de memoria: se le asignan 2 GB porque en Lambda la CPU crece
 con la memoria: con menos memoria cada simulación tendría menos CPU, tardaría más y se acercaría al límite
 de 60 s de CloudFront.
+
+### Cambios del 28/10 que todavía hay que medir en AWS
+
+La tabla anterior se midió con la Lambda de 2 GB. Desde la versión con Monte Carlo en paralelo:
+
+- **La Lambda tiene 3.008 MB** (2 vCPU) y simula los planes en 2 procesos. Se cobra 1,47 veces más por segundo,
+  pero cada simulación debería tardar menos: en local, con 2 procesos y lotes de 50 repeticiones, la misma
+  simulación tarda menos de la mitad.
+- **El mapa trae un fotograma por día** en vez de uno cada 10 días: la respuesta pasa de 27,5 KB a unos
+  85 KB comprimidos (4 MB sin comprimir; CloudFront la comprime).
+
+Si la duración no bajara nada (peor caso), una simulación costaría 12 s × 2,94 GB = **35 GB-s** y un mapa
+2 s × 2,94 GB = **6 GB-s**. Con eso el uso normal pasaría de $1,46 a **≈ $2,12** al mes (sigue en $0 con la
+capa gratuita) y el brote activo de $14,57 a **≈ $21,22** (≈ $13,80 con la capa gratuita, por encima del Budget
+de 10 USD, que avisaría). Las cifras definitivas se recalculan con `infra/costos.sh` después del despliegue.
+`infra/costos.sh` multiplica los segundos de todo el mes por la memoria actual, así que las filas de ese mes
+mezclan invocaciones de 2 GB y de 3.008 MB y sobreestiman un poco el cómputo.
 
 ## Costo mensual estimado de operación
 
