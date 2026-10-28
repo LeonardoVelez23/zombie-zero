@@ -1,5 +1,11 @@
-<div class="app-shell">
-  <aside class="sidebar">
+<div class="app-shell" [class.sidebar-plegada]="sidebarPlegada()">
+  <button class="sidebar-toggle" type="button" (click)="alternarSidebar()" [attr.aria-expanded]="!sidebarPlegada()"
+    aria-controls="sidebar-principal"
+    [attr.aria-label]="sidebarPlegada() ? 'Mostrar menú lateral' : 'Ocultar menú lateral'">
+    <span aria-hidden="true">{{ sidebarPlegada() ? '☰' : '✕' }}</span>
+  </button>
+
+<aside class="sidebar" id="sidebar-principal">
     <a class="brand" href="#dashboard" aria-label="Zombie Zero inicio">
       <img class="brand-mark" src="logo.svg" alt="" width="43" height="43" />
       <div>
@@ -35,7 +41,13 @@
       <div class="breadcrumb">
         PROYECTO <span>/</span> <strong>VIGILANCIA EPIDEMIOLÓGICA</strong>
       </div>
-      <div class="topbar-right"><span class="avatar">ZZ</span></div>
+      <div class="topbar-right">
+        <span class="production-badge">
+          <span class="production-dot"></span>
+          PRODUCCIÓN
+        </span>
+        <span class="avatar">ZZ</span>
+      </div>
     </header>
 
     <section class="page-heading">

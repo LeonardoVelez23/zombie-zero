@@ -30,6 +30,12 @@ interface Indicador {
   styleUrl: './panel.css',
 })
 export class Panel implements OnInit {
+  protected readonly sidebarPlegada = signal(false);
+
+  protected alternarSidebar(): void {
+    this.sidebarPlegada.update((plegada) => !plegada);
+  }
+
   private readonly obtenerParametros = inject(ObtenerParametros);
   private readonly simularBrote = inject(SimularBrote);
   private readonly modelarDifusion = inject(ModelarDifusion);
@@ -65,8 +71,20 @@ export class Panel implements OnInit {
       const pendiente = 'Ejecuta una simulación';
       return [
         tarjetaPoblacion,
-        { etiqueta: 'INFECTADOS SIN INTERVENIR', valor: '—', nota: pendiente, color: 'red', icono: '⌁' },
-        { etiqueta: 'INFECTADOS CON EL PLAN', valor: '—', nota: pendiente, color: 'green', icono: '✓' },
+        {
+          etiqueta: 'INFECTADOS SIN INTERVENIR',
+          valor: '—',
+          nota: pendiente,
+          color: 'red',
+          icono: '⌁',
+        },
+        {
+          etiqueta: 'INFECTADOS CON EL PLAN',
+          valor: '—',
+          nota: pendiente,
+          color: 'green',
+          icono: '✓',
+        },
         { etiqueta: 'PERSONAS SALVADAS', valor: '—', nota: pendiente, color: 'orange', icono: '✚' },
       ];
     }
