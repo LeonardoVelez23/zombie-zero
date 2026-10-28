@@ -54,6 +54,7 @@ del hogar son más largos y cercanos, como muestran los estudios de contactos
 | Cierre de colegios | $800 por día | Supuesto | Costo de clases a distancia y cuidado infantil. |
 | Duración de un cierre | 14 días | Supuesto | Dos periodos de latencia más infeccioso. |
 | Cumplimiento del cierre | 80 % | Supuesto | Fracción de contactos de ese lugar que realmente se evitan. |
+| Corte de vacunas | Sin corte por defecto | Imprevisto | Bloqueos de vías como los paros de 2019 y 2022 en Ecuador dificultaron el abastecimiento durante 11 y 18 días. Durante el corte no se vacuna; al reanudarse cada plan decide con lo que observa ese día. |
 | Visibilidad | Solo se ven los zombies detectados | Supuesto | Por eso una vacuna puede "perderse" en alguien ya mordido o no detectado. El sistema lo reporta. |
 
 ### Dificultad del escenario por defecto
@@ -79,6 +80,18 @@ llegó a influir.
 Con el Brote Sorpresa "el doble de contagiosa" (R0 = 5) ningún plan supera al azar: con R0 = 5 haría falta
 inmunizar a cerca del 80 % de la población (1 − 1/R0) y solo hay vacunas para el 10 %. El sistema lo informa
 como "recursos insuficientes" en vez de presentar un plan como ganador.
+
+Con el imprevisto de un corte de vacunas (semilla 42, 100 repeticiones):
+
+| Corte | Recomendación | Infectados | Salvados frente a no intervenir | Gana al azar |
+|---|---|---|---|---|
+| Sin corte | anillo + cerrar colegio | 546 | 1.658 | 100 % |
+| Desde el día 30, durante 21 días | anillo + cerrar colegio | 591 | 1.613 | 100 % |
+| Desde el día 21, durante 30 días | centralidad + cerrar colegio | 995 | 1.209 | 100 % |
+
+Si el corte llega justo cuando se empieza a actuar, el anillo pierde su ventaja: cuando vuelven las
+vacunas el brote ya es grande y vacunar alrededor de cada zombie llega tarde, así que conviene proteger
+primero a los superpropagadores.
 
 ## Modelo de contraste (EDP espacial)
 
@@ -116,7 +129,7 @@ y por eso la vacunación en anillo es mucho más eficaz con las mismas dosis.
 | Parámetro | Valor | Tipo | Justificación |
 |---|---|---|---|
 | Repeticiones por plan (CLI) | 1.000 | Reto | Lo pide el reglamento. `--n-sims` lo cambia. |
-| Repeticiones por plan (API e interfaz) | 100 (máximo 200) | Medido | 100 × 10 planes = 1.000 brotes en ~20 s en la Lambda de 2 GB; 300 ya no caben en 60 s (ver `docs/api.md`). |
+| Repeticiones por plan (API e interfaz) | 100 (máximo 300) | Medido | Los planes se simulan en procesos paralelos (2 en la Lambda de 3.008 MB). Tiempos en `docs/api.md`; falta medir el máximo en AWS. |
 | Estadísticos | Media, mediana y rango p5–p95 | Reto | De infectados totales, pico de zombies y personas salvadas frente a cada línea base. |
 | Contagio en la simulación | Umbral exponencial por persona (Sellke) | Supuesto | Cada persona sortea una vez un umbral ~ Exponencial(1) y es mordida cuando la presión acumulada de sus contactos zombies lo supera. Es equivalente a sortear cada día con probabilidad 1 − exp(−β · presión), pero permite simular muchos brotes a la vez. Latencia e infeccioso son geométricas con media 3 y 5 días, como el sorteo diario. |
 

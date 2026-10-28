@@ -42,7 +42,9 @@ AEROPUERTO = (-80.6788, -0.9461)   # Aeropuerto Internacional Eloy Alfaro (aprox
 DISPERSION_KM = {"Rural": 3.0}     # ancho de la mancha de población de cada sector
 DISPERSION_URBANA_KM = 1.0
 KM_POR_GRADO = 111.0
-CADA_DIAS = 10                     # un fotograma del mapa cada tantos días
+# Un fotograma del mapa por día, para animarlo día a día. Cada fotograma pesa ~22 KB en JSON y Lambda
+# responde hasta 6 MB, así que en simulaciones de más de 180 días se guarda uno cada 2 o más días.
+MAX_FOTOGRAMAS = 181
 
 
 @dataclass(frozen=True)
@@ -139,10 +141,11 @@ def _simular(esc: Escenario, dif: Difusion, malla: Malla, n_celda: np.ndarray, v
     usadas = 0.0
     serie = np.zeros((esc.dias + 1, 4))
     fotogramas = []
+    cada_dias = math.ceil(esc.dias / (MAX_FOTOGRAMAS - 1))
 
     def registrar(dia):
         serie[dia] = S.sum(), E.sum(), Z.sum(), R.sum()
-        if dia % CADA_DIAS == 0:
+        if dia % cada_dias == 0:
             fotogramas.append({"dia": dia, "zombies": Z.round(2).tolist()})
 
     registrar(0)
