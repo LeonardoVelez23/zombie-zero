@@ -54,3 +54,16 @@ def test_mas_movilidad_esparce_mas_la_plaga():
         dia_30 = next(f for f in _escenario(r, "ninguna")["fotogramas"] if f["dia"] == 30)
         return (np.array(dia_30["zombies"]) > 0.01).sum()
     assert celdas_con_zombies(1.0) > celdas_con_zombies(0.01)
+
+
+def test_un_fotograma_por_dia(res):
+    dias = [f["dia"] for f in _escenario(res, "ninguna")["fotogramas"]]
+    assert dias == list(range(ESC.dias + 1))
+
+
+def test_un_año_cabe_en_la_respuesta_de_lambda():
+    import json
+    largo = resolver(replace(ESC, dias=365))
+    dias = [f["dia"] for f in _escenario(largo, "ninguna")["fotogramas"]]
+    assert dias[:3] == [0, 3, 6]
+    assert len(json.dumps(largo)) < 6 * 1024 * 1024

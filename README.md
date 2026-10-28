@@ -43,7 +43,8 @@ Central. El Comité de Contención tiene pocas vacunas, un presupuesto limitado 
    plan le gana al azar.
 5. **Recomienda un plan en lenguaje simple** y dice qué tan sólida es la recomendación.
 6. **Muestra el avance en un mapa animado de Manta** (modelo de difusión espacial): se reproduce día por día
-   con ▶ y tres velocidades, o se recorre a mano con el deslizador.
+   con ▶ y tres velocidades, o se recorre a mano con el deslizador (en simulaciones de más de 180 días,
+   un fotograma cada 2 días o más, por el límite de 6 MB de respuesta de Lambda).
 
 Todo se calcula en vivo con cada cambio de parámetros, sin resultados guardados de antemano. En la interfaz se
 cambian el punto de origen del brote, el R0, la detección, el presupuesto, las vacunas, su eficacia, el día

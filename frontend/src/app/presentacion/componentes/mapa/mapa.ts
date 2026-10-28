@@ -17,11 +17,12 @@ import { ResultadoDifusion } from '../../../dominio/modelos/resultado';
 import { numero } from '../../utilidades/formato';
 import { LIMITES_MANTA, SECTORES, VISTAS, VistaId, estiloBase } from './vistas';
 
-// Velocidades de la animación del mapa: milisegundos entre un día y el siguiente.
+// Velocidades de la animación del mapa: milisegundos entre un fotograma y el siguiente
+// (uno por día: 180 días duran ~22 s a 1×).
 const VELOCIDADES = [
-  { nombre: '1×', ms: 400 },
-  { nombre: '2×', ms: 200 },
-  { nombre: '4×', ms: 100 },
+  { nombre: '1×', ms: 120 },
+  { nombre: '2×', ms: 60 },
+  { nombre: '4×', ms: 30 },
 ];
 
 @Component({

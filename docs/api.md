@@ -190,7 +190,7 @@ parámetros propios de la EDP. Todo es opcional.
 ```
 
 - `serie`: personas en cada estado por día (suman `n_personas`).
-- `fotogramas`: zombies por celda cada 10 días; la fila 0 es el borde norte y la
+- `fotogramas`: zombies por celda cada día (cada 2 días o más si `dias` pasa de 180, para no superar los 6 MB de respuesta de Lambda); la fila 0 es el borde norte y la
   columna 0 el oeste, según `malla`. Sirve para el mapa de calor.
 
 Tarda alrededor de 1,5 s y responde unos 450 KB.

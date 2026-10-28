@@ -52,11 +52,11 @@ describe('Mapa animado', () => {
     fixture.detectChanges();
     expect(boton().textContent).toContain('Pausa');
 
-    vi.advanceTimersByTime(400);
+    vi.advanceTimersByTime(120);
     fixture.detectChanges();
     expect(panel.textContent).toContain('Día 1');
 
-    vi.advanceTimersByTime(800);
+    vi.advanceTimersByTime(240);
     fixture.detectChanges();
     expect(panel.textContent).toContain('Día 2');
     expect(boton().textContent).toContain('Reproducir');
@@ -65,7 +65,7 @@ describe('Mapa animado', () => {
   it('desde el último día vuelve a empezar', () => {
     const { fixture, panel, boton } = renderizar();
     boton().click();
-    vi.advanceTimersByTime(1200);
+    vi.advanceTimersByTime(360);
     fixture.detectChanges();
     expect(panel.textContent).toContain('Día 2');
 

@@ -228,7 +228,19 @@ def test_reporta_los_cuatro_estados_dia_a_dia():
         assert estados["E"]["media"][0] + estados["I"]["media"][0] == ESC.casos_iniciales
 
 
-def test_en_paralelo_da_lo_mismo_que_en_serie():
+def test_en_paralelo_da_lo_mismo_que_en_serie(monkeypatch):
+    import multiprocessing.context
+
+    iniciados = []
+    original = multiprocessing.context.ForkProcess.start
+
+    def contar(proceso):
+        iniciados.append(proceso)
+        original(proceso)
+
+    monkeypatch.setattr(multiprocessing.context.ForkProcess, "start", contar)
     serie = comparar(ESC, repeticiones=10, procesos=1)
+    assert iniciados == []          # con un proceso no se crea ningún trabajador
     paralelo = comparar(ESC, repeticiones=10, procesos=4)
+    assert len(iniciados) == 4      # la ruta en paralelo sí se ejecutó
     assert paralelo == serie
