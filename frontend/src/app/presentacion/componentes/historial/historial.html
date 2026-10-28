@@ -15,7 +15,7 @@
           <th scope="col">Configuración <small>inicio · R0 · vacunas · presupuesto · semilla</small></th>
           <th scope="col">Plan recomendado</th>
           <th scope="col">Salvados <small>vs. no intervenir</small></th>
-          <th scope="col"><span class="oculto">Acción</span></th>
+          <th scope="col"><span class="oculto">Acciones</span></th>
         </tr>
       </thead>
       <tbody>
@@ -38,6 +38,9 @@
                 (click)="repetir.emit(f.configuracion)"
               >
                 Volver a simular
+              </button>
+              <button type="button" class="repetir" (click)="descargar(f.simulacion)">
+                Descargar informe
               </button>
             </td>
           </tr>

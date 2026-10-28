@@ -3,6 +3,7 @@ import { Component, computed, input, output } from '@angular/core';
 import { ConfiguracionSimulacion } from '../../../dominio/modelos/escenario';
 import { SimulacionGuardada } from '../../../dominio/modelos/resultado';
 import { capitalizar, numero } from '../../utilidades/formato';
+import { descargarInforme } from '../../utilidades/informe-descarga';
 
 const hora = new Intl.DateTimeFormat('es-EC', {
   day: '2-digit',
@@ -26,6 +27,7 @@ export class Historial {
   readonly repetir = output<ConfiguracionSimulacion>();
 
   protected readonly numero = numero;
+  protected readonly descargar = descargarInforme;
 
   protected readonly filas = computed(() =>
     this.simulaciones().map((s) => ({
@@ -40,6 +42,7 @@ export class Historial {
       plan: s.planes.find((p) => p.id === s.recomendado)?.nombre ?? '—',
       salvados: s.salvadosVsNinguna === null ? '—' : numero(s.salvadosVsNinguna),
       configuracion: aConfiguracion(s),
+      simulacion: s,
     })),
   );
 }

@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { ConfiguracionSimulacion } from '../../../dominio/modelos/escenario';
 import { SimulacionGuardada } from '../../../dominio/modelos/resultado';
 import { resultadoDePrueba } from '../../../../testing/datos';
+import { informeTexto, nombreInforme } from '../../utilidades/informe-descarga';
 import { Historial } from './historial';
 
 const esc = resultadoDePrueba.escenario;
@@ -77,5 +78,29 @@ describe('Resultados anteriores', () => {
   it('sin simulaciones guardadas lo dice', () => {
     const { raiz } = renderizar([]);
     expect(raiz.querySelector('.vacio')?.textContent).toContain('Todavía no hay simulaciones');
+  });
+});
+
+describe('Informe descargable', () => {
+  it('trae la configuración, la recomendación y todos los planes', () => {
+    const texto = informeTexto(guardada);
+    expect(texto).toContain('Origen del brote: Mercado');
+    expect(texto).toContain('semilla 7');
+    expect(texto).toContain('R0 5');
+    expect(texto).toContain('Plan recomendado: Vacunación en anillo');
+    expect(texto).toContain('Confianza: sólida (gana al reparto al azar en 90 %');
+    expect(texto).toContain('- Vacunación en anillo (RECOMENDADO): 300 infectados (10–900), 4.321 salvados');
+  });
+
+  it('el nombre del archivo lleva la fecha y la semilla', () => {
+    expect(nombreInforme(guardada)).toBe('zombie-zero-20261028-2140-semilla7.txt');
+  });
+
+  it('cada fila tiene su botón de descarga', () => {
+    const fixture = TestBed.createComponent(Historial);
+    fixture.componentRef.setInput('simulaciones', [guardada]);
+    fixture.detectChanges();
+    const botones = [...(fixture.nativeElement as HTMLElement).querySelectorAll('tbody button')];
+    expect(botones.map((b) => b.textContent?.trim())).toEqual(['Volver a simular', 'Descargar informe']);
   });
 });

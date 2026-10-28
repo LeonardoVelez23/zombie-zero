@@ -14,7 +14,8 @@ La respuesta de la API trae ese id en `guardado` (o `null` si no se guardó).
   que lea más de 100 MB (Athena cobra 5 USD por TB leído: 100 MB ≈ 0,0005 USD).
 - **En la interfaz:** la sección «Resultados anteriores» muestra las últimas 10 (de hoy y de
   ayer) con su configuración y su resultado, vía `GET /api/historial`. «Volver a simular»
-  repite la misma configuración con la misma semilla y da el mismo resultado.
+  repite la misma configuración con la misma semilla y da el mismo resultado; «Descargar
+  informe» baja un .txt con la configuración, la recomendación y todos los planes.
 - **Permisos:** la Lambda solo puede escribir y leer en `simulaciones/` (política
   `zombie-zero-guardar-resultados` en `infra/github-oidc.yaml`); no puede borrar.
 
