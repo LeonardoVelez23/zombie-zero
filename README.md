@@ -131,7 +131,23 @@ Para borrar todo: `aws cloudformation delete-stack --stack-name zombie-zero`
 
 ## Arquitectura
 
-_Pendiente: `docs/arquitectura.png` y su archivo fuente `docs/arquitectura.drawio`._
+![Arquitectura de Zombie Zero en AWS](docs/arquitectura.png)
+
+Archivo fuente editable: [`docs/arquitectura.drawio`](docs/arquitectura.drawio) (se abre en [diagrams.net](https://app.diagrams.net)).
+
+- **Región:** us-east-1. Todo es serverless y se define en [`infra/template.yaml`](infra/template.yaml) (SAM).
+- **Público:** CloudFront (la única URL que usa la app) y la Function URL de la Lambda.
+  **Privado:** el bucket S3, que solo CloudFront puede leer mediante OAC.
+- **Flujo de una visita:** el navegador pide la página a CloudFront, que la toma de S3. Las simulaciones van
+  a `/api/*` en el mismo dominio y CloudFront las pasa a la Lambda sin caché (hasta 60 s). La Lambda arma la
+  red de contactos, corre el Monte Carlo y devuelve el resultado; no hay base de datos, porque con la misma
+  semilla el resultado es siempre el mismo. Los mosaicos del mapa los pide el navegador directamente a Esri,
+  OpenStreetMap y CARTO.
+- **Despliegue:** cada merge a `main` corre las pruebas en GitHub Actions y, si pasan, despliega con un rol de
+  IAM que se obtiene por OIDC. No hay llaves de AWS guardadas en GitHub y el rol solo puede tocar los recursos
+  de esta aplicación ([`infra/github-oidc.yaml`](infra/github-oidc.yaml)).
+- **Costos:** el AWS Budget `zombie-zero-mensual` (10 USD) avisa por correo al 80 % del gasto real y al 100 %
+  del gasto previsto.
 
 ## Decisiones de diseño
 
