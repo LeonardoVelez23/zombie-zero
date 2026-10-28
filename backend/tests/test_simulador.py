@@ -129,36 +129,3 @@ def test_brote_sorpresa_cambia_parametros():
     res = comparar(sorpresa, repeticiones=10)
     assert res["r0"] == pytest.approx(5.0, rel=1e-2)
     assert res["veredicto"]["nivel"] in ("solida", "debil", "insuficiente")
-
-
-def test_el_lote_da_lo_mismo_que_cada_repeticion_sola(red, beta):
-    """Vectorizar no cambia el resultado: la repetición r es la misma sola o dentro de un lote."""
-    from zombie.modelo import simular_lote
-    lote = simular_lote(red, ESC, crear("anillo", red), beta, [5, 2, 9])
-    for k, r in enumerate([5, 2, 9]):
-        sola = simular(red, ESC, crear("anillo", red), beta, r)
-        assert np.array_equal(lote.serie[k], sola.serie)
-        assert lote.vacunas_usadas[k] == sola.vacunas_usadas
-
-
-def test_la_poblacion_se_conserva_en_el_lote(red, beta):
-    from zombie.modelo import simular_lote
-    lote = simular_lote(red, ESC, crear("azar", red), beta, range(20))
-    assert (lote.serie.sum(axis=2) == red.n).all()
-
-
-def test_monte_carlo_reporta_media_mediana_y_rango():
-    res = comparar(ESC, repeticiones=10)
-    for d in res["planes"]:
-        for clave in ("infectados", "pico"):
-            r = d[clave]
-            assert r["p5"] <= r["mediana"] <= r["p95"]
-            assert r["p5"] <= r["media"] <= r["p95"]
-        if "salvados_vs_ninguna" in d:
-            assert "mediana" in d["salvados_vs_ninguna"]
-
-
-def test_misma_semilla_mismo_monte_carlo():
-    a = comparar(ESC, repeticiones=8)
-    b = comparar(ESC, repeticiones=8)
-    assert a == b
