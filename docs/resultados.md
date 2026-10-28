@@ -4,6 +4,7 @@ Cada `POST /api/simular` guarda un resumen de una línea JSON en el bucket
 `zombie-zero-resultados-<cuenta>`, en `simulaciones/fecha=AAAA-MM-DD/<id>.json`.
 La respuesta de la API trae ese id en `guardado` (o `null` si no se guardó).
 
+- **Cuándo:** desde el despliegue del 28/10/2026 a las 17:04; las simulaciones anteriores no están.
 - **Qué se guarda:** el escenario completo (semilla, inicio, plaga, recursos), el plan
   recomendado, el veredicto y, por cada plan, costo, vacunas, infectados (media, p5, p95) y
   salvados. No se guardan curvas ni mapas: pesan cientos de kB y se recalculan con la semilla.
@@ -18,6 +19,24 @@ La respuesta de la API trae ese id en `guardado` (o `null` si no se guardó).
   informe» baja un .txt con la configuración, la recomendación y todos los planes.
 - **Permisos:** la Lambda solo puede escribir y leer en `simulaciones/` (política
   `zombie-zero-guardar-resultados` en `infra/github-oidc.yaml`); no puede borrar.
+
+## Verificado en producción
+
+El 28/10/2026, después del despliegue de las 17:04 (hora de Ecuador):
+
+- `GET /api/historial` en https://dehwt6pb3rwca.cloudfront.net devolvió las últimas simulaciones guardadas.
+- El bucket tenía un resumen por simulación, de 3,5 a 3,6 kB cada uno.
+- La segunda consulta de abajo leyó **53 KB** (15 simulaciones) y respondió en segundos:
+
+| recomendado | veces | salvados (promedio) |
+|---|---|---|
+| anillo+colegio | 8 | 1.658 |
+| centralidad+mercado+colegio | 5 | 138 |
+| adaptativa+mercado | 1 | 473 |
+| centralidad+colegio | 1 | 595 |
+
+Son pruebas del equipo con configuraciones distintas (incluidos Brote Sorpresa), no un experimento: sirven
+para comprobar que el guardado y la consulta funcionan.
 
 ## Consultas de ejemplo
 
