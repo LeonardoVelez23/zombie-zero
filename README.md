@@ -38,7 +38,7 @@ El repositorio tiene dos partes independientes que se comunican por HTTP:
 ### Requisitos
 
 - Python 3.11 o superior
-- Node.js 20 o superior (para el frontend)
+- Node.js 22.22 o superior (para el frontend)
 
 ### 1. Backend
 
@@ -77,9 +77,15 @@ En Windows, cambia `.venv/bin/python` por `.venv\Scripts\python`.
 
 ### 2. Frontend
 
-_Pendiente: el frontend en Angular está en construcción (ver
-[frontend/README.md](frontend/README.md)). Se levantará con `npm install` y
-`npm start` dentro de `frontend/`, con la API corriendo en otra terminal._
+Con la API corriendo en otra terminal:
+
+```bash
+cd frontend
+npm install
+npm start        # http://localhost:4200
+```
+
+Detalles y arquitectura en [frontend/README.md](frontend/README.md).
 
 _Pendiente: URL pública en AWS._
 
@@ -117,7 +123,7 @@ imprime `ApiUrl` y `FrontendUrl`. Para publicar la interfaz después de
 compilarla:
 
 ```bash
-infra/publicar-frontend.sh frontend/dist/<proyecto>/browser
+infra/publicar-frontend.sh frontend/dist/zombie-zero-ui/browser
 ```
 
 Para borrar todo: `aws cloudformation delete-stack --stack-name zombie-zero`

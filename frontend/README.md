@@ -1,59 +1,66 @@
-# ZombieZeroUi
+# Frontend (Angular)
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.2.4.
+Panel del simulador: arma la simulación, compara los planes y muestra la
+recomendación. Habla con la API del backend; el formato está en
+[docs/api.md](../docs/api.md).
 
-## Development server
+## Levantar en local
 
-To start a local development server, run:
-
-```bash
-ng serve
-```
-
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+Necesita Node.js 22.22 o superior y la API corriendo en otra terminal
+(ver el [README principal](../README.md)):
 
 ```bash
-ng generate component component-name
+npm install
+npm start        # http://localhost:4200, llama a la API en http://localhost:8000
+npm test         # pruebas con Vitest
+npm run build    # build de producción en dist/zombie-zero-ui/browser
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## URL de la API
 
-```bash
-ng generate --help
+- `src/environments/environment.development.ts`: la de `ng serve` (local).
+- `src/environments/environment.ts`: la del build de producción. Antes de
+  `npm run build` hay que poner ahí la salida `ApiUrl` de la pila de AWS, sin
+  la `/` final.
+
+## Arquitectura limpia
+
+Las dependencias apuntan siempre hacia adentro: la presentación usa casos de
+uso, los casos de uso usan el dominio, y la infraestructura implementa los
+puertos del dominio. El dominio no importa Angular, rxjs ni HTTP.
+
+```
+src/app/
+├── dominio/                 reglas del negocio, sin dependencias
+│   ├── modelos/             Escenario, Parametros, ResultadoSimulacion, ResultadoDifusion
+│   ├── puertos/             SimuladorRepositorio: lo que la app necesita del motor
+│   └── reglas/              planes.ts: recomendado frente a las líneas base
+├── aplicacion/
+│   └── casos-uso/           ObtenerParametros, SimularBrote, ModelarDifusion
+├── infraestructura/
+│   └── http/                SimuladorHttp (adaptador del puerto) y mapeo snake_case ⇄ camelCase
+├── presentacion/
+│   ├── paginas/panel/       estado de la pantalla; solo habla con los casos de uso
+│   ├── componentes/         controles, grafica, tabla, informe, mapa (reciben datos por input)
+│   └── utilidades/          formato de números y trazos SVG
+├── app.config.ts            punto de composición: une el puerto con SimuladorHttp
+└── app.ts
 ```
 
-## Building
+Reglas para agregar código:
 
-To build the project run:
+- Un dato nuevo de la API entra primero como tipo en `dominio/modelos/` (en
+  camelCase); el adaptador lo convierte solo.
+- Una operación nueva del backend es un método del puerto, su implementación en
+  `SimuladorHttp`, un caso de uso y su registro en `casosDeUso` de `app.config.ts`.
+- Los componentes no inyectan servicios: reciben datos con `input()` y avisan con
+  `output()`. Solo la página `panel` usa casos de uso.
+- Para probar la interfaz sin HTTP basta con un `SimuladorRepositorio` falso
+  (ver `app.spec.ts`).
 
-```bash
-ng build
-```
+## Pendiente
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- Mapa por barrio con MapLibre a partir de `mapa` y `poblacion_barrio` de
+  `/api/simular`. Hoy `componentes/mapa` muestra la cuadrícula del modelo EDP.
+- Los parámetros menos usados (latencia, costos, cierres) toman el valor por
+  defecto; se agregan a `SECCIONES` en `controles.ts` si hacen falta.

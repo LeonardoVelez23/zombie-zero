@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Sube el build de Angular al bucket y limpia la caché de CloudFront.
-# Uso: infra/publicar-frontend.sh frontend/dist/<proyecto>/browser
+# Uso: infra/publicar-frontend.sh frontend/dist/zombie-zero-ui/browser
 set -euo pipefail
-CARPETA=${1:?Indica la carpeta del build, por ejemplo frontend/dist/zombie-zero/browser}
+CARPETA=${1:?Indica la carpeta del build, por ejemplo frontend/dist/zombie-zero-ui/browser}
 PILA=${PILA:-zombie-zero}
 REGION=${AWS_REGION:-us-east-1}
 
