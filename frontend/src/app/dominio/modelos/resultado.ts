@@ -1,14 +1,16 @@
 import { Difusion, Escenario } from './escenario';
 
-// Media y rango p5–p95 entre las repeticiones Monte Carlo.
+// Media, mediana y rango p5–p95 entre las repeticiones Monte Carlo.
 export interface Estadistico {
   media: number;
+  mediana: number;
   p5: number;
   p95: number;
 }
 
 export interface Serie {
   media: number[];
+  mediana: number[];
   p5: number[];
   p95: number[];
 }
