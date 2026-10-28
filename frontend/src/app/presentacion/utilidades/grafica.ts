@@ -33,3 +33,19 @@ export function banda(inferior: number[], superior: number[], e: Escala): string
   const vuelta = inferior.map((v, dia) => `L${punto(e, v, dia)}`).reverse();
   return `${trazo(superior, e)} ${vuelta.join(' ')} Z`;
 }
+
+// Día bajo el puntero en una gráfica SVG: convierte la posición en pantalla a coordenadas del
+// viewBox y luego a día, acotado al rango de la serie.
+export function diaEnPunto(
+  evento: { clientX: number; currentTarget: EventTarget | null },
+  area: Area,
+  dias: number,
+  anchoViewBox: number,
+): number {
+  const svg = evento.currentTarget as Element | null;
+  const caja = svg?.getBoundingClientRect();
+  if (!caja || caja.width === 0) return 0;
+  const x = ((evento.clientX - caja.left) / caja.width) * anchoViewBox;
+  const fraccion = (x - area.izquierda) / (area.derecha - area.izquierda);
+  return Math.max(0, Math.min(dias, Math.round(fraccion * dias)));
+}

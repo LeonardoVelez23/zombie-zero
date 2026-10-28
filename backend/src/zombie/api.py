@@ -10,6 +10,7 @@ from dataclasses import asdict, fields, replace
 
 from .config import Escenario, Plaga, Recursos
 from .edp import Difusion, resolver
+from .informe_ia import ResumenInvalido, redactar
 from .montecarlo import comparar
 from .poblacion import BARRIOS
 
@@ -56,6 +57,8 @@ LIMITES = {
 # La CLI, sin ese límite, usa 1.000 repeticiones por defecto, como pide el reto.
 REPETICIONES = (5, 300)
 REPETICIONES_POR_DEFECTO = 100
+# El informe recibe un resumen compacto de la simulación (unos pocos KB), no el resultado con mapas y curvas.
+MAX_CUERPO_INFORME = 50_000
 
 
 class PeticionInvalida(ValueError):
@@ -141,6 +144,15 @@ def atender(metodo: str, ruta: str, cuerpo: str | None) -> tuple[int, dict]:
             datos = _json(cuerpo)
             esc, _ = leer_peticion(datos)
             return 200, resolver(esc, _grupo(Difusion(), "edp", datos.get("edp", {})))
+        if metodo == "POST" and ruta in ("/api/informe", "/informe"):
+            # Aparte de /api/simular: no la hace más lenta y, si Bedrock falla, la simulación sigue andando.
+            # En bytes UTF-8, no en caracteres: con tildes o emojis un texto ocupa más de lo que mide.
+            if len((cuerpo or "").encode("utf-8")) > MAX_CUERPO_INFORME:
+                raise PeticionInvalida("El resultado es demasiado grande para el informe")
+            try:
+                return 200, redactar(_json(cuerpo))
+            except ResumenInvalido as error:
+                raise PeticionInvalida(str(error)) from None
         return 404, {"error": f"No existe {metodo} {ruta}"}
     except PeticionInvalida as e:
         return 400, {"error": str(e)}
