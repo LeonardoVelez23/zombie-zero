@@ -14,7 +14,7 @@ import numpy as np
 
 from .config import Escenario, Recursos
 from .estrategias import CANDIDATAS, ESTRATEGIAS, crear
-from .modelo import CERRABLES, I, calibrar_beta, estimar_r0, simular_lote
+from .modelo import CERRABLES, E, I, R, S, calibrar_beta, estimar_r0, simular_lote
 from .poblacion import BARRIOS, construir_red
 
 
@@ -63,6 +63,10 @@ def planes_candidatos(rec: Recursos) -> list[Plan]:
     return planes
 
 
+# Los cuatro estados del modelo, en el orden de modelo.S, E, I, R:
+# 🟢 S sano · 🟡 E mordido (incubando) · 🔴 I zombie (contagia) · 🔵 R exorcizado (inmune).
+ESTADOS = {"S": S, "E": E, "I": I, "R": R}
+
 # Repeticiones que se simulan juntas en un lote (acota la memoria: ~40 MB por lote de 10.000 personas).
 TAM_LOTE = 250
 
@@ -89,6 +93,7 @@ def comparar(esc: Escenario, repeticiones: int = 100, planes: list[Plan] | None 
         vacunas = plan.vacunas(rec)
         tot = np.zeros(repeticiones)
         curvas = np.zeros((repeticiones, esc.dias + 1))
+        series = np.zeros((repeticiones, esc.dias + 1, 4))   # personas en S, E, I, R cada día
         mapa = np.zeros((esc.dias + 1, len(BARRIOS)))
         perdidas = np.zeros(repeticiones)
         for desde in range(0, repeticiones, TAM_LOTE):
@@ -96,6 +101,7 @@ def comparar(esc: Escenario, repeticiones: int = 100, planes: list[Plan] | None 
             lote = simular_lote(red, esc, estrategia, beta, range(desde, hasta), plan.cierres, vacunas)
             tot[desde:hasta] = lote.infectados_total
             curvas[desde:hasta] = lote.serie[:, :, I]
+            series[desde:hasta] = lote.serie
             mapa += lote.serie_barrio.sum(axis=0)
             perdidas[desde:hasta] = lote.vacunas_perdidas
         totales[plan.id] = tot
@@ -110,6 +116,7 @@ def comparar(esc: Escenario, repeticiones: int = 100, planes: list[Plan] | None 
             "costo": plan.costo(rec),
             "infectados": _rango(tot),
             "curva_zombies": _rango(curvas),
+            "estados": {nombre: _rango(series[:, :, k]) for nombre, k in ESTADOS.items()},
             "pico": _rango(curvas.max(axis=1)),
             "dia_pico": float(curvas.argmax(axis=1).mean().round(1)),
             "vacunas_perdidas": float(perdidas.mean().round(1)),
