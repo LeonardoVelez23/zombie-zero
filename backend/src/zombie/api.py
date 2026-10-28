@@ -47,8 +47,13 @@ LIMITES = {
         "alfa": (0.0, 1.0),
     },
 }
+# Tiempo de respuesta (docs/api.md): con el motor por lotes y 5.000 personas, un brote
+# tarda ~10 ms en un núcleo de 2,8 GHz y ~2,4 veces más en la Lambda de 2 GB (medido con
+# 50 repeticiones del motor anterior: ~12 s en local y ~29 s en AWS). 100 repeticiones x
+# 10 planes = 1.000 brotes caben en ~25 s; 200 repeticiones rozan el corte de 60 s.
+# La CLI, sin ese límite, usa 1.000 repeticiones por defecto, como pide el reto.
 REPETICIONES = (5, 200)
-REPETICIONES_POR_DEFECTO = 50
+REPETICIONES_POR_DEFECTO = 100
 
 
 class PeticionInvalida(ValueError):
