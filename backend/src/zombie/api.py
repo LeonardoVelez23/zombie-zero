@@ -11,7 +11,7 @@ from dataclasses import asdict, fields, replace
 from .calibracion import manta_2020
 from .config import Escenario, Plaga, Recursos
 from .edp import Difusion, resolver
-from .guardado import guardar
+from .guardado import guardar, historial
 from .informe_ia import ResumenInvalido, redactar
 from .montecarlo import comparar
 from .poblacion import BARRIOS
@@ -138,6 +138,8 @@ def atender(metodo: str, ruta: str, cuerpo: str | None) -> tuple[int, dict]:
     try:
         if metodo == "GET" and ruta in ("/api/parametros", "/parametros"):
             return 200, parametros()
+        if metodo == "GET" and ruta in ("/api/historial", "/historial"):
+            return 200, {"simulaciones": historial()}
         if metodo == "GET" and ruta in ("/api/salud", "/salud"):
             return 200, {"estado": "ok"}
         if metodo == "POST" and ruta in ("/api/simular", "/simular"):

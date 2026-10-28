@@ -200,7 +200,7 @@ Todo está en `infra/` y se despliega en `us-east-1` con una sola plantilla
 | AWS Budget | Alerta por correo al 80 % del gasto mensual y si el pronóstico pasa del 100 % |
 | CloudWatch Logs | Logs de la API, guardados 7 días |
 | CloudWatch (alarmas + dashboard) y SNS | Correo si la API da errores, si una simulación pasa de 50 s o si se llega al límite de concurrencia; un dashboard `zombie-zero` con simulaciones, duración, errores y llamadas a Bedrock (salida `TableroUrl`) |
-| S3 de resultados + Glue + Athena | Un resumen por simulación, consultable con SQL ([`docs/resultados.md`](docs/resultados.md)) |
+| S3 de resultados + Glue + Athena | Un resumen por simulación: la interfaz muestra las últimas en «Resultados anteriores» y se pueden consultar con SQL ([`docs/resultados.md`](docs/resultados.md)) |
 | Bedrock (`amazon.nova-micro-v1:0`) | Redacta el informe para el alcalde con las cifras que ya calculó el motor |
 
 ### Servicios sugeridos por el reto: cuáles usamos y por qué

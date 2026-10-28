@@ -12,8 +12,11 @@ La respuesta de la API trae ese id en `guardado` (o `null` si no se guardó).
 - **Costo:** cada resumen pesa unos 3 kB. Los objetos se borran a los 90 días y los
   resultados de Athena a los 7. El grupo de trabajo `zombie-zero` cancela cualquier consulta
   que lea más de 100 MB (Athena cobra 5 USD por TB leído: 100 MB ≈ 0,0005 USD).
-- **Permisos:** la Lambda solo puede escribir en `simulaciones/` (política
-  `zombie-zero-guardar-resultados` en `infra/github-oidc.yaml`); no puede leer ni borrar.
+- **En la interfaz:** la sección «Resultados anteriores» muestra las últimas 10 (de hoy y de
+  ayer) con su configuración y su resultado, vía `GET /api/historial`. «Volver a simular»
+  repite la misma configuración con la misma semilla y da el mismo resultado.
+- **Permisos:** la Lambda solo puede escribir y leer en `simulaciones/` (política
+  `zombie-zero-guardar-resultados` en `infra/github-oidc.yaml`); no puede borrar.
 
 ## Consultas de ejemplo
 

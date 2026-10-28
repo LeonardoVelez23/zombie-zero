@@ -227,18 +227,25 @@ Resources:
             Action: bedrock:InvokeModel
             Resource: !Sub arn:aws:bedrock:${AWS::Region}::foundation-model/amazon.nova-micro-v1:0
 
-  # Lo único que la Lambda puede hacer con los resultados: escribir resúmenes nuevos.
+  # Lo único que la Lambda puede hacer con los resultados: escribir resúmenes nuevos y leerlos
+  # para el historial. No puede borrar ni tocar nada fuera de simulaciones/.
   PoliticaResultados:
     Type: AWS::IAM::ManagedPolicy
     Properties:
       ManagedPolicyName: !Sub ${Pila}-guardar-resultados
-      Description: Zombie Zero - la Lambda solo puede escribir en simulaciones/ del bucket de resultados
+      Description: Zombie Zero - la Lambda solo puede escribir y leer en simulaciones/ del bucket de resultados
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
           - Effect: Allow
-            Action: s3:PutObject
+            Action: [s3:PutObject, s3:GetObject]
             Resource: !Sub arn:aws:s3:::${Pila}-resultados-${AWS::AccountId}/simulaciones/*
+          - Effect: Allow
+            Action: s3:ListBucket
+            Resource: !Sub arn:aws:s3:::${Pila}-resultados-${AWS::AccountId}
+            Condition:
+              StringLike:
+                s3:prefix: simulaciones/*
 
   # --- Corte de gasto de Bedrock para toda la cuenta ------------------------------------------
   # La Function URL es pública y el cupo de llamadas a Bedrock es por contenedor. Si el gasto real
