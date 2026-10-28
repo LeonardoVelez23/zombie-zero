@@ -1,9 +1,16 @@
 <div class="panel-heading">
   <div>
-    <span class="section-index">03 / RESPUESTA</span>
+    <span class="section-index">04 / RESPUESTA</span>
     <h2>Comparativa de planes</h2>
   </div>
-  <span class="chart-tag">MISMO PRESUPUESTO</span>
+  <!-- Todos los planes tienen el mismo tope; cuánto gasta cada uno está en la columna Costo. -->
+  <span class="chart-tag">
+    @if (resultado(); as r) {
+      TOPE ${{ numero(r.escenario.recursos.presupuesto) }} POR PLAN
+    } @else {
+      MISMO TOPE DE PRESUPUESTO
+    }
+  </span>
 </div>
 
 @if (resultado(); as r) {
@@ -70,6 +77,11 @@
       </tbody>
     </table>
   </div>
+  <p class="nota-presupuesto">
+    Todos los planes enfrentan los mismos brotes y tienen el mismo tope de presupuesto, pero no
+    gastan lo mismo: la columna Costo muestra cuánto usa cada uno. Las líneas base no incluyen
+    cierres.
+  </p>
   @if (r.planes.length > visibles().length || verTodos()) {
     <button type="button" class="ver-todos" [attr.aria-expanded]="verTodos()" (click)="verTodos.set(!verTodos())">
       {{ verTodos() ? 'Ver solo los principales' : 'Ver los ' + r.planes.length + ' planes' }}

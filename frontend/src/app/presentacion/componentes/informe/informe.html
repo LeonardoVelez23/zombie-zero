@@ -1,6 +1,6 @@
 @if (resultado(); as r) {
   @let v = r.veredicto;
-  <span class="section-index">04 / RECOMENDACIÓN</span>
+  <span class="section-index">01 / RECOMENDACIÓN</span>
   <div class="nivel" [class]="v.nivel">{{ titulos[v.nivel] }}</div>
   @if (enCurso(); as hoy) {
     <p class="en-curso" aria-live="polite">
@@ -9,64 +9,76 @@
       recomendación se calcula con el brote completo.
     </p>
   }
-  @if (v.nivel === 'insuficiente') {
-    <h2>Con estos recursos ningún plan cambia el resultado.</h2>
-    <p>
-      Ningún plan supera de forma consistente al reparto de vacunas al azar. La mejor opción disponible
-      es <strong>{{ recomendado()?.nombre }}</strong>, que salva en promedio
-      <strong>{{ numero(v.salvadosVsNinguna) }}</strong> personas frente a no intervenir.
-    </p>
-    <p>
-      Para cambiar el resultado hacen falta más vacunas o empezar a actuar antes: prueba subiendo las
-      vacunas o adelantando el día de inicio.
-    </p>
-    <app-que-haria-falta [resultado]="r" />
-  } @else {
-    <h2>{{ recomendado()?.nombre }}</h2>
-    <p>{{ recomendado()?.descripcion }}</p>
-    <p>
-      Gana al reparto de vacunas al azar en <strong>{{ porcentaje(v.ganaAAzar) }}</strong> de los
-      brotes en que hubo diferencia. Frente a no intervenir salva en promedio
-      <strong>{{ numero(v.salvadosVsNinguna) }}</strong> personas, y
-      <strong>{{ numero(v.salvadosVsAzar) }}</strong> frente al azar.
-    </p>
-    <p>
-      La simulación usa una muestra de {{ numero(r.escenario.nPersonas) }} personas. Llevado a toda Manta
-      ({{ numero(poblacionManta) }} habitantes), el plan salvaría a unas
-      <strong>{{ numero(enManta(v.salvadosVsNinguna, r.escenario.nPersonas)) }}</strong> personas.
-    </p>
-    @if (v.nivel === 'debil') {
-      <app-que-haria-falta [resultado]="r" />
-    }
-  }
-  @if (v.empatesConAzar) {
-    <p>
-      En {{ porcentaje(v.empatesConAzar) }} de los brotes todos los planes terminaron igual, casi siempre
-      porque la plaga se apagó sola antes de que se pudiera actuar.
-    </p>
-  }
-  @let corte = r.escenario.recursos;
-  @if (corte.corteDias > 0) {
-    <p>
-      Incluye el imprevisto: no llegan vacunas del día {{ corte.corteDesde }} al
-      {{ corte.corteDesde + corte.corteDias - 1 }}. Al reanudarse la entrega, cada plan vuelve a
-      decidir con el brote de ese día.
-    </p>
-  }
-  @let plan = recomendado();
-  @if (plan && plan.vacunas > 0) {
-    <p>
-      Nunca se vacuna a un zombie detectado. De sus {{ numero(plan.vacunas) }} vacunas, en promedio
-      {{ numero(plan.vacunasPerdidas) }} fueron a personas que parecían sanas pero ya estaban mordidas o
-      se habían recuperado sin que se supiera.
-    </p>
-  }
-  <app-explicar-alcalde [resultado]="r" />
+  <!-- Dos columnas cuando la tarjeta es ancha (ver informe.css): la decisión y el botón para el
+       alcalde a la izquierda, los detalles a la derecha. En pantallas estrechas se apilan. -->
+  <div class="informe-cuerpo">
+    <div class="informe-decision">
+      @if (v.nivel === 'insuficiente') {
+        <h2>Con estos recursos ningún plan cambia el resultado.</h2>
+        <p>
+          Ningún plan supera de forma consistente al reparto de vacunas al azar. La mejor opción
+          disponible es <strong>{{ recomendado()?.nombre }}</strong
+          >, que salva en promedio <strong>{{ numero(v.salvadosVsNinguna) }}</strong> personas
+          frente a no intervenir.
+        </p>
+        <p>
+          Para cambiar el resultado hacen falta más vacunas o empezar a actuar antes: prueba
+          subiendo las vacunas o adelantando el día de inicio.
+        </p>
+      } @else {
+        <h2>{{ recomendado()?.nombre }}</h2>
+        <p>{{ recomendado()?.descripcion }}</p>
+        <p>
+          Gana al reparto de vacunas al azar en <strong>{{ porcentaje(v.ganaAAzar) }}</strong> de
+          los brotes en que hubo diferencia. Frente a no intervenir salva en promedio
+          <strong>{{ numero(v.salvadosVsNinguna) }}</strong> personas, y
+          <strong>{{ numero(v.salvadosVsAzar) }}</strong> frente al azar.
+        </p>
+      }
+      <app-explicar-alcalde [resultado]="r" />
+    </div>
+
+    <div class="informe-detalle">
+      @if (v.nivel !== 'insuficiente') {
+        <p>
+          La simulación usa una muestra de {{ numero(r.escenario.nPersonas) }} personas. Llevado a
+          toda Manta ({{ numero(poblacionManta) }} habitantes), el plan salvaría a unas
+          <strong>{{ numero(enManta(v.salvadosVsNinguna, r.escenario.nPersonas)) }}</strong>
+          personas.
+        </p>
+      }
+      @if (v.nivel === 'insuficiente' || v.nivel === 'debil') {
+        <app-que-haria-falta [resultado]="r" />
+      }
+      @if (v.empatesConAzar) {
+        <p>
+          En {{ porcentaje(v.empatesConAzar) }} de los brotes todos los planes terminaron igual,
+          casi siempre porque la plaga se apagó sola antes de que se pudiera actuar.
+        </p>
+      }
+      @let corte = r.escenario.recursos;
+      @if (corte.corteDias > 0) {
+        <p>
+          Incluye el imprevisto: no llegan vacunas del día {{ corte.corteDesde }} al
+          {{ corte.corteDesde + corte.corteDias - 1 }}. Al reanudarse la entrega, cada plan vuelve a
+          decidir con el brote de ese día.
+        </p>
+      }
+      @let plan = recomendado();
+      @if (plan && plan.vacunas > 0) {
+        <p>
+          Nunca se vacuna a un zombie detectado. De sus {{ numero(plan.vacunas) }} vacunas, en
+          promedio {{ numero(plan.vacunasPerdidas) }} fueron a personas que parecían sanas pero ya
+          estaban mordidas o se habían recuperado sin que se supiera.
+        </p>
+      }
+    </div>
+  </div>
   <div class="insight-footer">
     <span class="status-dot"></span> {{ r.repeticiones }} BROTES · SEMILLA {{ r.escenario.semilla }}
   </div>
 } @else {
-  <span class="section-index">04 / OBJETIVO DEL PROYECTO</span>
+  <span class="section-index">01 / OBJETIVO DEL PROYECTO</span>
   <div class="insight-icon" aria-hidden="true">✳</div>
   <h2>Decidir antes de que el brote avance.</h2>
   <p>

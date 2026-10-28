@@ -54,7 +54,7 @@
 
 .dia small {
   color: #8589a9;
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .estado {
@@ -62,7 +62,7 @@
   align-items: center;
   gap: 5px;
   color: #8589a9;
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.08em;
 }
@@ -111,7 +111,7 @@ input[type='range'] {
   border: 0;
   background: none;
   color: #8589a9;
-  font-size: 8px;
+  font-size: 10px;
   white-space: nowrap;
   transform: translateX(-50%);
   cursor: pointer;
@@ -144,7 +144,7 @@ select {
   border-radius: 4px;
   background: #0d0b22;
   color: #d8daeb;
-  font-size: 10px;
+  font-size: 11px;
 }
 
 @keyframes latido {
