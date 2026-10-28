@@ -81,27 +81,29 @@ Resources:
                 Resource: '*'
               # Cada servicio queda limitado a los recursos de esta aplicación. Si template.yaml
               # agrega otro tipo de recurso, hay que ampliar esta política (con un administrador).
+              # Nombres exactos de los recursos que crea template.yaml: "${Pila}-*" a secas también
+              # alcanzaría recursos ajenos con el mismo prefijo (p. ej. el bucket zombie-zero-manta-2026).
               - Effect: Allow
                 Action: lambda:*
-                Resource: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${Pila}-*
+                Resource: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${Pila}-ApiFunction-*
               - Effect: Allow
                 Action: s3:*
                 Resource:
-                  - !Sub arn:aws:s3:::${Pila}-*
-                  - !Sub arn:aws:s3:::${Pila}-*/*
-                  - arn:aws:s3:::aws-sam-cli-managed-default-*
-                  - arn:aws:s3:::aws-sam-cli-managed-default-*/*
+                  - !Sub arn:aws:s3:::${Pila}-frontendbucket-*
+                  - !Sub arn:aws:s3:::${Pila}-frontendbucket-*/*
+                  - arn:aws:s3:::aws-sam-cli-managed-default-samclisourcebucket-*
+                  - arn:aws:s3:::aws-sam-cli-managed-default-samclisourcebucket-*/*
               - Effect: Allow
                 Action: logs:*
                 Resource:
-                  - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${Pila}-*
-                  - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${Pila}-*:*
+                  - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${Pila}-api
+                  - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${Pila}-api:*
               - Effect: Allow
                 Action: logs:DescribeLogGroups
                 Resource: '*'
               - Effect: Allow
                 Action: budgets:*
-                Resource: !Sub arn:aws:budgets::${AWS::AccountId}:budget/${Pila}-*
+                Resource: !Sub arn:aws:budgets::${AWS::AccountId}:budget/${Pila}-mensual
               # CloudFront: solo actualizar la distribución y el OAC existentes (crearlos de nuevo
               # requiere un administrador).
               - Effect: Allow
