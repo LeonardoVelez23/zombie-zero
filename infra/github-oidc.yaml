@@ -113,6 +113,29 @@ Resources:
               - Effect: Allow
                 Action: logs:DescribeLogGroups
                 Resource: '*'
+              # Monitoreo: las alarmas, el dashboard y el tema SNS de avisos de esta pila.
+              - Effect: Allow
+                Action:
+                  - cloudwatch:PutMetricAlarm
+                  - cloudwatch:DeleteAlarms
+                  - cloudwatch:TagResource
+                  - cloudwatch:UntagResource
+                  - cloudwatch:ListTagsForResource
+                Resource: !Sub arn:aws:cloudwatch:${AWS::Region}:${AWS::AccountId}:alarm:${Pila}-*-api
+              - Effect: Allow
+                Action:
+                  - cloudwatch:PutDashboard
+                  - cloudwatch:GetDashboard
+                  - cloudwatch:DeleteDashboards
+                Resource: !Sub arn:aws:cloudwatch::${AWS::AccountId}:dashboard/${Pila}
+              - Effect: Allow
+                Action:
+                  - cloudwatch:DescribeAlarms
+                  - cloudwatch:ListDashboards
+                Resource: '*'
+              - Effect: Allow
+                Action: sns:*
+                Resource: !Sub arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${Pila}-avisos
               - Effect: Allow
                 Action: budgets:*
                 Resource: !Sub arn:aws:budgets::${AWS::AccountId}:budget/${Pila}-mensual

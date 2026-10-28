@@ -199,6 +199,20 @@ Todo está en `infra/` y se despliega en `us-east-1` con una sola plantilla
 | S3 privado + CloudFront | La interfaz web en Angular |
 | AWS Budget | Alerta por correo al 80 % del gasto mensual y si el pronóstico pasa del 100 % |
 | CloudWatch Logs | Logs de la API, guardados 7 días |
+| CloudWatch (alarmas + dashboard) y SNS | Correo si la API da errores, si una simulación pasa de 50 s o si se llega al límite de concurrencia; un dashboard `zombie-zero` con simulaciones, duración, errores y llamadas a Bedrock (salida `TableroUrl`) |
+| Bedrock (`amazon.nova-micro-v1:0`) | Redacta el informe para el alcalde con las cifras que ya calculó el motor |
+
+### Servicios sugeridos por el reto: cuáles usamos y por qué
+
+| Sugerido | Decisión | Por qué |
+|---|---|---|
+| Lambda / ECS Fargate / Batch | **Lambda** | Una simulación completa (100 repeticiones × 10 planes) tarda ~10 s con 2 vCPU: cabe de sobra en una Lambda y se paga solo por uso. Fargate o Batch cobran por tener capacidad lista |
+| Step Functions (Distributed Map) / Batch | No | Repartir el Monte Carlo entre muchas Lambdas sumaría costo por transición y arranques en frío para ahorrar segundos; el paralelismo está dentro de la Lambda (2 procesos) |
+| S3 + Athena / DynamoDB | No | El resultado es reproducible: la misma configuración y la misma semilla dan siempre el mismo resultado, así que guardarlo no agrega información |
+| Amplify / S3 + CloudFront | **S3 + CloudFront** | Bucket privado con OAC; la API sale por el mismo dominio (`/api/*`) |
+| SageMaker | No | No hay un modelo que entrenar: el motor es un modelo SEIR sobre una red de contactos |
+| Bedrock | **Sí** | Informe en lenguaje simple con nova-micro, el modelo más barato; con tope de llamadas y un Budget que corta la IA si pasa de 3 USD |
+| CloudWatch | **Sí** | Logs (7 días), tres alarmas por correo y un dashboard; dentro de la capa gratuita (10 alarmas y 3 dashboards) |
 
 Requisitos: [AWS CLI v2](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html),
 [SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html)
@@ -245,6 +259,9 @@ Archivo fuente editable: [`docs/arquitectura.drawio`](docs/arquitectura.drawio) 
   únicamente el modelo `amazon.nova-micro-v1:0` para redactar el informe. Como la URL de la API es pública,
   un Budget solo de Bedrock (3 USD al mes) le niega la IA a la Lambda si se supera, y el informe sigue con la
   plantilla sin IA ([detalle](docs/costos.md)).
+- **Monitoreo:** CloudWatch guarda los logs 7 días; tres alarmas avisan por correo (SNS) si la API da errores,
+  si una simulación pasa de 50 s o si la Lambda rechaza peticiones, y el dashboard `zombie-zero` muestra
+  simulaciones, duración, errores y llamadas a Bedrock.
 - **Costos:** el AWS Budget `zombie-zero-mensual` (10 USD) avisa por correo al 80 % del gasto real y al 100 %
   del gasto previsto.
 
