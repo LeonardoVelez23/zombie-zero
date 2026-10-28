@@ -275,7 +275,10 @@ las intervenciones, la calibración de la dificultad y la reproducibilidad.
 ## Limitaciones conocidas
 
 - **Escala:** se simulan 5.000 personas (cerca de 1 de cada 54 habitantes de Manta), no la ciudad completa.
-  La interfaz permite hasta 20.000, a costa de más tiempo de cálculo.
+  La interfaz permite hasta 20.000, a costa de más tiempo de cálculo (35 s en local; 271.145 personas
+  tardarían unos 8 minutos y la Lambda corta a los 60 s). Por eso las tarjetas, la comparación del Brote
+  Sorpresa y el informe muestran además cada cifra llevada a toda Manta (× 271.145 / personas simuladas,
+  redondeada a centenas): es una proyección de la muestra, no una simulación de la ciudad completa.
 - **Población parcialmente supuesta:** el reparto entre parroquias urbanas es un supuesto, porque no
   encontramos datos públicos del Censo 2022 por parroquia urbana. Los tamaños de colegios, trabajos y buses
   también son supuestos.

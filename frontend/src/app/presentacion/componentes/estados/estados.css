@@ -217,7 +217,9 @@ svg {
 
 /* Identidad Zombie Zero: estados hover y activo de los selectores de plan. */
 .opcion {
-  transition: background-color .15s ease, color .15s ease;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .opcion:hover:not(.opcion.activa) {
@@ -228,4 +230,73 @@ svg {
 .opcion.activa {
   background: linear-gradient(180deg, rgba(168, 85, 247, 0.32), rgba(107, 38, 217, 0.22));
   box-shadow: inset 0 -2px 0 var(--orange);
+}
+
+/* Vista de líneas, como el gráfico "Populations" de NetLogo. */
+.linea-estado {
+  fill: none;
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+}
+
+.banda-estado {
+  opacity: 0.16;
+}
+
+.linea-estado.S {
+  stroke: var(--estado-s);
+}
+.linea-estado.E {
+  stroke: var(--estado-e);
+}
+.linea-estado.I {
+  stroke: var(--estado-i);
+}
+.linea-estado.R {
+  stroke: var(--estado-r);
+}
+.banda-estado.S {
+  fill: var(--estado-s);
+}
+.banda-estado.E {
+  fill: var(--estado-e);
+}
+.banda-estado.I {
+  fill: var(--estado-i);
+}
+.banda-estado.R {
+  fill: var(--estado-r);
+}
+
+.leyenda-estados {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+  color: #d8daeb;
+  font-size: 11px;
+}
+
+.leyenda-estados .trazo {
+  display: inline-block;
+  width: 18px;
+  height: 3px;
+  margin: 0 6px 3px 0;
+  border-radius: 2px;
+  vertical-align: middle;
+}
+
+.leyenda-estados .trazo.S {
+  background: var(--estado-s);
+}
+.leyenda-estados .trazo.E {
+  background: var(--estado-e);
+}
+.leyenda-estados .trazo.I {
+  background: var(--estado-i);
+}
+.leyenda-estados .trazo.R {
+  background: var(--estado-r);
 }

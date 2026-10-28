@@ -2,6 +2,7 @@ import { Component, computed, input, output } from '@angular/core';
 
 import { ResultadoSimulacion } from '../../../dominio/modelos/resultado';
 import { cambiosDeEscenario } from '../../../dominio/reglas/cambios';
+import { enManta } from '../../../dominio/reglas/escala';
 import { comparacion } from '../../../dominio/reglas/planes';
 import { capitalizar, numero, porcentaje } from '../../utilidades/formato';
 
@@ -37,6 +38,7 @@ export class AntesDespues {
         infectados: recomendado.infectados,
         sinIntervenir: sinIntervencion.infectados.media,
         salvados: r.veredicto.salvadosVsNinguna,
+        salvadosManta: enManta(r.veredicto.salvadosVsNinguna, r.escenario.nPersonas),
         ganaAAzar: r.veredicto.ganaAAzar,
       };
     }),

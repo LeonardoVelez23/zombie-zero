@@ -22,6 +22,11 @@
       <strong>{{ numero(v.salvadosVsNinguna) }}</strong> personas, y
       <strong>{{ numero(v.salvadosVsAzar) }}</strong> frente al azar.
     </p>
+    <p>
+      La simulación usa una muestra de {{ numero(r.escenario.nPersonas) }} personas. Llevado a toda Manta
+      ({{ numero(poblacionManta) }} habitantes), el plan salvaría a unas
+      <strong>{{ numero(enManta(v.salvadosVsNinguna, r.escenario.nPersonas)) }}</strong> personas.
+    </p>
   }
   @if (v.empatesConAzar) {
     <p>
