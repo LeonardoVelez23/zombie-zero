@@ -270,7 +270,7 @@ las intervenciones, la calibración de la dificultad y la reproducibilidad.
 - **No se modela la mortalidad:** el objetivo es minimizar los contagios.
 - **El mapa usa otro modelo:** la difusión espacial (EDP) es un modelo de contraste y no sale de la misma red
   de contactos que el Monte Carlo.
-- **Límite de cómputo en la web:** hasta 200 repeticiones por petición, por el corte de 60 s de CloudFront. La
+- **Límite de cómputo en la web:** hasta 300 repeticiones por petición (3.000 brotes, en procesos paralelos), por el corte de 60 s de CloudFront. La
   CLI no tiene ese límite y usa 1.000 por defecto.
 - **API sin autenticación:** la Function URL es pública. El costo está acotado por los límites de cada
   parámetro, el tiempo máximo de 60 s y la alerta del AWS Budget, pero no hay un límite de peticiones por

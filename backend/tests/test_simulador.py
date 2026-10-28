@@ -226,3 +226,9 @@ def test_reporta_los_cuatro_estados_dia_a_dia():
         # Día 0: el brote empieza con los casos iniciales y nadie exorcizado.
         assert estados["R"]["media"][0] == 0
         assert estados["E"]["media"][0] + estados["I"]["media"][0] == ESC.casos_iniciales
+
+
+def test_en_paralelo_da_lo_mismo_que_en_serie():
+    serie = comparar(ESC, repeticiones=10, procesos=1)
+    paralelo = comparar(ESC, repeticiones=10, procesos=4)
+    assert paralelo == serie

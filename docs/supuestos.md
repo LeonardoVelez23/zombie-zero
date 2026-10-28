@@ -129,7 +129,7 @@ y por eso la vacunación en anillo es mucho más eficaz con las mismas dosis.
 | Parámetro | Valor | Tipo | Justificación |
 |---|---|---|---|
 | Repeticiones por plan (CLI) | 1.000 | Reto | Lo pide el reglamento. `--n-sims` lo cambia. |
-| Repeticiones por plan (API e interfaz) | 100 (máximo 200) | Medido | 100 × 10 planes = 1.000 brotes en ~20 s en la Lambda de 2 GB; 300 ya no caben en 60 s (ver `docs/api.md`). |
+| Repeticiones por plan (API e interfaz) | 100 (máximo 300) | Medido | Los planes se simulan en procesos paralelos (2 en la Lambda de 3.008 MB). Tiempos en `docs/api.md`; falta medir el máximo en AWS. |
 | Estadísticos | Media, mediana y rango p5–p95 | Reto | De infectados totales, pico de zombies y personas salvadas frente a cada línea base. |
 | Contagio en la simulación | Umbral exponencial por persona (Sellke) | Supuesto | Cada persona sortea una vez un umbral ~ Exponencial(1) y es mordida cuando la presión acumulada de sus contactos zombies lo supera. Es equivalente a sortear cada día con probabilidad 1 − exp(−β · presión), pero permite simular muchos brotes a la vez. Latencia e infeccioso son geométricas con media 3 y 5 días, como el sorteo diario. |
 

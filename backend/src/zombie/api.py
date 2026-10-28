@@ -54,7 +54,7 @@ LIMITES = {
 # 50 repeticiones del motor anterior: ~12 s en local y ~29 s en AWS). 100 repeticiones x
 # 10 planes = 1.000 brotes caben en ~25 s; 200 repeticiones rozan el corte de 60 s.
 # La CLI, sin ese límite, usa 1.000 repeticiones por defecto, como pide el reto.
-REPETICIONES = (5, 200)
+REPETICIONES = (5, 300)
 REPETICIONES_POR_DEFECTO = 100
 
 
