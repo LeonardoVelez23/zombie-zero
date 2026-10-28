@@ -95,6 +95,7 @@ Acumulado del mes en curso. Cada fila es una medición; se agrega una nueva con
 | Fecha y hora (Ecuador) | Gasto real de la cuenta (AWS Budgets) | Invocaciones de la Lambda | Cómputo de la Lambda | Valor a precio de lista (sin capa gratuita) | Solicitudes a CloudFront |
 |---|---|---|---|---|---|
 | 28/10/2026 00:38 | $0.00 | 79 | 466 s × 2 GB = 932 GB-s | $0.0155 | 152 |
+| 28/10/2026 11:18 | $0.01 | 122 | 722 s × 3 GB = 2120 GB-s | $0.0353 | 352 |
 
 - **Gasto real:** sale de AWS Budgets y es el de toda la cuenta. AWS Cost Explorer todavía no muestra datos
   de esta cuenta (tarda hasta 24 horas en activarse).

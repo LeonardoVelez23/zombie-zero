@@ -299,7 +299,7 @@ las intervenciones, la calibración de la dificultad y la reproducibilidad.
 
 Operar la herramienta cuesta **≈ 1,46 USD al mes** en uso normal (3.000 simulaciones) y **≈ 14,57 USD** en un
 mes de brote activo (30.000), sin contar la capa gratuita de AWS; con ella, 0 USD y ≈ 7,35 USD. Casi todo es
-cómputo de Lambda. Gasto real durante el evento: **0,00 USD**. El cálculo completo y las mediciones están en
+cómputo de Lambda. Gasto real durante el evento: **0,01 USD** (medido el 28/10/2026). El cálculo completo y las mediciones están en
 [docs/costos.md](docs/costos.md); `infra/costos.sh` agrega una medición nueva del gasto real.
 
 ## AWS Budget
