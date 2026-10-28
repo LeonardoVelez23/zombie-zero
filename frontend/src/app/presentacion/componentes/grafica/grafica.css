@@ -13,7 +13,7 @@
   gap: 16px;
   margin: 5px 0 3px;
   color: #b3b6cf;
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .chart-legend span {
@@ -55,7 +55,7 @@
 .axis-labels text {
   fill: #8589a9;
   font-family: inherit;
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .banda { stroke: none; opacity: .14; }
@@ -91,7 +91,7 @@
 
 .cursor text {
   fill: #e9d5ff;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
 }
 
@@ -112,7 +112,7 @@
   padding: 0;
   list-style: none;
   color: #b3b6cf;
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .valores-dia li {
@@ -133,7 +133,7 @@
   padding-top: 11px;
   border-top: 1px solid var(--border);
   color: #7f84a5;
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .tiny-dot {
@@ -147,7 +147,7 @@
 
 @media (max-width: 760px) {
   :host { min-height: 330px; }
-  .chart-foot { font-size: 8px; }
+  .chart-foot { font-size: 10px; }
 }
 
 @media (max-width: 380px) {

@@ -30,7 +30,7 @@ fieldset {
   border-radius: 4px;
   background: rgba(255, 186, 82, 0.06);
   color: #ffd79a;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -54,7 +54,7 @@ fieldset {
 legend {
   padding: 0;
   color: var(--orange);
-  font-size: 8px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: 1.5px;
   text-transform: uppercase;
@@ -72,13 +72,13 @@ legend {
   gap: 10px;
   margin: 12px 0 7px;
   color: #d8daeb;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
 }
 
 .field-label span {
   color: #777c9f;
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: 0.7px;
 }
 
@@ -126,7 +126,7 @@ input.ng-invalid {
   display: block;
   margin-top: 3px;
   color: #969abb;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 400;
 }
 
@@ -173,7 +173,7 @@ input.ng-invalid {
   margin: 8px 0 0;
   color: #7f83a3;
   text-align: center;
-  font-size: 9px;
+  font-size: 11px;
   line-height: 1.5;
 }
 
