@@ -1,46 +1,56 @@
 import { TestBed } from '@angular/core/testing';
 
-import { parametrosDePrueba, resultadoDePrueba } from '../testing/datos';
 import { App } from './app';
 import { casosDeUso } from './app.config';
 import { SimuladorRepositorio } from './dominio/puertos/simulador.repositorio';
+import { parametrosDePrueba, resultadoDePrueba } from '../testing/datos';
 
-// Adaptador falso del puerto: la interfaz se prueba sin HTTP.
-const simuladorFalso: SimuladorRepositorio = {
-  parametros: () => Promise.resolve(parametrosDePrueba),
-  simular: () => Promise.resolve(resultadoDePrueba),
-  difusion: () => Promise.reject(new Error('sin EDP en esta prueba')),
-};
+// Motor falso: el panel pide los parámetros al arrancar.
+class SimuladorFalso extends SimuladorRepositorio {
+  parametros = async () => parametrosDePrueba;
+  simular = async () => resultadoDePrueba;
+  difusion = async () => {
+    throw new Error('no se usa en esta prueba');
+  };
+}
 
-describe('App', () => {
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [App],
-      providers: [{ provide: SimuladorRepositorio, useValue: simuladorFalso }, ...casosDeUso],
-    }).compileComponents();
-  });
-
+describe('Entrada a la aplicación', () => {
   async function renderizar() {
+    TestBed.configureTestingModule({
+      providers: [{ provide: SimuladorRepositorio, useClass: SimuladorFalso }, ...casosDeUso],
+    });
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
-    return { fixture, pagina: fixture.nativeElement as HTMLElement };
+    return { fixture, raiz: fixture.nativeElement as HTMLElement };
   }
 
-  it('muestra el centro de control con los parámetros de la API', async () => {
-    const { pagina } = await renderizar();
-    expect(pagina.querySelector('h1')?.textContent).toContain('Centro de control');
-    expect(pagina.textContent).toContain('API conectada');
-    expect(pagina.querySelector<HTMLInputElement>('#nPersonas')?.value).toBe('10000');
+  it('muestra primero la bienvenida con sus imágenes', async () => {
+    const { raiz } = await renderizar();
+    expect(raiz.querySelector('app-bienvenida')).not.toBeNull();
+    expect(raiz.querySelector('app-panel')).toBeNull();
+    const fuentes = [...raiz.querySelectorAll('img')].map((img) => img.getAttribute('src'));
+    expect(fuentes).toEqual(['spooky_hacker.jpg', 'logo.png', 'espam_logo.jpg']);
   });
 
-  it('al simular llena la tabla y la recomendación', async () => {
-    const { fixture, pagina } = await renderizar();
-
-    pagina.querySelector<HTMLButtonElement>('.run-button')?.click();
+  it('el botón de ingreso lleva al panel con el nombre del operador', async () => {
+    const { fixture, raiz } = await renderizar();
+    raiz.querySelector<HTMLButtonElement>('.btn-spooky-orange')!.click();
     await fixture.whenStable();
+    expect(raiz.querySelector('app-bienvenida')).toBeNull();
+    expect(raiz.querySelector('app-panel')).not.toBeNull();
+    const avatar = raiz.querySelector('.avatar')!;
+    expect(avatar.textContent?.trim()).toBe('CC');
+    expect(avatar.getAttribute('title')).toBe('Comité de Contención Manta');
+  });
 
-    expect(pagina.querySelectorAll('app-tabla tbody tr')).toHaveLength(3);
-    expect(pagina.querySelector('app-tabla tr.recomendado')?.textContent).toContain('anillo');
-    expect(pagina.querySelector('app-informe')?.textContent).toContain('Recomendación sólida');
+  it('la identificación no es obligatoria para entrar', async () => {
+    const { fixture, raiz } = await renderizar();
+    const campo = raiz.querySelector<HTMLInputElement>('#operador')!;
+    campo.value = '   ';
+    campo.dispatchEvent(new Event('input'));
+    raiz.querySelector<HTMLButtonElement>('.btn-spooky-orange')!.click();
+    await fixture.whenStable();
+    expect(raiz.querySelector('app-panel')).not.toBeNull();
+    expect(raiz.querySelector('.avatar')?.getAttribute('title')).toBe('Comité de Emergencia');
   });
 });

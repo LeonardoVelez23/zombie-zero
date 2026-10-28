@@ -47,7 +47,7 @@
           <span class="production-dot"></span>
           PRODUCCIÓN
         </span>
-        <span class="avatar">ZZ</span>
+        <span class="avatar" [title]="operador() || 'Zombie Zero'" [attr.aria-label]="'Operador: ' + (operador() || 'Zombie Zero')">{{ iniciales() }}</span>
       </div>
     </header>
 
