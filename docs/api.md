@@ -196,3 +196,53 @@ parámetros propios de la EDP. Todo es opcional.
   columna 0 el oeste, según `malla`. Sirve para el mapa de calor.
 
 Tarda alrededor de 1,5 s y responde unos 450 KB.
+
+## `POST /api/informe`
+
+Informe para el alcalde en lenguaje simple. **El motor calcula y la IA solo redacta:** recibe el
+resultado de una simulación ya hecha, no vuelve a simular y no cambia la recomendación ni el veredicto.
+Ver `backend/src/zombie/informe_ia.py`.
+
+Es un endpoint aparte de `/api/simular` por dos razones: la simulación no se vuelve más lenta, y si
+Bedrock falla en vivo, la simulación sigue funcionando.
+
+### Petición
+
+Un resumen del resultado de `/api/simular` (la interfaz lo arma en `resumenParaInforme`). Las cifras
+pueden ir sueltas o como rango `{ "media": ... }`. Máximo 50 KB y 64 planes.
+
+```json
+{
+  "escenario": { "n_personas": 5000 },
+  "repeticiones": 100,
+  "recomendado": "centralidad",
+  "veredicto": { "nivel": "solida", "gana_a_azar": 0.9, "empates_con_azar": 0.1,
+                 "salvados_vs_ninguna": 812.4, "salvados_vs_azar": 120.0 },
+  "planes": [
+    { "id": "centralidad", "nombre": "centralidad", "tipo": "candidato", "vacunas": 1000, "costo": 5000,
+      "infectados": 2287.6, "salvados_vs_ninguna": 812.4, "salvados_vs_azar": 120.0, "gana_a_azar": 0.9 }
+  ]
+}
+```
+
+### Respuesta
+
+```json
+{ "fuente": "bedrock", "modelo": "amazon.nova-micro-v1:0", "texto": "Se recomienda ..." }
+```
+
+- `fuente: "bedrock"`: lo redactó Amazon Bedrock (Converse API, máximo 400 tokens, temperatura 0,2).
+- `fuente: "local"` y `modelo: null`: plantilla fija sin IA. Se usa cuando `IA_ACTIVA` no es `true` (por
+  defecto en local) o cuando Bedrock falla; la interfaz la muestra como «Texto automático (sin IA)».
+
+Al modelo solo le llega lo necesario (sin mapas ni curvas), más la cifra ya calculada para toda Manta,
+para que no tenga que hacer cuentas. Las instrucciones le piden usar solo esas cifras, no presentar la
+recomendación como garantía e ignorar cualquier instrucción que venga dentro de los datos. Si Bedrock
+falla, en los logs queda solo el tipo de error, nunca los datos.
+
+Variables de entorno de la Lambda (`infra/template.yaml`): `IA_ACTIVA` y `MODELO_IA`. El permiso IAM
+es solo `bedrock:InvokeModel` sobre ese modelo. Si se usa un ID que empieza con `us.` (un *inference
+profile*), la política tiene que permitir también el ARN de ese perfil.
+
+Respuesta 400 si falta algún campo, si las cifras no son números o si `nivel` no es `solida`, `debil`
+o `insuficiente`.

@@ -10,6 +10,7 @@ el 28/10/2026. No se cuentan los créditos del plan gratuito.
 | Simulación completa (`POST /api/simular`, 100 repeticiones × 10 planes) | Lambda de 2 GB | 10,4 a 12,3 s facturados → usamos **12 s = 24 GB-s**. Respuesta de 48,6 KB |
 | Mapa EDP (`POST /api/edp`) | Lambda de 2 GB | 1,7 s facturados → usamos **2 s = 4 GB-s**. Respuesta de 27,5 KB |
 | Parámetros y salud (`GET /api/...`) | Lambda | 2 ms (despreciable) |
+| Informe para el alcalde (`POST /api/informe`) | Amazon Bedrock (Nova Micro) + Lambda | Resumen de 2,6 KB + instrucciones ≈ **1.100 tokens de entrada**; respuesta de **400 tokens como máximo**. Lambda: ~2 s esperando a Bedrock |
 | Primera visita a la web | CloudFront + S3 | 8 archivos, **0,52 MB** comprimidos (el código de MapLibre es la mayor parte) |
 | Mosaicos del mapa | Esri, OpenStreetMap | Fuera de AWS y sin costo para nosotros |
 
@@ -34,6 +35,24 @@ capa gratuita) y el brote activo de $14,57 a **≈ $21,22** (≈ $13,80 con la c
 de 10 USD, que avisaría). Las cifras definitivas se recalculan con `infra/costos.sh` después del despliegue.
 `infra/costos.sh` multiplica los segundos de todo el mes por la memoria actual, así que las filas de ese mes
 mezclan invocaciones de 2 GB y de 3.008 MB y sobreestiman un poco el cómputo.
+
+### Informe con IA (Amazon Bedrock)
+
+Solo se llama cuando alguien pulsa «Explicar al alcalde»; si Bedrock falla, responde la plantilla sin IA y
+no se cobra nada de Bedrock. Precio on-demand de Amazon Nova Micro en us-east-1: **$0,035 por millón de
+tokens de entrada** y **$0,14 por millón de tokens de salida** (precio de lista de la página de Bedrock;
+falta confirmarlo con `aws pricing get-products`, como el resto de la tabla).
+
+| | Cálculo | Costo |
+|---|---|---|
+| Un informe (peor caso, 400 tokens de salida) | 1.100 × $0,035/M + 400 × $0,14/M | ≈ **$0,0001** |
+| Lambda por informe | 2 s × 2,94 GB = 6 GB-s | ≈ $0,0001 |
+| Uso normal, un informe por simulación (peor caso) | 3.000 × ($0,0001 + $0,0001) | ≈ **$0,59 al mes** |
+| Brote activo, un informe por simulación | 30.000 × ($0,0001 + $0,0001) | ≈ **$5,90 al mes** |
+
+Bedrock no tiene capa gratuita. Los segundos de Lambda sí entran en la capa gratuita junto con los demás.
+Las cifras son un techo: en la práctica el informe se pide mucho menos que la simulación. El gasto real de
+Bedrock aparece en AWS Budgets con el resto de la cuenta.
 
 ## Costo mensual estimado de operación
 

@@ -39,6 +39,7 @@ describe('Panel: simulaciones que se cruzan', () => {
         pendientes.push(d);
         return d.promesa;
       },
+      informe: () => Promise.reject(new Error('no se usa')),
       difusion: () => Promise.reject(new Error('sin EDP en esta prueba')),
     };
     await TestBed.configureTestingModule({
@@ -98,6 +99,7 @@ describe('Panel: indicadores en vivo', () => {
     const simulador: SimuladorRepositorio = {
       parametros: () => Promise.resolve(parametrosDePrueba),
       simular: () => Promise.resolve(resultadoDePrueba),
+      informe: () => Promise.reject(new Error('no se usa')),
       difusion: () => Promise.reject(new Error('sin EDP en esta prueba')),
     };
     await TestBed.configureTestingModule({
@@ -139,6 +141,7 @@ describe('Panel: menú lateral', () => {
     const simulador: SimuladorRepositorio = {
       parametros: () => Promise.resolve(parametrosDePrueba),
       simular: () => Promise.reject(new Error('no se usa')),
+      informe: () => Promise.reject(new Error('no se usa')),
       difusion: () => Promise.reject(new Error('no se usa')),
     };
     TestBed.configureTestingModule({
@@ -204,6 +207,7 @@ describe('Panel: selector de modelo del mapa', () => {
     const simulador: SimuladorRepositorio = {
       parametros: () => Promise.resolve(parametrosDePrueba),
       simular: () => Promise.resolve(resultadoDePrueba),
+      informe: () => Promise.reject(new Error('no se usa')),
       difusion: () => {
         difusiones++;
         return Promise.resolve(difusion);

@@ -6,6 +6,7 @@ import { POBLACION_MANTA, enManta } from '../../../dominio/reglas/escala';
 import { comparacion } from '../../../dominio/reglas/planes';
 import { RelojBrote } from '../../servicios/reloj-brote';
 import { numero, porcentaje } from '../../utilidades/formato';
+import { ExplicarAlcalde } from '../explicar-alcalde/explicar-alcalde';
 import { QueHariaFalta } from '../que-haria-falta/que-haria-falta';
 
 const TITULOS: Record<Veredicto['nivel'], string> = {
@@ -16,7 +17,7 @@ const TITULOS: Record<Veredicto['nivel'], string> = {
 
 @Component({
   selector: 'app-informe',
-  imports: [QueHariaFalta],
+  imports: [ExplicarAlcalde, QueHariaFalta],
   templateUrl: './informe.html',
   styleUrl: './informe.css',
   host: { class: 'panel' },

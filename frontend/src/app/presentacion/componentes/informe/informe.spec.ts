@@ -8,15 +8,19 @@ import { RelojBrote } from '../../servicios/reloj-brote';
 import { Informe } from './informe';
 
 describe('Informe para el alcalde', () => {
-  async function renderizar(veredicto: Partial<Veredicto>) {
+  beforeEach(() => {
     const simulador: SimuladorRepositorio = {
       parametros: () => Promise.resolve(parametrosDePrueba),
       simular: () => Promise.reject(new Error('no se usa')),
+      informe: () => Promise.reject(new Error('no se usa')),
       difusion: () => Promise.reject(new Error('no se usa')),
     };
     TestBed.configureTestingModule({
       providers: [{ provide: SimuladorRepositorio, useValue: simulador }, ...casosDeUso],
     });
+  });
+
+  async function renderizar(veredicto: Partial<Veredicto>) {
     const fixture = TestBed.createComponent(Informe);
     fixture.componentRef.setInput('resultado', {
       ...resultadoDePrueba,
@@ -80,5 +84,10 @@ describe('Informe para el alcalde', () => {
     reloj.irA(3);
     await fixture.whenStable();
     expect(raiz.querySelector('.en-curso')).toBeNull();
+  });
+
+  it('ofrece explicar el resultado al alcalde', async () => {
+    const texto = await renderizar({ nivel: 'solida' });
+    expect(texto).toContain('Explicar al alcalde');
   });
 });
