@@ -83,8 +83,11 @@ un cálculo del mapa EDP.
 | S3: almacenamiento | **2,3 MB** de la web | $0,023 por GB-mes | $0,0001 |
 | S3: lecturas | peor caso, sin caché: 500 × 8 = **4.000 GET** | $0,004 por 10.000 | $0,0016 |
 | CloudWatch Logs | ~1 KB por invocación × 6.500 = **6,2 MB** (se guardan 7 días) | $0,50 por GB ingerido | $0,0031 |
+| S3 de resultados | 3.000 resúmenes × 3 kB = **9 MB** (se borran a los 90 días) y 3.000 PUT + 3.000 GET del historial | $0,023 por GB-mes · $0,005 por 1.000 PUT · $0,0004 por 1.000 GET | $0,016 |
+| Athena + Glue | Consultas ocasionales del comité: 20 al mes × 10 MB como mínimo facturado = **0,2 GB** leídos; Glue: 1 base y 1 tabla | $5 por TB · catálogo gratis hasta 1 millón de objetos | $0,001 |
+| CloudWatch alarmas, dashboard y SNS | 3 alarmas, 1 dashboard, avisos por correo | Gratis hasta 10 alarmas, 3 dashboards y 1.000 correos | $0 |
 | AWS Budgets | 2 presupuestos con alertas por correo y 1 acción (corte de Bedrock) | Los 2 primeros presupuestos con acciones son gratis | $0 |
-| **Total** | | | **≈ $2,50 al mes** |
+| **Total** | | | **≈ $2,52 al mes** |
 
 ### Brote activo (10 veces más uso)
 
@@ -96,7 +99,9 @@ un cálculo del mapa EDP.
 | CloudFront: solicitudes HTTPS | **105.000** | $0,11 |
 | S3 (almacenamiento y 40.000 GET) | | $0,016 |
 | CloudWatch Logs | **62 MB** | $0,031 |
-| **Total** | | **≈ $24,97 al mes** |
+| S3 de resultados (90 MB, 30.000 PUT y GET) | | $0,16 |
+| Athena + Glue (consultas ocasionales) | | $0,001 |
+| **Total** | | **≈ $25,13 al mes** |
 
 ### Con la capa siempre gratuita de AWS
 
@@ -105,8 +110,8 @@ solicitudes de CloudFront ni 5 GB de logs ([aws.amazon.com/free](https://aws.ama
 
 | Escenario | Sin capa gratuita | Con capa gratuita |
 |---|---|---|
-| Uso normal | $2,50 | **$0,00** (todo entra en la capa gratuita) |
-| Brote activo | $24,97 | **≈ $16,83** (solo los 1.010.000 GB-s de Lambda que pasan de 400.000) |
+| Uso normal | $2,52 | **≈ $0,02** (solo S3 de resultados y Athena, que no están en la capa siempre gratuita) |
+| Brote activo | $25,13 | **≈ $16,99** (los 1.010.000 GB-s de Lambda que pasan de 400.000, más S3 de resultados y Athena) |
 
 **Conclusión:** casi todo el costo es el cómputo de la Lambda, es decir, cuántas simulaciones se corren. La web y
 la transferencia cuestan centavos. Como no hay servidores encendidos ni base de datos, si nadie usa la

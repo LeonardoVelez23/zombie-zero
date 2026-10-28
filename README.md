@@ -150,7 +150,7 @@ La versión desplegada está en https://dehwt6pb3rwca.cloudfront.net. La API res
 ```bash
 curl https://dehwt6pb3rwca.cloudfront.net/api/salud
 curl -X POST https://dehwt6pb3rwca.cloudfront.net/api/simular \
-     -H 'content-type: application/json' -d '{}'      # escenario por defecto, ~10 s
+     -H 'content-type: application/json' -d '{}'      # escenario por defecto, ~14 s
 ```
 
 ## Parámetros por defecto y semilla
@@ -204,17 +204,16 @@ Todo está en `infra/` y se despliega en `us-east-1` con una sola plantilla
 | Lambda (Python 3.13, 3.008 MB = 2 vCPU, 60 s) + **Function URL** | La API. Function URL en vez de API Gateway porque una simulación puede pasar de los 30 s que permite API Gateway |
 | S3 privado + CloudFront | La interfaz web en Angular |
 | AWS Budget | Alerta por correo al 80 % del gasto mensual y si el pronóstico pasa del 100 % |
-| Permiso de Bedrock | La Lambda solo puede invocar `amazon.nova-micro-v1:0` (política `zombie-zero-invocar-bedrock`, creada por `infra/github-oidc.yaml`) |
 | CloudWatch Logs | Logs de la API, guardados 7 días |
 | CloudWatch (alarmas + dashboard) y SNS | Correo si la API da errores, si una simulación pasa de 50 s o si se llega al límite de concurrencia; un dashboard `zombie-zero` con simulaciones, duración, errores y llamadas a Bedrock (salida `TableroUrl`) |
 | S3 de resultados + Glue + Athena | Un resumen por simulación: la interfaz muestra las últimas en «Resultados anteriores» y se pueden consultar con SQL ([`docs/resultados.md`](docs/resultados.md)) |
-| Bedrock (`amazon.nova-micro-v1:0`) | Redacta el informe para el alcalde con las cifras que ya calculó el motor |
+| Bedrock (`amazon.nova-micro-v1:0`) | Redacta el informe para el alcalde con las cifras que ya calculó el motor. La Lambda solo puede invocar ese modelo (política `zombie-zero-invocar-bedrock`, creada por `infra/github-oidc.yaml`) |
 
 ### Servicios sugeridos por el reto: cuáles usamos y por qué
 
 | Sugerido | Decisión | Por qué |
 |---|---|---|
-| Lambda / ECS Fargate / Batch | **Lambda** | Una simulación completa (100 repeticiones × 10 planes) tarda ~10 s con 2 vCPU: cabe de sobra en una Lambda y se paga solo por uso. Fargate o Batch cobran por tener capacidad lista |
+| Lambda / ECS Fargate / Batch | **Lambda** | Una simulación completa (100 repeticiones × 14 planes) tarda 13 a 15 s con 2 vCPU (medido en AWS): cabe de sobra en una Lambda y se paga solo por uso. Fargate o Batch cobran por tener capacidad lista |
 | Step Functions (Distributed Map) / Batch | No | Repartir el Monte Carlo entre muchas Lambdas sumaría costo por transición y arranques en frío para ahorrar segundos; el paralelismo está dentro de la Lambda (2 procesos) |
 | S3 + Athena / DynamoDB | **S3 + Athena** | Cada simulación guarda un resumen de ~3 kB (sin curvas: se recalculan con la semilla). Athena responde, por ejemplo, qué plan se recomendó más en todos los Brote Sorpresa; con tope de 100 MB por consulta y borrado a los 90 días ([detalle](docs/resultados.md)). DynamoDB no hace falta: no hay lecturas por clave |
 | Amplify / S3 + CloudFront | **S3 + CloudFront** | Bucket privado con OAC; la API sale por el mismo dominio (`/api/*`) |
@@ -310,10 +309,11 @@ Archivo fuente editable: [`docs/arquitectura.drawio`](docs/arquitectura.drawio) 
 - **Planes que combinan intervenciones con un presupuesto.** Cada estrategia de vacunación se prueba sola y con
   cada combinación de cierres que cabe en el presupuesto; lo que sobra tras los cierres se gasta en vacunas.
 - **Motor vectorizado con numpy.** Simula muchas repeticiones a la vez, sin un bucle por repetición. Así
-  1.400 brotes (100 repeticiones × 14 planes) caben en unos 10 s.
+  1.400 brotes (100 repeticiones × 14 planes) caben en unos 14 s en la Lambda.
 - **Serverless y sin base de datos.** Lambda con Function URL (API Gateway corta a los 30 s) detrás de
-  CloudFront, en el mismo dominio que la web. No se guardan resultados porque cada simulación es reproducible
-  con su semilla: no hay datos que respaldar y, si nadie la usa, cuesta casi cero.
+  CloudFront, en el mismo dominio que la web. Cada simulación es reproducible con su semilla, así que solo se
+  guarda un resumen de ~3 kB en S3 (sin curvas ni mapas) para el historial y para consultarlo con Athena; no
+  hace falta una base de datos encendida y, si nadie la usa, cuesta casi cero.
 - **Despliegue automático y seguro.** Cada merge a `main` corre las pruebas y despliega con un rol de IAM por
   OIDC, sin llaves guardadas y con permisos solo sobre los recursos de esta aplicación.
 
@@ -354,8 +354,8 @@ las intervenciones, la calibración de la dificultad y la reproducibilidad.
 
 ## Costos
 
-Operar la herramienta cuesta **≈ 2,50 USD al mes** en uso normal (3.000 simulaciones) y **≈ 24,97 USD** en un
-mes de brote activo (30.000), sin contar la capa gratuita de AWS; con ella, 0 USD y ≈ 16,83 USD. Casi todo es
+Operar la herramienta cuesta **≈ 2,52 USD al mes** en uso normal (3.000 simulaciones) y **≈ 25,13 USD** en un
+mes de brote activo (30.000), sin contar la capa gratuita de AWS; con ella, ≈ 0,02 USD y ≈ 16,99 USD. Casi todo es
 cómputo de Lambda (14 s facturados por simulación, medidos en AWS). El informe con IA tiene su propio tope de
 3 USD al mes. Gasto real durante el evento: **0,01 USD** (medido el 28/10/2026 a las 14:53). El cálculo completo y las mediciones están en
 [docs/costos.md](docs/costos.md); `infra/costos.sh` agrega una medición nueva del gasto real.
