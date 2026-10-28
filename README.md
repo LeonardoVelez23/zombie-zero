@@ -172,7 +172,7 @@ Todo está en `infra/` y se despliega en `us-east-1` con una sola plantilla
 
 | Recurso | Para qué |
 |---|---|
-| Lambda (Python 3.13, 2 GB, 60 s) + **Function URL** | La API. Function URL en vez de API Gateway porque una simulación puede pasar de los 30 s que permite API Gateway |
+| Lambda (Python 3.13, 3.008 MB = 2 vCPU, 60 s) + **Function URL** | La API. Function URL en vez de API Gateway porque una simulación puede pasar de los 30 s que permite API Gateway |
 | S3 privado + CloudFront | La interfaz web en Angular |
 | AWS Budget | Alerta por correo al 80 % del gasto mensual y si el pronóstico pasa del 100 % |
 | CloudWatch Logs | Logs de la API, guardados 7 días |
