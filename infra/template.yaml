@@ -101,11 +101,27 @@ Resources:
             OriginAccessControlId: !GetAtt FrontendOAC.Id
             S3OriginConfig:
               OriginAccessIdentity: ''
+          # La API sale por el mismo dominio: el frontend llama a /api/... sin conocer la URL de la Lambda.
+          - Id: api
+            DomainName: !Select [2, !Split ['/', !GetAtt ApiFunctionUrl.FunctionUrl]]
+            CustomOriginConfig:
+              OriginProtocolPolicy: https-only
+              OriginSSLProtocols: [TLSv1.2]
+              OriginReadTimeout: 60   # la simulación tarda ~30 s; el valor por defecto (30 s) la cortaría
         DefaultCacheBehavior:
           TargetOriginId: frontend
           ViewerProtocolPolicy: redirect-to-https
           Compress: true
           CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6   # CachingOptimized (administrada por AWS)
+        CacheBehaviors:
+          - PathPattern: /api/*
+            TargetOriginId: api
+            ViewerProtocolPolicy: https-only
+            AllowedMethods: [GET, HEAD, OPTIONS, PUT, PATCH, POST, DELETE]
+            CachedMethods: [GET, HEAD]
+            Compress: true
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad           # CachingDisabled
+            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac   # AllViewerExceptHostHeader (la Function URL rechaza otro Host)
         CustomErrorResponses:     # rutas de Angular: siempre se sirve index.html
           - ErrorCode: 403
             ResponseCode: 200
