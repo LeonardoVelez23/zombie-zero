@@ -29,6 +29,21 @@ describe('Informe para el alcalde', () => {
     expect(texto).toContain('De sus 1.000 vacunas, en promedio 0 fueron');
   });
 
+  it('avisa cuando la recomendación ya incluye un corte de vacunas', async () => {
+    const fixture = TestBed.createComponent(Informe);
+    const { escenario } = resultadoDePrueba;
+    fixture.componentRef.setInput('resultado', {
+      ...resultadoDePrueba,
+      escenario: {
+        ...escenario,
+        recursos: { ...escenario.recursos, corteDesde: 30, corteDias: 10 },
+      },
+    });
+    await fixture.whenStable();
+    const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(texto).toContain('no llegan vacunas del día 30 al 39');
+  });
+
   it('sin recursos suficientes no presenta el plan como una victoria', async () => {
     const texto = await renderizar({ nivel: 'insuficiente', ganaAAzar: 0.14, salvadosVsAzar: -31 });
     expect(texto).toContain('Recursos insuficientes');

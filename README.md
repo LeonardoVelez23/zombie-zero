@@ -49,6 +49,11 @@ Todo se calcula en vivo con cada cambio de parámetros, sin resultados guardados
 cambian el punto de origen del brote, el R0, la detección, el presupuesto, las vacunas, su eficacia, el día
 en que se empieza a actuar, las vacunas por día, la población, la duración y la semilla.
 
+7. **Recalcula ante imprevistos:** se puede simular un corte en la entrega de vacunas (por ejemplo, un bloqueo
+   de la vía desde el día 21 durante 30 días). Al reanudarse la entrega, cada plan vuelve a decidir con el brote
+   de ese día, y la recomendación puede cambiar: con ese corte pasa de *anillo + cerrar colegio* a
+   *centralidad + cerrar colegio*.
+
 ## Cómo probarlo
 
 El repositorio tiene dos partes independientes que se comunican por HTTP:
@@ -138,6 +143,7 @@ justificado en [docs/supuestos.md](docs/supuestos.md).
 | | Vacunas disponibles | 500 (10 % de la población) |
 | | Vacunas por día | 50 |
 | | Día en que se empieza a actuar | 21 |
+| | Corte de vacunas (imprevisto) | Sin corte (0 días) |
 | | Eficacia de la vacuna | 90 % |
 | | Cierre de mercado / colegios | 600 / 800 USD por día, 14 días, 80 % de cumplimiento |
 | Monte Carlo | Repeticiones por plan | 100 en la web y la API (límite de 60 s), 1.000 en la CLI |

@@ -35,6 +35,8 @@ LIMITES = {
         "vacunas_disponibles": (0, 20_000),
         "vacunas_por_dia": (1, 20_000),
         "dia_inicio": (0, 365),
+        "corte_desde": (0, 365),
+        "corte_dias": (0, 365),
         "eficacia": (0.0, 1.0),
         "dias_cierre": (0, 365),
         "cumplimiento_cierre": (0.0, 1.0),

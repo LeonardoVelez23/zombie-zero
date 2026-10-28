@@ -46,11 +46,14 @@ Todo es opcional: lo que no se envía toma el valor por defecto.
     "plaga":    { "r0": 2.5, "dias_latencia": 3, "dias_infeccioso": 5, "deteccion": 0.7 },
     "recursos": { "presupuesto": 20000, "costo_vacuna": 10, "vacunas_disponibles": 1000,
                   "vacunas_por_dia": 100, "dia_inicio": 3, "eficacia": 0.9,
+                  "corte_desde": 0, "corte_dias": 0,
                   "dias_cierre": 14, "cumplimiento_cierre": 0.8,
                   "costo_cierre_mercado": 600, "costo_cierre_colegio": 800 }
   }
 }
 ```
+
+`corte_desde` y `corte_dias` simulan un imprevisto: no llegan vacunas desde ese día durante esos días (0 = sin corte).
 
 **Brote Sorpresa típico:** `{"escenario": {"inicio": "mercado", "plaga": {"r0": 5}, "recursos": {"vacunas_disponibles": 500, "eficacia": 0.5}}}`.
 

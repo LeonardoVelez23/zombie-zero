@@ -13,6 +13,9 @@ export interface Recursos {
   vacunasDisponibles: number;
   vacunasPorDia: number;
   diaInicio: number;
+  // Imprevisto: no llegan vacunas desde `corteDesde` durante `corteDias` días (0 = sin corte).
+  corteDesde: number;
+  corteDias: number;
   eficacia: number;
   diasCierre: number;
   cumplimientoCierre: number;

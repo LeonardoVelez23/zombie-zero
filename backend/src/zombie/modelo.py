@@ -237,7 +237,8 @@ def simular_lote(red: Red, esc: Escenario, estrategia, beta: float, repeticiones
 
     for dia in range(1, dias + 1):
         # 1. Vacunación del día con las dosis disponibles (cada repetición decide por su cuenta).
-        if vacunas > 0 and dia >= recursos.dia_inicio:
+        en_corte = recursos.corte_desde <= dia < recursos.corte_desde + recursos.corte_dias
+        if vacunas > 0 and dia >= recursos.dia_inicio and not en_corte:
             for k in np.flatnonzero(vivas & (usadas < vacunas)):
                 dosis = int(min(recursos.vacunas_por_dia, vacunas - usadas[k]))
                 obs = Observacion(dia, red, detectado[k], vacunado[k],

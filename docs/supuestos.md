@@ -54,6 +54,7 @@ del hogar son más largos y cercanos, como muestran los estudios de contactos
 | Cierre de colegios | $800 por día | Supuesto | Costo de clases a distancia y cuidado infantil. |
 | Duración de un cierre | 14 días | Supuesto | Dos periodos de latencia más infeccioso. |
 | Cumplimiento del cierre | 80 % | Supuesto | Fracción de contactos de ese lugar que realmente se evitan. |
+| Corte de vacunas | Sin corte por defecto | Imprevisto | Bloqueos de vías como los paros de 2019 y 2022 en Ecuador dificultaron el abastecimiento durante 11 y 18 días. Durante el corte no se vacuna; al reanudarse cada plan decide con lo que observa ese día. |
 | Visibilidad | Solo se ven los zombies detectados | Supuesto | Por eso una vacuna puede "perderse" en alguien ya mordido o no detectado. El sistema lo reporta. |
 
 ### Dificultad del escenario por defecto
@@ -79,6 +80,18 @@ llegó a influir.
 Con el Brote Sorpresa "el doble de contagiosa" (R0 = 5) ningún plan supera al azar: con R0 = 5 haría falta
 inmunizar a cerca del 80 % de la población (1 − 1/R0) y solo hay vacunas para el 10 %. El sistema lo informa
 como "recursos insuficientes" en vez de presentar un plan como ganador.
+
+Con el imprevisto de un corte de vacunas (semilla 42, 100 repeticiones):
+
+| Corte | Recomendación | Infectados | Salvados frente a no intervenir | Gana al azar |
+|---|---|---|---|---|
+| Sin corte | anillo + cerrar colegio | 546 | 1.658 | 100 % |
+| Desde el día 30, durante 21 días | anillo + cerrar colegio | 591 | 1.613 | 100 % |
+| Desde el día 21, durante 30 días | centralidad + cerrar colegio | 995 | 1.209 | 100 % |
+
+Si el corte llega justo cuando se empieza a actuar, el anillo pierde su ventaja: cuando vuelven las
+vacunas el brote ya es grande y vacunar alrededor de cada zombie llega tarde, así que conviene proteger
+primero a los superpropagadores.
 
 ## Modelo de contraste (EDP espacial)
 

@@ -81,6 +81,14 @@ const SECCIONES: { titulo: string; campos: Campo[] }[] = [
       },
     ],
   },
+  {
+    // Imprevisto en vivo: se bloquea la vía y las vacunas dejan de llegar unos días.
+    titulo: 'Imprevisto: corte de vacunas',
+    campos: [
+      { grupo: 'recursos', nombre: 'corteDesde', etiqueta: 'Desde el día', unidad: 'DÍA', paso: 1 },
+      { grupo: 'recursos', nombre: 'corteDias', etiqueta: 'Durante', unidad: 'DÍAS', paso: 1 },
+    ],
+  },
 ];
 
 const CAMPOS = SECCIONES.flatMap((s) => s.campos);

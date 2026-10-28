@@ -71,6 +71,37 @@ def test_prohibido_vacunar_zombies(red, beta):
         simular(red, ESC, VacunaZombies(), beta, 0)
 
 
+class AnotaDias(Estrategia):
+    """Anillo que anota en qué días le tocó decidir."""
+
+    def __init__(self, red):
+        self.anillo, self.dias = crear("anillo", red), []
+
+    def elegir(self, obs, dosis, rng):
+        self.dias.append(obs.dia)
+        return self.anillo.elegir(obs, dosis, rng)
+
+
+def test_durante_el_corte_no_llegan_vacunas(red, beta):
+    corte = replace(ESC, inicio="aleatorio", casos_iniciales=30, plaga=replace(ESC.plaga, r0=4.0),
+                    recursos=replace(ESC.recursos, dia_inicio=10, vacunas_por_dia=5,
+                                     corte_desde=15, corte_dias=20))
+    estrategia = AnotaDias(red)
+    simular(red, corte, estrategia, beta, 0)
+    assert estrategia.dias[0] == 10
+    assert not any(15 <= d < 35 for d in estrategia.dias)
+    assert 35 in estrategia.dias  # al reanudarse vuelve a decidir con el brote de ese día
+
+
+def test_un_corte_de_vacunas_no_ayuda(red, beta):
+    corte = replace(ESC, recursos=replace(ESC.recursos, corte_desde=ESC.recursos.dia_inicio,
+                                          corte_dias=30))
+    anillo = crear("anillo", red)
+    normal = np.mean([simular(red, ESC, anillo, beta, r).infectados_total for r in range(10)])
+    cortado = np.mean([simular(red, corte, anillo, beta, r).infectados_total for r in range(10)])
+    assert cortado >= normal
+
+
 def test_estrategia_supera_lineas_base():
     res = comparar(ESC, repeticiones=30)
     inf = {d["id"]: d["infectados"]["media"] for d in res["planes"]}
