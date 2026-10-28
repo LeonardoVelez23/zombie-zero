@@ -10,6 +10,12 @@ Parameters:
     Type: String
     Default: LeonardoVelez23/zombie-zero
     Description: Repositorio de GitHub (usuario/repo) que puede desplegar.
+  RepositorioConIds:
+    Type: String
+    Default: LeonardoVelez23@126128766/zombie-zero@1434829139
+    Description: >
+      El mismo repositorio con los ids inmutables de usuario y repo, como GitHub los
+      pone ahora en el "sub" del token (usuario@id/repo@id). Se ven en CloudTrail.
   Rama:
     Type: String
     Default: main
@@ -17,7 +23,15 @@ Parameters:
   Pila:
     Type: String
     Default: zombie-zero
-    Description: Nombre de la pila de la aplicación (limita los roles IAM que se pueden tocar).
+    Description: Nombre de la pila de la aplicación (prefijo de los recursos que se pueden tocar).
+  DistribucionId:
+    Type: String
+    Default: E2MEEF4Z6XQ9XM
+    Description: Id de la distribución de CloudFront de la pila (salida FrontendDistributionId).
+  OacId:
+    Type: String
+    Default: E3G28K5KO11Y7C
+    Description: Id del Origin Access Control de CloudFront de la pila.
 
 Resources:
   # Una cuenta solo admite un proveedor por URL: si ya existe, quitar este recurso y usar su ARN.
@@ -43,7 +57,10 @@ Resources:
             Condition:
               StringEquals:
                 token.actions.githubusercontent.com:aud: sts.amazonaws.com
-                token.actions.githubusercontent.com:sub: !Sub repo:${Repositorio}:ref:refs/heads/${Rama}
+                # Se aceptan los dos formatos del sub: con ids (actual) y solo con nombres.
+                token.actions.githubusercontent.com:sub:
+                  - !Sub repo:${RepositorioConIds}:ref:refs/heads/${Rama}
+                  - !Sub repo:${Repositorio}:ref:refs/heads/${Rama}
       Policies:
         - PolicyName: desplegar-zombie-zero
           PolicyDocument:
@@ -62,30 +79,65 @@ Resources:
                   - cloudformation:GetTemplateSummary
                   - cloudformation:ListStacks
                 Resource: '*'
-              # Recursos que crea template.yaml
+              # Cada servicio queda limitado a los recursos de esta aplicación. Si template.yaml
+              # agrega otro tipo de recurso, hay que ampliar esta política (con un administrador).
+              # Nombres exactos de los recursos que crea template.yaml: "${Pila}-*" a secas también
+              # alcanzaría recursos ajenos con el mismo prefijo (p. ej. el bucket zombie-zero-manta-2026).
               - Effect: Allow
-                Action:
-                  - lambda:*
-                  - s3:*
-                  - cloudfront:*
-                  - logs:*
-                  - budgets:*
+                Action: lambda:*
+                Resource: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${Pila}-ApiFunction-*
+              - Effect: Allow
+                Action: s3:*
+                Resource:
+                  - !Sub arn:aws:s3:::${Pila}-frontendbucket-*
+                  - !Sub arn:aws:s3:::${Pila}-frontendbucket-*/*
+                  - arn:aws:s3:::aws-sam-cli-managed-default-samclisourcebucket-*
+                  - arn:aws:s3:::aws-sam-cli-managed-default-samclisourcebucket-*/*
+              - Effect: Allow
+                Action: logs:*
+                Resource:
+                  - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${Pila}-api
+                  - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${Pila}-api:*
+              - Effect: Allow
+                Action: logs:DescribeLogGroups
                 Resource: '*'
-              # Solo el rol de ejecución de la Lambda que genera SAM (zombie-zero-ApiFunctionRole-...)
+              - Effect: Allow
+                Action: budgets:*
+                Resource: !Sub arn:aws:budgets::${AWS::AccountId}:budget/${Pila}-mensual
+              # CloudFront: solo actualizar la distribución y el OAC existentes (crearlos de nuevo
+              # requiere un administrador).
               - Effect: Allow
                 Action:
-                  - iam:CreateRole
-                  - iam:DeleteRole
-                  - iam:GetRole
-                  - iam:PassRole
-                  - iam:TagRole
-                  - iam:UntagRole
-                  - iam:AttachRolePolicy
-                  - iam:DetachRolePolicy
-                  - iam:PutRolePolicy
-                  - iam:DeleteRolePolicy
-                  - iam:GetRolePolicy
-                Resource: !Sub arn:aws:iam::${AWS::AccountId}:role/${Pila}-*
+                  - cloudfront:GetDistribution
+                  - cloudfront:GetDistributionConfig
+                  - cloudfront:UpdateDistribution
+                  - cloudfront:CreateInvalidation
+                  - cloudfront:GetInvalidation
+                  - cloudfront:ListTagsForResource
+                  - cloudfront:TagResource
+                  - cloudfront:UntagResource
+                  - cloudfront:GetOriginAccessControl
+                  - cloudfront:GetOriginAccessControlConfig
+                  - cloudfront:UpdateOriginAccessControl
+                Resource:
+                  - !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${DistribucionId}
+                  - !Sub arn:aws:cloudfront::${AWS::AccountId}:origin-access-control/${OacId}
+              - Effect: Allow
+                Action:
+                  - cloudfront:GetCachePolicy
+                  - cloudfront:GetOriginRequestPolicy
+                Resource: '*'
+              # IAM: sin crear roles ni adjuntar políticas (evita escalar a administrador).
+              # Solo puede entregar a Lambda el rol de ejecución que ya existe.
+              - Effect: Allow
+                Action: iam:GetRole
+                Resource: !Sub arn:aws:iam::${AWS::AccountId}:role/${Pila}-ApiFunctionRole-*
+              - Effect: Allow
+                Action: iam:PassRole
+                Resource: !Sub arn:aws:iam::${AWS::AccountId}:role/${Pila}-ApiFunctionRole-*
+                Condition:
+                  StringEquals:
+                    iam:PassedToService: lambda.amazonaws.com
 
 Outputs:
   RolArn:

@@ -58,9 +58,33 @@ Reglas para agregar código:
 - Para probar la interfaz sin HTTP basta con un `SimuladorRepositorio` falso
   (ver `app.spec.ts`).
 
+## Mapa de Manta
+
+`presentacion/componentes/mapa` usa [MapLibre GL](https://maplibre.org/) sobre el
+mapa real de Manta, con cuatro vistas que se eligen arriba del mapa:
+
+| Vista | Teselas | Atribución |
+|---|---|---|
+| Satélite (por defecto) | Esri World Imagery | Esri, Maxar, Earthstar Geographics |
+| Satélite + calles | Esri World Imagery + capas de referencia de Esri (vías y nombres) | Esri |
+| Calles | OpenStreetMap | Colaboradores de OpenStreetMap |
+| Oscuro | CARTO Dark Matter | OpenStreetMap y CARTO |
+
+- Encima se dibuja la cuadrícula del modelo EDP (celdas de 0,5 km) en sus
+  coordenadas reales (`malla` de `POST /api/edp`), con deslizador de día y de
+  opacidad, más las marcas de los sectores y del aeropuerto.
+- MapLibre se carga con un import dinámico (archivo aparte, ~240 kB comprimido),
+  así que no pesa en la carga inicial del panel.
+- Su worker (`maplibre-gl-worker.mjs`) se copia a la raíz del build desde
+  `node_modules` (`angular.json`, `assets`) y se carga como Blob, para no depender
+  del tipo MIME con que S3/CloudFront sirvan los `.mjs`.
+- Las teselas son servicios públicos gratuitos pensados para uso moderado
+  (demos, no tráfico masivo); para producción habría que usar una cuenta propia
+  (por ejemplo, Amazon Location Service).
+
 ## Pendiente
 
-- Mapa por barrio con MapLibre a partir de `mapa` y `poblacion_barrio` de
-  `/api/simular`. Hoy `componentes/mapa` muestra la cuadrícula del modelo EDP.
+- Capa por barrio del modelo de red a partir de `mapa` y `poblacion_barrio` de
+  `/api/simular` (hoy el mapa muestra el modelo EDP).
 - Los parámetros menos usados (latencia, costos, cierres) toman el valor por
   defecto; se agregan a `SECCIONES` en `controles.ts` si hacen falta.

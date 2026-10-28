@@ -43,10 +43,15 @@ const plan = (id: string, tipo: Plan['tipo'], infectados: number): Plan => ({
   cierres: [],
   vacunas: 1000,
   costo: 10000,
-  infectados: { media: infectados, p5: 0, p95: infectados * 2 },
-  pico: { media: 10, p5: 0, p95: 20 },
+  infectados: { media: infectados, mediana: infectados, p5: 0, p95: infectados * 2 },
+  pico: { media: 10, mediana: 10, p5: 0, p95: 20 },
   diaPico: 2,
-  curvaZombies: { media: [5, 10, 4, 1], p5: [5, 6, 2, 0], p95: [5, 14, 8, 3] },
+  curvaZombies: {
+    media: [5, 10, 4, 1],
+    mediana: [5, 10, 4, 1],
+    p5: [5, 6, 2, 0],
+    p95: [5, 14, 8, 3],
+  },
   mapa: [],
   vacunasPerdidas: 0,
 });
@@ -63,6 +68,6 @@ export const resultadoDePrueba: ResultadoSimulacion = {
   planes: [
     plan('ninguna', 'linea_base', 4637),
     plan('azar', 'linea_base', 3741),
-    { ...plan('anillo', 'candidato', 212), salvadosVsNinguna: { media: 4425, p5: 2, p95: 5331 }, ganaAAzar: 0.98 },
+    { ...plan('anillo', 'candidato', 212), salvadosVsNinguna: { media: 4425, mediana: 4430, p5: 2, p95: 5331 }, ganaAAzar: 0.98 },
   ],
 };
