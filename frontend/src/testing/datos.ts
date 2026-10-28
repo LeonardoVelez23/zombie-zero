@@ -25,7 +25,12 @@ export const parametrosDePrueba: Parametros = {
   },
   edpPorDefecto: { dSanos: 0.1, dZombies: 0.05, alfa: 0.02 },
   limites: {
-    escenario: { nPersonas: [1000, 20000], dias: [3, 365], semilla: [0, 100], casosIniciales: [1, 100] },
+    escenario: {
+      nPersonas: [1000, 20000],
+      dias: [3, 365],
+      semilla: [0, 100],
+      casosIniciales: [1, 100],
+    },
     plaga: { r0: [0.5, 10], deteccion: [0, 1] },
     recursos: { presupuesto: [0, 1e6], vacunasDisponibles: [0, 20000], eficacia: [0, 1] },
     edp: {},
@@ -68,6 +73,10 @@ export const resultadoDePrueba: ResultadoSimulacion = {
   planes: [
     plan('ninguna', 'linea_base', 4637),
     plan('azar', 'linea_base', 3741),
-    { ...plan('anillo', 'candidato', 212), salvadosVsNinguna: { media: 4425, mediana: 4430, p5: 2, p95: 5331 }, ganaAAzar: 0.98 },
+    {
+      ...plan('anillo', 'candidato', 212),
+      salvadosVsNinguna: { media: 4425, mediana: 4430, p5: 2, p95: 5331 },
+      ganaAAzar: 0.98,
+    },
   ],
 };
