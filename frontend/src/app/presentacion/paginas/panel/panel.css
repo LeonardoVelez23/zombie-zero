@@ -576,6 +576,92 @@
   padding: 0 5px;
 }
 
+/* Mapa principal: selector entre el modelo de red y la EDP de contraste, y la comparación de ambos. */
+.columna-mapa {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.selector-modelo {
+  display: inline-flex;
+  align-self: flex-start;
+  max-width: 100%;
+  border: 1px solid #282b4d;
+  border-radius: 4px;
+  overflow: hidden;
+  scroll-margin-top: 16px;
+}
+
+.modelo {
+  min-height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-right: 1px solid #282b4d;
+  background: #070a1d;
+  color: #b7bad3;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color .15s ease, color .15s ease;
+}
+
+.modelo:last-child {
+  border-right: 0;
+}
+
+.modelo.activo {
+  background: rgba(168, 85, 247, 0.22);
+  color: #f3e8ff;
+}
+
+.modelo:hover:not(.activo) {
+  background: rgba(168, 85, 247, 0.1);
+}
+
+.modelo:focus-visible {
+  outline: 2px solid var(--violet);
+  outline-offset: -2px;
+}
+
+.contraste table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.contraste th,
+.contraste td {
+  padding: 7px 8px;
+  border-bottom: 1px solid #282b4d;
+  text-align: right;
+}
+
+.contraste th:first-child {
+  text-align: left;
+}
+
+.contraste thead th {
+  color: #8f93b8;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.contraste small {
+  display: block;
+  color: #8f93b8;
+  font-size: 10px;
+}
+
+.contraste p {
+  margin: 10px 0 0;
+  color: #b7bad3;
+  font-size: 12px;
+}
+
 @media (min-width: 1500px) {
   .main-content {
     padding-right: 42px;
