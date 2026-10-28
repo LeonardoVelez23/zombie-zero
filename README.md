@@ -380,7 +380,7 @@ las intervenciones, la calibración de la dificultad y la reproducibilidad.
 Operar la herramienta cuesta **≈ 2,52 USD al mes** en uso normal (3.000 simulaciones) y **≈ 25,13 USD** en un
 mes de brote activo (30.000), sin contar la capa gratuita de AWS; con ella, ≈ 0,02 USD y ≈ 16,99 USD. Casi todo es
 cómputo de Lambda (14 s facturados por simulación, medidos en AWS). El informe con IA tiene su propio tope de
-3 USD al mes. Gasto real durante el evento: **0,01 USD** (medido el 28/10/2026 a las 14:53). El cálculo completo y las mediciones están en
+3 USD al mes. Gasto real durante el evento: **0,01 USD** (0,006 USD; medido el 28/10/2026 a las 17:52). El cálculo completo y las mediciones están en
 [docs/costos.md](docs/costos.md); `infra/costos.sh` agrega una medición nueva del gasto real.
 
 ## AWS Budget
@@ -391,8 +391,12 @@ La cuenta tiene presupuestos con alerta por correo desde el 1 de octubre de 2026
 |---|---|---|
 | `Costo-Mensual` (captura) | 5 USD | Gasto real al 85 % y al 100 %; gasto previsto al 100 % |
 | `zombie-zero-mensual` (creado por `infra/template.yaml`) | 10 USD | Gasto real al 80 %; gasto previsto al 100 % |
-| `Alerta-Gasto` | 1 USD | Cualquier gasto real (0,01 %) |
+| `Alerta-Gasto` | 1 USD | Cualquier gasto real: avisa cuando pasa de 0,01 USD |
 | `zombie-zero-bedrock` (creado por `infra/github-oidc.yaml`) | 3 USD, solo Bedrock | Al 100 % del gasto real avisa por correo y le niega Bedrock a la Lambda (acción automática) |
+
+Estado al 28/10/2026, 17:52: gasto real del mes **0,006 USD** en los tres presupuestos de la cuenta, ninguna
+alerta disparada y el corte de Bedrock en espera (0 USD gastados en Bedrock). El gasto previsto todavía sale
+vacío: AWS necesita algunos días de historial de una cuenta nueva para calcularlo.
 
 ![AWS Budget Costo-Mensual con sus alertas](docs/budget.png)
 

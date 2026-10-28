@@ -86,7 +86,7 @@ un cálculo del mapa EDP.
 | S3 de resultados | 3.000 resúmenes × 3 kB = **9 MB** (se borran a los 90 días) y 3.000 PUT + 3.000 GET del historial | $0,023 por GB-mes · $0,005 por 1.000 PUT · $0,0004 por 1.000 GET | $0,016 |
 | Athena + Glue | Consultas ocasionales del comité: 20 al mes × 10 MB como mínimo facturado = **0,2 GB** leídos; Glue: 1 base y 1 tabla | $5 por TB · catálogo gratis hasta 1 millón de objetos | $0,001 |
 | CloudWatch alarmas, dashboard y SNS | 3 alarmas, 1 dashboard, avisos por correo | Gratis hasta 10 alarmas, 3 dashboards y 1.000 correos | $0 |
-| AWS Budgets | 2 presupuestos con alertas por correo y 1 acción (corte de Bedrock) | Los 2 primeros presupuestos con acciones son gratis | $0 |
+| AWS Budgets | 4 presupuestos con alertas por correo (ver README), 1 de ellos con acción (corte de Bedrock) | Los 2 primeros presupuestos con acciones son gratis; Cost Explorer no muestra cargos de AWS Budgets en octubre | $0 |
 | **Total** | | | **≈ $2,52 al mes** |
 
 ### Brote activo (10 veces más uso)
@@ -131,9 +131,12 @@ Acumulado del mes en curso. Cada fila es una medición; se agrega una nueva con
 | 28/10/2026 00:38 | $0.00 | 79 | 466 s × 2 GB = 932 GB-s | $0.0155 | 152 |
 | 28/10/2026 11:18 | $0.01 | 122 | 722 s × 3 GB = 2120 GB-s | $0.0353 | 352 |
 | 28/10/2026 14:53 | $0.01 | 153 | 809 s × 3 GB = 2377 GB-s | $0.0396 | 485 |
+| 28/10/2026 17:52 | $0.01 | 237 | 1195 s × 3 GB = 3511 GB-s | $0.0585 | 648 |
 
-- **Gasto real:** sale de AWS Budgets y es el de toda la cuenta. AWS Cost Explorer todavía no muestra datos
-  de esta cuenta (tarda hasta 24 horas en activarse).
+- **Gasto real:** sale de AWS Budgets y es el de toda la cuenta. Al 28/10 a las 17:52 eran 0,006 USD; por
+  servicio (Cost Explorer): DynamoDB $0,0047, S3 $0,0012, Secrets Manager $0,00001, CloudFront menos de
+  $0,000001, y $0 en Lambda, CloudWatch, SNS y Glue (capa gratuita). **Zombie Zero no usa DynamoDB:** ese
+  gasto es de la tabla `zombie-zero-sessions`, de otro proyecto en la misma cuenta.
 - **Cómputo:** suma de las métricas `Invocations` y `Duration` de CloudWatch desde el día 1 del mes. Todo
   está dentro de la capa gratuita, por eso el gasto real es cero.
 - AWS Budgets actualiza el gasto con hasta un día de retraso, así que la última fila puede no reflejar
