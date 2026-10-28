@@ -24,7 +24,12 @@ Valores por defecto y límites de cada parámetro, para armar los controles de l
                "plaga": {"r0": [0.5, 10.0], ...},
                "recursos": {...} },
   "inicios": ["aleatorio", "aeropuerto", "mercado", "colegio", "Tarqui", "Manta", "Los Esteros", "Eloy Alfaro", "San Mateo", "Rural"],
-  "repeticiones": {"por_defecto": 100, "limites": [5, 200]}
+  "repeticiones": {"por_defecto": 100, "limites": [5, 200]},
+  "calibracion": { "fuente": "SNGRE, casos positivos por cantón (repositorio ecuacovid)",
+                   "url_fuente": "https://github.com/andrab/ecuacovid",
+                   "semanas": [{"semana": 12, "fin": "2020-03-22", "acumulado": 18, "nuevos": 18}, ...],
+                   "ventana": [34, 46], "ajuste": [18.8, 21.7, ...],
+                   "r_diario": 0.0204, "duplicacion_dias": 34.0, "r_efectivo": 1.17, "ic95": [1.07, 1.27] }
 }
 ```
 
@@ -141,10 +146,11 @@ de 2,8 GHz; la Lambda de 2 GB es unas 2,4 veces más lenta (con el motor anterio
 
 Esa tabla es de la versión en serie. Ahora los planes se reparten entre procesos (2 en la Lambda de
 3.008 MB, todos los núcleos en la CLI) y los lotes son de 50 repeticiones: en local, con 6 procesos,
-300 repeticiones tardan 5,6 s. Falta medirlo en AWS después del despliegue.
+300 repeticiones tardan 5,6 s. Con la estrategia adaptativa son 14 planes; con 2 procesos en local, 100
+repeticiones tardan 9,4 s (escenario por defecto) y 17 s (R0 = 5). Falta medirlo en AWS después del despliegue.
 
 Por eso la API usa 100 repeticiones por defecto y acepta hasta 300: el reto pide
-1.000 por defecto, pero con 10 planes no caben en los 60 s de la Lambda. La CLI
+1.000 por defecto, pero con 14 planes no caben en los 60 s de la Lambda. La CLI
 (`python -m zombie.cli`, sin límite de tiempo) sí usa 1.000. Escala lineal con
 `repeticiones` y con `n_personas`. Se puede verificar en AWS con la métrica
 `Duration` de CloudWatch.

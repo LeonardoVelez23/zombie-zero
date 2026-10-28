@@ -1,4 +1,5 @@
-import { Component, OnInit, input, output } from '@angular/core';
+import { Component, OnInit, computed, input, output, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import {
@@ -28,28 +29,16 @@ interface Campo {
 }
 
 // Solo los parámetros que más cambian el resultado; el resto toma el valor por defecto.
-const SECCIONES: { titulo: string; campos: Campo[] }[] = [
-  {
-    titulo: 'Escenario',
-    campos: [
-      {
-        grupo: 'escenario',
-        nombre: 'nPersonas',
-        etiqueta: 'Población',
-        unidad: 'PERSONAS',
-        paso: 1000,
-      },
-      { grupo: 'escenario', nombre: 'dias', etiqueta: 'Duración', unidad: 'DÍAS', paso: 1 },
-      {
-        grupo: 'escenario',
-        nombre: 'casosIniciales',
-        etiqueta: 'Casos iniciales',
-        unidad: 'ZOMBIES',
-        paso: 1,
-      },
-      { grupo: 'escenario', nombre: 'semilla', etiqueta: 'Semilla', unidad: 'SEED', paso: 1 },
-    ],
-  },
+// Las secciones "avanzadas" quedan plegadas para que el formulario no abrume a primera vista.
+interface Seccion {
+  titulo: string;
+  campos: Campo[];
+  avanzada?: boolean;
+  // La semilla va junto a las repeticiones: las dos definen qué brotes se simulan.
+  conRepeticiones?: boolean;
+}
+
+const SECCIONES: Seccion[] = [
   {
     titulo: 'Plaga',
     campos: [
@@ -87,8 +76,37 @@ const SECCIONES: { titulo: string; campos: Campo[] }[] = [
     ],
   },
   {
+    titulo: 'Monte Carlo',
+    conRepeticiones: true,
+    campos: [
+      { grupo: 'escenario', nombre: 'semilla', etiqueta: 'Semilla', unidad: 'SEED', paso: 1 },
+    ],
+  },
+  {
+    titulo: 'Escenario',
+    avanzada: true,
+    campos: [
+      {
+        grupo: 'escenario',
+        nombre: 'nPersonas',
+        etiqueta: 'Población',
+        unidad: 'PERSONAS',
+        paso: 1000,
+      },
+      { grupo: 'escenario', nombre: 'dias', etiqueta: 'Duración', unidad: 'DÍAS', paso: 1 },
+      {
+        grupo: 'escenario',
+        nombre: 'casosIniciales',
+        etiqueta: 'Casos iniciales',
+        unidad: 'ZOMBIES',
+        paso: 1,
+      },
+    ],
+  },
+  {
     // Imprevisto en vivo: se bloquea la vía y las vacunas dejan de llegar unos días.
     titulo: 'Imprevisto: corte de vacunas',
+    avanzada: true,
     campos: [
       { grupo: 'recursos', nombre: 'corteDesde', etiqueta: 'Desde el día', unidad: 'DÍA', paso: 1 },
       { grupo: 'recursos', nombre: 'corteDias', etiqueta: 'Durante', unidad: 'DÍAS', paso: 1 },
@@ -97,6 +115,9 @@ const SECCIONES: { titulo: string; campos: Campo[] }[] = [
 ];
 
 const CAMPOS = SECCIONES.flatMap((s) => s.campos);
+const AVANZADOS = new Set(
+  SECCIONES.filter((s) => s.avanzada).flatMap((s) => s.campos.map((c) => c.nombre)),
+);
 
 interface Sorpresa {
   nombre: string;
@@ -136,7 +157,7 @@ const SORPRESAS: Sorpresa[] = [
 
 @Component({
   selector: 'app-controles',
-  imports: [ReactiveFormsModule],
+  imports: [NgTemplateOutlet, ReactiveFormsModule],
   templateUrl: './controles.html',
   styleUrl: './controles.css',
   host: { class: 'panel', id: 'simulacion' },
@@ -146,8 +167,23 @@ export class Controles implements OnInit {
   readonly cargando = input(false);
   readonly ejecutar = output<ConfiguracionSimulacion>();
 
-  protected readonly secciones = SECCIONES;
-  protected readonly sorpresas = SORPRESAS;
+  protected readonly principales = SECCIONES.filter((s) => !s.avanzada);
+  protected readonly avanzadas = SECCIONES.filter((s) => s.avanzada);
+  // «Más parámetros» desplegado; se abre solo si un Brote Sorpresa cambia alguno de esos campos.
+  protected readonly verAvanzado = signal(false);
+  // Además de los Brotes Sorpresa, el escenario con el R efectivo medido en Manta (datos reales de 2020).
+  protected readonly sorpresas = computed<Sorpresa[]>(() => {
+    const calibracion = this.parametros().calibracion;
+    if (!calibracion) return SORPRESAS;
+    return [
+      ...SORPRESAS,
+      {
+        nombre: 'R de Manta 2020',
+        detalle: `R efectivo de la COVID-19 en Manta con medidas (datos reales): ${calibracion.rEfectivo}`,
+        valores: () => ({ r0: calibracion.rEfectivo }),
+      },
+    ];
+  });
   protected readonly etiquetaInicio = (inicio: string): string =>
     ETIQUETAS_INICIO[inicio] ?? capitalizar(inicio);
   protected formulario = new FormGroup<Record<string, FormControl>>({});
@@ -171,7 +207,9 @@ export class Controles implements OnInit {
   }
 
   protected aplicarSorpresa(sorpresa: Sorpresa): void {
-    this.formulario.patchValue(sorpresa.valores(this.parametros().porDefecto));
+    const valores = sorpresa.valores(this.parametros().porDefecto);
+    if (Object.keys(valores).some((nombre) => AVANZADOS.has(nombre))) this.verAvanzado.set(true);
+    this.formulario.patchValue(valores);
     this.enviar();
   }
 

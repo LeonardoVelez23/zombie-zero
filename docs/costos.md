@@ -26,13 +26,17 @@ La tabla anterior se midió con la Lambda de 2 GB. Desde la versión con Monte C
 - **La Lambda tiene 3.008 MB** (2 vCPU) y simula los planes en 2 procesos. Se cobra 1,47 veces más por segundo,
   pero cada simulación debería tardar menos: en local, con 2 procesos y lotes de 50 repeticiones, la misma
   simulación tarda menos de la mitad.
+- **14 planes en vez de 10** (se sumó la estrategia adaptativa): cada simulación hace un 40 % más de cómputo.
+  En local, con 2 procesos, tarda 9,4 s en el escenario por defecto y 17 s con R0 = 5.
 - **El mapa trae un fotograma por día** en vez de uno cada 10 días: la respuesta pasa de 27,5 KB a unos
   85 KB comprimidos (4 MB sin comprimir; CloudFront la comprime).
 
-Si la duración no bajara nada (peor caso), una simulación costaría 12 s × 2,94 GB = **35 GB-s** y un mapa
+Si la duración no bajara nada (peor caso, sin contar los 4 planes nuevos), una simulación costaría 12 s × 2,94 GB = **35 GB-s** y un mapa
 2 s × 2,94 GB = **6 GB-s**. Con eso el uso normal pasaría de $1,46 a **≈ $2,12** al mes (sigue en $0 con la
 capa gratuita) y el brote activo de $14,57 a **≈ $21,22** (≈ $13,80 con la capa gratuita, por encima del Budget
-de 10 USD, que avisaría). Las cifras definitivas se recalculan con `infra/costos.sh` después del despliegue.
+de 10 USD, que avisaría). Con los 4 planes nuevos y la duración proporcional (12 s × 1,4 = 17 s), serían 49 GB-s por simulación:
+≈ $2,82 al mes en uso normal y ≈ $28,22 en un brote activo, sin la capa gratuita (3.000 y 30.000 simulaciones con su mapa, a $0,0000166667 por GB-s, más los mismos ≈ $0,07 y ≈ $0,72 del resto de servicios). Las cifras definitivas se
+recalculan con `infra/costos.sh` después del despliegue.
 `infra/costos.sh` multiplica los segundos de todo el mes por la memoria actual, así que las filas de ese mes
 mezclan invocaciones de 2 GB y de 3.008 MB y sobreestiman un poco el cómputo.
 

@@ -1,12 +1,22 @@
 <div class="app-shell" [class.sidebar-plegada]="sidebarPlegada()">
-  <button class="sidebar-toggle" type="button" (click)="alternarSidebar()" [attr.aria-expanded]="!sidebarPlegada()"
+  <button
+    class="sidebar-toggle"
+    type="button"
+    (click)="alternarSidebar()"
+    [attr.aria-expanded]="!sidebarPlegada()"
     aria-controls="sidebar-principal"
-    [attr.aria-label]="sidebarPlegada() ? 'Mostrar menú lateral' : 'Ocultar menú lateral'">
+    [attr.aria-label]="sidebarPlegada() ? 'Mostrar menú lateral' : 'Ocultar menú lateral'"
+  >
     <span aria-hidden="true">{{ sidebarPlegada() ? '☰' : '✕' }}</span>
   </button>
 
-<aside class="sidebar" id="sidebar-principal">
-    <a class="brand" href="#dashboard" aria-label="Zombie Zero inicio" (click)="seccionActiva.set('dashboard')">
+  <aside class="sidebar" id="sidebar-principal">
+    <a
+      class="brand"
+      href="#dashboard"
+      aria-label="Zombie Zero inicio"
+      (click)="seccionActiva.set('dashboard')"
+    >
       <img class="brand-mark" src="logo.svg" alt="" width="43" height="43" />
       <div>
         <strong>ZOMBIE ZERO</strong>
@@ -16,24 +26,64 @@
 
     <div class="nav-label">CENTRO DE CONTROL</div>
     <nav class="nav-menu">
-      <a class="nav-item" href="#dashboard" [class.active]="seccionActiva() === 'dashboard'"
+      <a
+        class="nav-item"
+        href="#dashboard"
+        [class.active]="seccionActiva() === 'dashboard'"
         [attr.aria-current]="seccionActiva() === 'dashboard' ? 'location' : null"
-        (click)="seccionActiva.set('dashboard')"><span>◈</span> Dashboard <b>01</b></a>
-      <a class="nav-item" href="#simulacion" [class.active]="seccionActiva() === 'simulacion'"
+        (click)="seccionActiva.set('dashboard')"
+        ><span>◈</span> Dashboard <b>01</b></a
+      >
+      <a
+        class="nav-item"
+        href="#simulacion"
+        [class.active]="seccionActiva() === 'simulacion'"
         [attr.aria-current]="seccionActiva() === 'simulacion' ? 'location' : null"
-        (click)="seccionActiva.set('simulacion')"><span>⌘</span> Simulación</a>
-      <a class="nav-item" href="#selector-modelo" [class.active]="seccionActiva() === 'mapa-brote'"
+        (click)="seccionActiva.set('simulacion')"
+        ><span>⌘</span> Simulación</a
+      >
+      <a
+        class="nav-item"
+        href="#selector-modelo"
+        [class.active]="seccionActiva() === 'mapa-brote'"
         [attr.aria-current]="seccionActiva() === 'mapa-brote' ? 'location' : null"
-        (click)="seccionActiva.set('mapa-brote')"><span>⬢</span> Mapa del brote</a>
-      <a class="nav-item" href="#resultados" [class.active]="seccionActiva() === 'resultados'"
+        (click)="seccionActiva.set('mapa-brote')"
+        ><span>⬢</span> Mapa del brote</a
+      >
+      <a
+        class="nav-item"
+        href="#graficas"
+        [class.active]="seccionActiva() === 'resultados'"
         [attr.aria-current]="seccionActiva() === 'resultados' ? 'location' : null"
-        (click)="seccionActiva.set('resultados')"><span>▥</span> Resultados</a>
-      <a class="nav-item" href="#estados" [class.active]="seccionActiva() === 'estados'"
+        (click)="seccionActiva.set('resultados'); grafica.set('curva')"
+        ><span>▥</span> Resultados</a
+      >
+      <a
+        class="nav-item"
+        href="#graficas"
+        [class.active]="seccionActiva() === 'estados'"
         [attr.aria-current]="seccionActiva() === 'estados' ? 'location' : null"
-        (click)="seccionActiva.set('estados')"><span>◐</span> Estados SEIR</a>
-      <a class="nav-item" href="#estrategias" [class.active]="seccionActiva() === 'estrategias'"
+        (click)="seccionActiva.set('estados'); grafica.set('estados')"
+        ><span>◐</span> Estados SEIR</a
+      >
+      <a
+        class="nav-item"
+        href="#estrategias"
+        [class.active]="seccionActiva() === 'estrategias'"
         [attr.aria-current]="seccionActiva() === 'estrategias' ? 'location' : null"
-        (click)="seccionActiva.set('estrategias')"><span>⇄</span> Estrategias</a>
+        (click)="seccionActiva.set('estrategias')"
+        ><span>⇄</span> Estrategias</a
+      >
+      @if (parametros()?.calibracion) {
+        <a
+          class="nav-item"
+          href="#calibracion"
+          [class.active]="seccionActiva() === 'calibracion'"
+          [attr.aria-current]="seccionActiva() === 'calibracion' ? 'location' : null"
+          (click)="seccionActiva.set('calibracion')"
+          ><span>◎</span> Datos reales</a
+        >
+      }
     </nav>
 
     <div class="sidebar-bottom">
@@ -59,7 +109,12 @@
           <span class="production-dot"></span>
           PRODUCCIÓN
         </span>
-        <span class="avatar" [title]="operador() || 'Zombie Zero'" [attr.aria-label]="'Operador: ' + (operador() || 'Zombie Zero')">{{ iniciales() }}</span>
+        <span
+          class="avatar"
+          [title]="operador() || 'Zombie Zero'"
+          [attr.aria-label]="'Operador: ' + (operador() || 'Zombie Zero')"
+          >{{ iniciales() }}</span
+        >
       </div>
     </header>
 
@@ -106,7 +161,11 @@
       @if (resultado(); as actual) {
         @if (actual !== anterior) {
           <section class="full-grid">
-            <app-antes-despues [anterior]="anterior" [actual]="actual" (fijar)="referencia.set(actual)" />
+            <app-antes-despues
+              [anterior]="anterior"
+              [actual]="actual"
+              (fijar)="referencia.set(actual)"
+            />
           </section>
         }
       }
@@ -117,11 +176,20 @@
         <app-controles [parametros]="p" [cargando]="simulando()" (ejecutar)="simular($event)" />
       } @else {
         <div class="panel vacio" id="simulacion">
-          {{ error() ? 'Sin conexión con la API no se pueden cargar los parámetros.' : 'Cargando parámetros…' }}
+          {{
+            error()
+              ? 'Sin conexión con la API no se pueden cargar los parámetros.'
+              : 'Cargando parámetros…'
+          }}
         </div>
       }
       <div class="columna-mapa">
-        <div class="selector-modelo" id="selector-modelo" role="radiogroup" aria-label="Modelo que muestra el mapa">
+        <div
+          class="selector-modelo"
+          id="selector-modelo"
+          role="radiogroup"
+          aria-label="Modelo que muestra el mapa"
+        >
           @for (m of modelos; track m.id) {
             <button
               type="button"
@@ -161,8 +229,12 @@
                   <tr>
                     <th scope="row">{{ f.nombre }}</th>
                     <td>{{ f.sin }}</td>
-                    <td>{{ f.con }} <small>{{ f.plan }}</small></td>
-                    <td><strong>{{ f.salvados }}</strong></td>
+                    <td>
+                      {{ f.con }} <small>{{ f.plan }}</small>
+                    </td>
+                    <td>
+                      <strong>{{ f.salvados }}</strong>
+                    </td>
                   </tr>
                 }
               </tbody>
@@ -178,18 +250,38 @@
       </div>
     </section>
 
-    <section class="full-grid">
-      <app-grafica [resultado]="resultado()" />
-    </section>
-
-    <section class="full-grid">
-      <app-estados [resultado]="resultado()" />
-    </section>
-
     <section class="bottom-grid">
       <app-tabla [resultado]="resultado()" />
       <app-informe [resultado]="resultado()" />
     </section>
+
+    <section class="full-grid graficas" id="graficas">
+      <div class="selector-modelo" role="tablist" aria-label="Gráficas del brote">
+        @for (g of graficas; track g.id) {
+          <button
+            type="button"
+            role="tab"
+            class="modelo"
+            [class.activo]="grafica() === g.id"
+            [attr.aria-selected]="grafica() === g.id"
+            (click)="grafica.set(g.id)"
+          >
+            {{ g.nombre }}
+          </button>
+        }
+      </div>
+      @if (grafica() === 'curva') {
+        <app-grafica [resultado]="resultado()" />
+      } @else {
+        <app-estados [resultado]="resultado()" />
+      }
+    </section>
+
+    @if (parametros()?.calibracion; as calibracion) {
+      <section class="full-grid">
+        <app-calibracion [calibracion]="calibracion" />
+      </section>
+    }
 
     <footer class="page-footer">
       <span>ZOMBIE ZERO <span class="footer-separator">/</span> PROTOTIPO ACADÉMICO</span>

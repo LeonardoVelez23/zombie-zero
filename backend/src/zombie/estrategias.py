@@ -74,9 +74,45 @@ class Anillo(Estrategia):
         return elegidos
 
 
-ESTRATEGIAS = {e.nombre: e for e in (NoIntervenir, Azar, Centralidad, Anillo)}
+class Adaptativa(Estrategia):
+    """Cambia de táctica según lo que se ve del brote.
+
+    Mientras haya pocos zombies detectados (hasta el 1 % de la población), hace anillo. Si el brote
+    ya se extendió, los vecinos de los zombies y los superpropagadores suelen estar mordidos sin que
+    se sepa, y vacunarlos desperdicia dosis: entonces protege a quienes probablemente siguen sanos,
+    primero en los barrios con menos casos detectados y, dentro de cada uno, a los de más contactos,
+    saltando a los contactos de cualquier zombie detectado.
+    """
+    nombre = "adaptativa"
+    descripcion = ("Anillo mientras el brote es chico; si se extiende, protege primero a los barrios "
+                   "con menos casos detectados, lejos de los zombies conocidos.")
+    UMBRAL = 0.01   # fracción de la población detectada como zombie a partir de la cual cambia de táctica
+
+    def preparar(self, red):
+        self.anillo = Anillo()
+        self.anillo.preparar(red)
+        self.poblacion_barrio = np.bincount(red.barrio)
+
+    def elegir(self, obs, dosis, rng):
+        red = obs.red
+        conocidos = np.flatnonzero(obs.visible)
+        if len(conocidos) <= self.UMBRAL * red.n:
+            return self.anillo.elegir(obs, dosis, rng)
+        libres = ~obs.visible & ~obs.vacunado
+        aristas = red.aristas_de(conocidos)
+        cerca = np.bincount(red.destino[aristas], minlength=red.n) > 0
+        candidatos = np.flatnonzero(libres & ~cerca)
+        if len(candidatos) < dosis:
+            candidatos = np.flatnonzero(libres)
+        tasa = np.bincount(red.barrio[conocidos], minlength=len(self.poblacion_barrio)) / self.poblacion_barrio
+        # Barrio con menos casos detectados primero; dentro de él, más contactos primero.
+        orden = np.lexsort((-red.fuerza[candidatos], tasa[red.barrio[candidatos]]))
+        return candidatos[orden][:dosis]
+
+
+ESTRATEGIAS = {e.nombre: e for e in (NoIntervenir, Azar, Centralidad, Anillo, Adaptativa)}
 LINEAS_BASE = ("ninguna", "azar")
-CANDIDATAS = ("centralidad", "anillo")
+CANDIDATAS = ("centralidad", "anillo", "adaptativa")
 
 
 def crear(nombre: str, red: Red) -> Estrategia:

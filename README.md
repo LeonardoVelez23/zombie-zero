@@ -34,8 +34,9 @@ Central. El Comité de Contención tiene pocas vacunas, un presupuesto limitado 
 
 1. **Simula la propagación día a día** con un modelo SEIR sobre una red de contactos de 5.000 personas de
    Manta, armada con datos del Censo 2022 del INEC.
-2. **Prueba planes de intervención** con los mismos recursos: dos estrategias de vacunación (superpropagadores
-   y vacunación en anillo alrededor de los zombies detectados), solas o combinadas con el cierre del mercado y
+2. **Prueba planes de intervención** con los mismos recursos: tres estrategias de vacunación (superpropagadores,
+   vacunación en anillo alrededor de los zombies detectados y una adaptativa que deja el anillo cuando el brote
+   ya se extendió y protege a los barrios con menos casos), solas o combinadas con el cierre del mercado y
    de los colegios, siempre dentro del presupuesto.
 3. **Compara contra dos líneas base:** no intervenir y repartir las mismas vacunas al azar.
 4. **Repite cada plan 100 veces** (Monte Carlo) con la misma "suerte" para todos los planes y reporta la media,
@@ -69,6 +70,13 @@ o se mantiene, y sus infectados, personas salvadas y porcentaje de brotes en que
    de la vía desde el día 21 durante 30 días). Al reanudarse la entrega, cada plan vuelve a decidir con el brote
    de ese día, y la recomendación puede cambiar: con ese corte pasa de *anillo + cerrar colegio* a
    *centralidad + cerrar colegio*.
+
+9. **Se calibra con datos reales de Manta:** con los casos positivos semanales de COVID-19 de 2020 (SNGRE, vía
+   [ecuacovid](https://github.com/andrab/ecuacovid)) ajusta el crecimiento de la segunda ola (23 de agosto al
+   15 de noviembre: +2,04 % por día, se duplicaba cada 34 días) y lo convierte en un **R efectivo de 1,17**
+   (IC 95 %: 1,07–1,27) con las ecuaciones del SEIR. El panel *Calibración con datos reales* muestra los casos
+   reales con el ajuste, y el botón **R de Manta 2020** simula la plaga con ese valor. Detalle en
+   [docs/supuestos.md](docs/supuestos.md#calibración-con-datos-reales-covid-19-en-manta-2020).
 
 ## Cómo probarlo
 
@@ -249,7 +257,11 @@ Archivo fuente editable: [`docs/arquitectura.drawio`](docs/arquitectura.drawio) 
   sortean una sola vez por repetición (construcción de Sellke), así que todos los planes enfrentan exactamente
   el mismo brote y la diferencia se debe solo a la estrategia.
 - **Recursos que llegan por días y decisiones que cambian con el brote.** Las vacunas llegan a un ritmo diario
-  desde el día en que se detecta el brote, y el anillo vuelve a decidir cada día según los nuevos casos.
+  desde el día en que se detecta el brote, y el anillo vuelve a decidir cada día según los nuevos casos. La
+  estrategia adaptativa además cambia de táctica: si los zombies detectados pasan del 1 % de la población, deja
+  de vacunar alrededor de ellos (suelen estar ya mordidos) y protege a los barrios con menos casos. Es la que
+  sostiene el Brote Sorpresa "el doble de contagiosa": ahí el anillo y los superpropagadores quedaban por
+  debajo del azar y la adaptativa le gana en el 88 % de los brotes ([detalle](docs/supuestos.md)).
 - **Se reportan rangos, no un solo resultado.** Media, mediana, p5–p95 y porcentaje de brotes en que el plan le
   gana al azar. Ese porcentaje se cuenta solo entre los brotes en que hubo diferencia: si la plaga se apaga sola
   antes de poder actuar, todos los planes empatan y eso no dice nada de la estrategia, así que los empates se
@@ -259,7 +271,7 @@ Archivo fuente editable: [`docs/arquitectura.drawio`](docs/arquitectura.drawio) 
 - **Planes que combinan intervenciones con un presupuesto.** Cada estrategia de vacunación se prueba sola y con
   cada combinación de cierres que cabe en el presupuesto; lo que sobra tras los cierres se gasta en vacunas.
 - **Motor vectorizado con numpy.** Simula muchas repeticiones a la vez, sin un bucle por repetición. Así
-  1.000 brotes (100 repeticiones × 10 planes) caben en unos 10 s.
+  1.400 brotes (100 repeticiones × 14 planes) caben en unos 10 s.
 - **Serverless y sin base de datos.** Lambda con Function URL (API Gateway corta a los 30 s) detrás de
   CloudFront, en el mismo dominio que la web. No se guardan resultados porque cada simulación es reproducible
   con su semilla: no hay datos que respaldar y, si nadie la usa, cuesta casi cero.
@@ -282,8 +294,9 @@ las intervenciones, la calibración de la dificultad y la reproducibilidad.
 - **Población parcialmente supuesta:** el reparto entre parroquias urbanas es un supuesto, porque no
   encontramos datos públicos del Censo 2022 por parroquia urbana. Los tamaños de colegios, trabajos y buses
   también son supuestos.
-- **Sin calibración con brotes reales de Manabí:** los parámetros de la plaga vienen de la literatura de
-  COVID-19, no de datos locales (por ejemplo, de dengue).
+- **Calibración con datos reales solo del R efectivo:** el R0 = 2,5 sale de la literatura porque Manta entró en
+  cuarentena con su primer caso y nunca tuvo un brote libre que medir. Con los casos reales de 2020 se calibra
+  el R efectivo con medidas (1,17); la latencia y los días de contagio siguen viniendo de la literatura.
 - **Intervenciones simplificadas:** una sola dosis que protege desde el día en que se aplica, cierres que
   empiezan el día de la detección y duran un tiempo fijo, y una probabilidad de detección constante.
 - **No se modela la mortalidad:** el objetivo es minimizar los contagios.
