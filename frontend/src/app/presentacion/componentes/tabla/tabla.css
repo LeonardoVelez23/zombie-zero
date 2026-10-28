@@ -96,3 +96,41 @@ tr.recomendado th {
   border-color: #34375c;
   color: #a6a9c6;
 }
+
+/* Identidad Zombie Zero: cabecera y filas de la comparativa. */
+thead th {
+  color: #b39ddb;
+  font-family: var(--font-mono);
+  border-bottom: 1px solid rgba(168, 85, 247, .3);
+}
+
+th,
+td {
+  border-top-color: rgba(168, 85, 247, .12);
+}
+
+tbody tr {
+  transition: background-color .15s ease;
+}
+
+tbody tr:hover {
+  background: rgba(168, 85, 247, .06);
+}
+
+tr.recomendado,
+tr.recomendado:hover {
+  background: rgba(34, 197, 94, .09);
+}
+
+td {
+  font-family: var(--font-mono);
+}
+
+.insignia {
+  border-radius: 3px;
+  box-shadow: 0 0 10px rgba(34, 197, 94, .2);
+}
+
+.insignia.base {
+  box-shadow: none;
+}
