@@ -9,6 +9,7 @@ import { parametrosDePrueba, resultadoDePrueba } from '../testing/datos';
 class SimuladorFalso extends SimuladorRepositorio {
   parametros = async () => parametrosDePrueba;
   simular = async () => resultadoDePrueba;
+  historial = async () => [];
   informe = async () => {
     throw new Error('no se usa en esta prueba');
   };

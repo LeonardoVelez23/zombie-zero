@@ -85,6 +85,14 @@
         (click)="irA('estados'); grafica.set('estados')"
         ><span aria-hidden="true">◐</span> Estados SEIR</a
       >
+      <a
+        class="nav-item"
+        href="#historial"
+        [class.active]="seccionActiva() === 'historial'"
+        [attr.aria-current]="seccionActiva() === 'historial' ? 'location' : null"
+        (click)="seccionActiva.set('historial')"
+        ><span>↺</span> Resultados anteriores</a
+      >
       @if (parametros()?.calibracion) {
         <a
           class="nav-item"
@@ -315,6 +323,14 @@
       } @else {
         <app-estados [resultado]="resultado()" />
       }
+    </section>
+
+    <section class="full-grid">
+      <app-historial
+        [simulaciones]="historial()"
+        [cargando]="simulando()"
+        (repetir)="simular($event)"
+      />
     </section>
 
     @if (parametros()?.calibracion; as calibracion) {

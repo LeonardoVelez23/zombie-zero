@@ -1,5 +1,6 @@
 import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
 
+import { ObtenerHistorial } from '../../../aplicacion/casos-uso/obtener-historial';
 import { ModelarDifusion } from '../../../aplicacion/casos-uso/modelar-difusion';
 import { ObtenerParametros } from '../../../aplicacion/casos-uso/obtener-parametros';
 import { SimularBrote } from '../../../aplicacion/casos-uso/simular-brote';
@@ -7,6 +8,7 @@ import { ConfiguracionSimulacion, Parametros } from '../../../dominio/modelos/es
 import {
   ResultadoDifusion,
   ResultadoSimulacion,
+  SimulacionGuardada,
   Veredicto,
 } from '../../../dominio/modelos/resultado';
 import { mordidosHasta, salvadosHasta } from '../../../dominio/reglas/dias';
@@ -17,6 +19,7 @@ import { Calibracion } from '../../componentes/calibracion/calibracion';
 import { Controles } from '../../componentes/controles/controles';
 import { Grafica } from '../../componentes/grafica/grafica';
 import { Guia } from '../../componentes/guia/guia';
+import { Historial } from '../../componentes/historial/historial';
 import { MapaBarrios } from '../../componentes/mapa-barrios/mapa-barrios';
 import { Informe } from '../../componentes/informe/informe';
 import { LineaTiempo } from '../../componentes/linea-tiempo/linea-tiempo';
@@ -71,6 +74,7 @@ const MODELOS: { id: ModeloMapa; nombre: string }[] = [
     MapaBarrios,
     Tabla,
     Guia,
+    Historial,
   ],
   templateUrl: './panel.html',
   styleUrl: './panel.css',
@@ -116,6 +120,7 @@ export class Panel implements OnInit {
   private readonly obtenerParametros = inject(ObtenerParametros);
   private readonly simularBrote = inject(SimularBrote);
   private readonly modelarDifusion = inject(ModelarDifusion);
+  private readonly obtenerHistorial = inject(ObtenerHistorial);
 
   protected readonly parametros = signal<Parametros | null>(null);
   protected readonly resultado = signal<ResultadoSimulacion | null>(null);
@@ -128,6 +133,8 @@ export class Panel implements OnInit {
   // Día que muestran todas las pantallas: los indicadores cuentan lo ocurrido hasta ese día.
   protected readonly reloj = inject(RelojBrote);
   protected readonly errorDifusion = signal<string | null>(null);
+  // Últimas simulaciones guardadas en S3 (de todos); vacío si la API no las tiene.
+  protected readonly historial = signal<SimulacionGuardada[]>([]);
 
   // Modelo que muestra el mapa principal: el de red (el que decide) o la EDP de contraste.
   protected readonly modelos = MODELOS;
@@ -292,6 +299,16 @@ export class Panel implements OnInit {
     } catch (e) {
       this.error.set(mensaje(e));
     }
+    void this.cargarHistorial();
+  }
+
+  // Sin historial la aplicación sigue igual: un fallo aquí no se muestra como error.
+  protected async cargarHistorial(): Promise<void> {
+    try {
+      this.historial.set(await this.obtenerHistorial.ejecutar());
+    } catch {
+      this.historial.set([]);
+    }
   }
 
   protected async simular(configuracion: ConfiguracionSimulacion): Promise<void> {
@@ -312,6 +329,8 @@ export class Panel implements OnInit {
       this.errorDifusion.set(null);
       this.calculandoDifusion.set(false);
       if (this.modeloMapa() === 'edp') void this.calcularDifusion();
+      // La simulación recién guardada aparece en «Resultados anteriores».
+      void this.cargarHistorial();
     } catch (e) {
       if (vigente()) this.error.set(mensaje(e));
     } finally {

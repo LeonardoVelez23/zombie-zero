@@ -39,6 +39,7 @@ describe('Panel: simulaciones que se cruzan', () => {
         pendientes.push(d);
         return d.promesa;
       },
+      historial: () => Promise.resolve([]),
       informe: () => Promise.reject(new Error('no se usa')),
       difusion: () => Promise.reject(new Error('sin EDP en esta prueba')),
     };
@@ -99,6 +100,7 @@ describe('Panel: indicadores en vivo', () => {
     const simulador: SimuladorRepositorio = {
       parametros: () => Promise.resolve(parametrosDePrueba),
       simular: () => Promise.resolve(resultadoDePrueba),
+      historial: () => Promise.resolve([]),
       informe: () => Promise.reject(new Error('no se usa')),
       difusion: () => Promise.reject(new Error('sin EDP en esta prueba')),
     };
@@ -141,6 +143,7 @@ describe('Panel: menú lateral', () => {
     const simulador: SimuladorRepositorio = {
       parametros: () => Promise.resolve(parametrosDePrueba),
       simular: () => Promise.reject(new Error('no se usa')),
+      historial: () => Promise.resolve([]),
       informe: () => Promise.reject(new Error('no se usa')),
       difusion: () => Promise.reject(new Error('no se usa')),
     };
@@ -264,6 +267,7 @@ describe('Panel: selector de modelo del mapa', () => {
     const simulador: SimuladorRepositorio = {
       parametros: () => Promise.resolve(parametrosDePrueba),
       simular: () => Promise.resolve(resultadoDePrueba),
+      historial: () => Promise.resolve([]),
       informe: () => Promise.reject(new Error('no se usa')),
       difusion: () => {
         difusiones++;
