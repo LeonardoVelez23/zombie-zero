@@ -93,7 +93,7 @@
           {{ error() ? 'Sin conexión con la API no se pueden cargar los parámetros.' : 'Cargando parámetros…' }}
         </div>
       }
-      <app-mapa-barrios [resultado]="resultado()" />
+      <app-mapa-barrios [resultado]="resultado()" [(dia)]="diaVivo" />
     </section>
 
     <section class="full-grid">

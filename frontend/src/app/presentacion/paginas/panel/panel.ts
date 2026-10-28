@@ -4,7 +4,7 @@ import { ModelarDifusion } from '../../../aplicacion/casos-uso/modelar-difusion'
 import { ObtenerParametros } from '../../../aplicacion/casos-uso/obtener-parametros';
 import { SimularBrote } from '../../../aplicacion/casos-uso/simular-brote';
 import { ConfiguracionSimulacion, Parametros } from '../../../dominio/modelos/escenario';
-import { ResultadoDifusion, ResultadoSimulacion } from '../../../dominio/modelos/resultado';
+import { Plan, ResultadoDifusion, ResultadoSimulacion } from '../../../dominio/modelos/resultado';
 import { comparacion } from '../../../dominio/reglas/planes';
 import { Controles } from '../../componentes/controles/controles';
 import { Grafica } from '../../componentes/grafica/grafica';
@@ -64,6 +64,8 @@ export class Panel implements OnInit {
   protected readonly simulando = signal(false);
   protected readonly calculandoDifusion = signal(false);
   protected readonly error = signal<string | null>(null);
+  // Día que muestra el mapa del brote: los indicadores cuentan lo ocurrido hasta ese día.
+  protected readonly diaVivo = signal(0);
   protected readonly errorDifusion = signal<string | null>(null);
 
   // El mapa EDP usa el escenario de la última simulación (o el por defecto si aún no hay).
@@ -107,26 +109,41 @@ export class Panel implements OnInit {
       ];
     }
     const { sinIntervencion, recomendado } = comparacion(r);
+    // Mientras el mapa reproduce el brote se muestran los mordidos acumulados hasta ese día;
+    // en el último día, los totales de la simulación (son los mismos valores).
+    const dia = this.diaVivo();
+    const enCurso = dia < r.escenario.dias;
+    const hastaHoy = (plan: Plan) => {
+      const fila = plan.mapaAfectados?.[dia];
+      return enCurso && fila ? fila.reduce((a, b) => a + b, 0) : plan.infectados.media;
+    };
+    const sin = hastaHoy(sinIntervencion);
+    const con = hastaHoy(recomendado);
+    const pico = `pico hacia el día ${Math.round(sinIntervencion.diaPico)}`;
     return [
       tarjetaPoblacion,
       {
         etiqueta: 'INFECTADOS SIN INTERVENIR',
-        valor: numero(sinIntervencion.infectados.media),
-        nota: `Pico hacia el día ${Math.round(sinIntervencion.diaPico)}`,
+        valor: numero(sin),
+        nota: enCurso
+          ? `Día ${dia} de ${r.escenario.dias} · ${pico}`
+          : `Pico hacia el día ${Math.round(sinIntervencion.diaPico)}`,
         color: 'red',
         icono: '⌁',
       },
       {
         etiqueta: 'INFECTADOS CON EL PLAN',
-        valor: numero(recomendado.infectados.media),
+        valor: numero(con),
         nota: recomendado.nombre,
         color: 'green',
         icono: '✓',
       },
       {
         etiqueta: 'PERSONAS SALVADAS',
-        valor: numero(r.veredicto.salvadosVsNinguna),
-        nota: 'Frente a no intervenir (media)',
+        valor: numero(enCurso ? Math.max(0, sin - con) : r.veredicto.salvadosVsNinguna),
+        nota: enCurso
+          ? `Hasta el día ${dia}, frente a no intervenir`
+          : 'Frente a no intervenir (media)',
         color: 'orange',
         icono: '✚',
       },
@@ -176,4 +193,5 @@ export class Panel implements OnInit {
   }
 }
 
-const mensaje = (error: unknown): string => (error instanceof Error ? error.message : String(error));
+const mensaje = (error: unknown): string =>
+  error instanceof Error ? error.message : String(error);
