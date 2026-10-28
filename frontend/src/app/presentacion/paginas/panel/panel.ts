@@ -6,6 +6,7 @@ import { SimularBrote } from '../../../aplicacion/casos-uso/simular-brote';
 import { ConfiguracionSimulacion, Parametros } from '../../../dominio/modelos/escenario';
 import { Plan, ResultadoDifusion, ResultadoSimulacion } from '../../../dominio/modelos/resultado';
 import { comparacion } from '../../../dominio/reglas/planes';
+import { AntesDespues } from '../../componentes/antes-despues/antes-despues';
 import { Controles } from '../../componentes/controles/controles';
 import { Grafica } from '../../componentes/grafica/grafica';
 import { MapaBarrios } from '../../componentes/mapa-barrios/mapa-barrios';
@@ -26,7 +27,7 @@ interface Indicador {
 
 @Component({
   selector: 'app-panel',
-  imports: [Controles, Grafica, Estados, Informe, Mapa, MapaBarrios, Tabla],
+  imports: [AntesDespues, Controles, Grafica, Estados, Informe, Mapa, MapaBarrios, Tabla],
   templateUrl: './panel.html',
   styleUrl: './panel.css',
 })
@@ -60,6 +61,8 @@ export class Panel implements OnInit {
 
   protected readonly parametros = signal<Parametros | null>(null);
   protected readonly resultado = signal<ResultadoSimulacion | null>(null);
+  // Resultado contra el que se compara (Brote Sorpresa): la primera simulación, hasta que se fije otra.
+  protected readonly referencia = signal<ResultadoSimulacion | null>(null);
   protected readonly difusion = signal<ResultadoDifusion | null>(null);
   protected readonly simulando = signal(false);
   protected readonly calculandoDifusion = signal(false);
@@ -166,6 +169,7 @@ export class Panel implements OnInit {
     try {
       const resultado = await this.simularBrote.ejecutar(configuracion);
       if (!vigente()) return;
+      if (!this.referencia()) this.referencia.set(resultado);
       this.resultado.set(resultado);
       this.ultimaConfiguracion = configuracion;
     } catch (e) {

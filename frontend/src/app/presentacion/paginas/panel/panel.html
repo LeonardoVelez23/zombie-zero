@@ -85,6 +85,16 @@
       }
     </section>
 
+    @if (referencia(); as anterior) {
+      @if (resultado(); as actual) {
+        @if (actual !== anterior) {
+          <section class="full-grid">
+            <app-antes-despues [anterior]="anterior" [actual]="actual" (fijar)="referencia.set(actual)" />
+          </section>
+        }
+      }
+    }
+
     <section class="workspace-grid">
       @if (parametros(); as p) {
         <app-controles [parametros]="p" [cargando]="simulando()" (ejecutar)="simular($event)" />
