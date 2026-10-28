@@ -1,0 +1,81 @@
+# Despliega a AWS cada vez que algo llega a main: pruebas -> backend (SAM) -> frontend (S3 + CloudFront).
+# Requiere en GitHub (Settings -> Secrets and variables -> Actions -> Variables):
+#   AWS_ROLE_ARN   salida RolArn de infra/github-oidc.yaml
+#   CORREO_ALERTA  correo del AWS Budget (si falta, el despliegue se detiene para no borrar el Budget)
+name: Desplegar
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Un despliegue a la vez; si llega otro merge, espera a que termine el anterior.
+concurrency:
+  group: desplegar-produccion
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+      - name: Pruebas del backend
+        working-directory: backend
+        run: uv run --python 3.13 --extra dev pytest -q
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Pruebas del frontend
+        working-directory: frontend
+        run: |
+          npm ci --no-audit --no-fund
+          npx ng test --watch=false
+
+  desplegar:
+    needs: pruebas
+    runs-on: ubuntu-latest
+    # Sin "environment:": cambiaría el sub del token OIDC y el rol solo acepta ref:refs/heads/main.
+    permissions:
+      contents: read
+      id-token: write   # token OIDC para asumir el rol de AWS sin llaves
+    env:
+      AWS_REGION: us-east-1
+      CORREO_ALERTA: ${{ vars.CORREO_ALERTA }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Comprobar variables
+        run: |
+          test -n "${{ vars.AWS_ROLE_ARN }}" || { echo "::error::Falta la variable AWS_ROLE_ARN"; exit 1; }
+          test -n "$CORREO_ALERTA" || { echo "::error::Falta la variable CORREO_ALERTA (sin ella se borraría el Budget)"; exit 1; }
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - uses: astral-sh/setup-uv@v6
+      - uses: aws-actions/setup-sam@v2
+        with:
+          use-installer: true
+
+      - name: Backend (Lambda, CloudFront, Budget)
+        run: infra/desplegar.sh
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Frontend (S3 + CloudFront)
+        run: |
+          (cd frontend && npm ci --no-audit --no-fund && npx ng build)
+          infra/publicar-frontend.sh frontend/dist/zombie-zero-ui/browser
