@@ -25,8 +25,8 @@
         </tr>
       </thead>
       <tbody>
-        @for (plan of r.planes; track plan.id) {
-          <tr [class.recomendado]="plan.id === r.recomendado" [class.base]="plan.tipo === 'linea_base'">
+        @for (plan of visibles(); track plan.id) {
+          <tr [title]="plan.descripcion" [class.recomendado]="plan.id === r.recomendado" [class.base]="plan.tipo === 'linea_base'">
             <th scope="row">
               <strong>{{ plan.nombre }}</strong>
               @if (plan.id === r.recomendado) {
@@ -34,7 +34,9 @@
               } @else if (plan.tipo === 'linea_base') {
                 <span class="insignia base">LÍNEA BASE</span>
               }
-              <small>{{ plan.descripcion }}</small>
+              @if (plan.id === r.recomendado || plan.tipo === 'linea_base') {
+                <small>{{ plan.descripcion }}</small>
+              }
             </th>
             <td>${{ numero(plan.costo) }}</td>
             <td>
@@ -56,6 +58,11 @@
       </tbody>
     </table>
   </div>
+  @if (r.planes.length > visibles().length || verTodos()) {
+    <button type="button" class="ver-todos" [attr.aria-expanded]="verTodos()" (click)="verTodos.set(!verTodos())">
+      {{ verTodos() ? 'Ver solo los principales' : 'Ver los ' + r.planes.length + ' planes' }}
+    </button>
+  }
 } @else {
   <div class="vacio">
     Ejecuta una simulación para comparar todos los planes: sin intervención, vacunas al azar,
