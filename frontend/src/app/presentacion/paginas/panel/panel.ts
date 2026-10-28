@@ -35,9 +35,17 @@ export class Panel implements OnInit {
   readonly operador = input('');
 
   protected readonly iniciales = computed(() => {
-    // Se saltan palabras cortas como "de" o "la": "Comité de Contención Manta" -> "CC".
-    const palabras = this.operador().split(/\s+/).filter((p) => p.length > 2);
-    return palabras.length ? palabras.slice(0, 2).map((p) => p[0].toUpperCase()).join('') : 'ZZ';
+    // Ignora palabras cortas como "de" o "la" cuando hay otras palabras relevantes.
+    const nombre = this.operador().trim();
+    const palabras = nombre.split(/\s+/).filter((p) => p.length > 2);
+    const relevantes = palabras.length ? palabras : nombre.split(/\s+/).filter(Boolean);
+
+    return (
+      relevantes
+        .slice(0, 2)
+        .map((p) => p[0].toUpperCase())
+        .join('') || 'ZZ'
+    );
   });
 
   protected readonly sidebarPlegada = signal(false);
