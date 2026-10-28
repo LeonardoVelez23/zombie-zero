@@ -16,7 +16,7 @@ export const VISTAS: Vista[] = [
   { id: 'satelite', nombre: 'Satélite', capas: ['satelite'] },
   { id: 'hibrido', nombre: 'Satélite + calles', capas: ['satelite-hibrido', 'etiquetas', 'vias'] },
   { id: 'calles', nombre: 'Calles', capas: ['calles'] },
-  { id: 'oscuro', nombre: 'Oscuro', capas: ['oscuro'] },
+  { id: 'oscuro', nombre: 'Oscuro', capas: ['oscuro', 'oscuro-etiquetas'] },
 ];
 
 // Encuadre inicial: todo el cantón Manta, de San Mateo y la zona rural (oeste) a Los Esteros (este). [oeste, sur, este, norte]
@@ -70,14 +70,19 @@ export function estiloBase(inicial: VistaId): StyleSpecification {
         maxzoom: 19,
         attribution: ATRIBUCION_OSM,
       },
+      // Esri Dark Gray: los mosaicos raster de CARTO ahora piden una clave de API.
       oscuro: {
         type: 'raster',
-        tiles: ['a', 'b', 'c', 'd'].map(
-          (s) => `https://${s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png`,
-        ),
+        tiles: [`${ESRI}/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}`],
         tileSize: 256,
-        maxzoom: 19,
-        attribution: `${ATRIBUCION_OSM} © <a href="https://carto.com/attributions">CARTO</a>`,
+        maxzoom: 16,
+        attribution: 'Mapa base © Esri, HERE, Garmin, colaboradores de OpenStreetMap',
+      },
+      'oscuro-etiquetas': {
+        type: 'raster',
+        tiles: [`${ESRI}/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}`],
+        tileSize: 256,
+        maxzoom: 16,
       },
     },
     layers: [
@@ -87,6 +92,20 @@ export function estiloBase(inicial: VistaId): StyleSpecification {
       { id: 'etiquetas', type: 'raster', source: 'etiquetas', layout: visible('hibrido') },
       { id: 'calles', type: 'raster', source: 'calles', layout: visible('calles') },
       { id: 'oscuro', type: 'raster', source: 'oscuro', layout: visible('oscuro') },
+      {
+        id: 'oscuro-etiquetas',
+        type: 'raster',
+        source: 'oscuro-etiquetas',
+        layout: visible('oscuro'),
+      },
     ],
   };
+}
+
+// MapLibre carga su worker desde una URL; se arma desde el archivo publicado junto a la web.
+export async function urlDelWorker(): Promise<string> {
+  const respuesta = await fetch('maplibre-gl-worker.mjs');
+  if (!respuesta.ok) throw new Error(`No se pudo cargar el worker del mapa (${respuesta.status})`);
+  const codigo = new Blob([await respuesta.text()], { type: 'text/javascript' });
+  return URL.createObjectURL(codigo);
 }

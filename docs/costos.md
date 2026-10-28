@@ -11,7 +11,7 @@ el 28/10/2026. No se cuentan los créditos del plan gratuito.
 | Mapa EDP (`POST /api/edp`) | Lambda de 2 GB | 1,7 s facturados → usamos **2 s = 4 GB-s**. Respuesta de 27,5 KB |
 | Parámetros y salud (`GET /api/...`) | Lambda | 2 ms (despreciable) |
 | Primera visita a la web | CloudFront + S3 | 8 archivos, **0,52 MB** comprimidos (el código de MapLibre es la mayor parte) |
-| Mosaicos del mapa | Esri, OpenStreetMap, CARTO | Fuera de AWS y sin costo para nosotros |
+| Mosaicos del mapa | Esri, OpenStreetMap | Fuera de AWS y sin costo para nosotros |
 
 Las duraciones salen de las líneas `REPORT` de CloudWatch Logs; los tamaños, de descargar cada recurso por
 la URL pública. La Lambda usa solo ~120 MB de memoria: se le asignan 2 GB porque en Lambda la CPU crece

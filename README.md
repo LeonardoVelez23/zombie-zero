@@ -216,8 +216,8 @@ Archivo fuente editable: [`docs/arquitectura.drawio`](docs/arquitectura.drawio) 
 - **Flujo de una visita:** el navegador pide la página a CloudFront, que la toma de S3. Las simulaciones van
   a `/api/*` en el mismo dominio y CloudFront las pasa a la Lambda sin caché (hasta 60 s). La Lambda arma la
   red de contactos, corre el Monte Carlo y devuelve el resultado; no hay base de datos, porque con la misma
-  semilla el resultado es siempre el mismo. Los mosaicos del mapa los pide el navegador directamente a Esri,
-  OpenStreetMap y CARTO.
+  semilla el resultado es siempre el mismo. Los mosaicos del mapa los pide el navegador directamente a Esri y
+  OpenStreetMap.
 - **Despliegue:** cada merge a `main` corre las pruebas en GitHub Actions y, si pasan, despliega con un rol de
   IAM que se obtiene por OIDC. No hay llaves de AWS guardadas en GitHub y el rol solo puede tocar los recursos
   de esta aplicación ([`infra/github-oidc.yaml`](infra/github-oidc.yaml)).
