@@ -47,6 +47,8 @@ Resources:
         Variables:
           IA_ACTIVA: 'true'
           MODELO_IA: amazon.nova-micro-v1:0
+          # Tope de gasto: llamadas a Bedrock por minuto en cada contenedor; pasado eso, plantilla sin IA.
+          IA_LLAMADAS_POR_MINUTO: '4'
       Policies:
         - Statement:
             - Effect: Allow             # mínimo privilegio: solo invocar este modelo

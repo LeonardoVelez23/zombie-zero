@@ -50,6 +50,16 @@ falta confirmarlo con `aws pricing get-products`, como el resto de la tabla).
 | Uso normal, un informe por simulación (peor caso) | 3.000 × ($0,0001 + $0,0001) | ≈ **$0,59 al mes** |
 | Brote activo, un informe por simulación | 30.000 × ($0,0001 + $0,0001) | ≈ **$5,90 al mes** |
 
+**Tope de gasto.** El endpoint es público y no pide inicio de sesión, por eso el gasto en Bedrock tiene un
+techo por diseño. Cada contenedor de la Lambda llama a Bedrock 4 veces por minuto como máximo
+(`IA_LLAMADAS_POR_MINUTO`). Pasado ese cupo responde la plantilla sin IA, y el mismo resultado pedido otra vez
+sale de la caché. Una cuenta nueva admite 10 ejecuciones simultáneas de Lambda, así que aunque alguien enviara
+peticiones sin parar el peor caso sería 10 × 4 × 60 × 24 = 57.600 llamadas al día ≈ **$5,80 al día**
+(≈ $0,24 por hora). No es un límite absoluto: si se sostuviera, el AWS Budget de 10 USD avisaría por correo
+en menos de dos días, y basta con poner `IA_ACTIVA: 'false'` y volver a desplegar para cortarlo. Un tope
+global exacto necesitaría un contador compartido (por ejemplo, DynamoDB) o AWS WAF con límite de frecuencia
+(≈ $6 al mes): quedan como mejora si el uso público lo justifica.
+
 Bedrock no tiene capa gratuita. Los segundos de Lambda sí entran en la capa gratuita junto con los demás.
 Las cifras son un techo: en la práctica el informe se pide mucho menos que la simulación. El gasto real de
 Bedrock aparece en AWS Budgets con el resto de la cuenta.

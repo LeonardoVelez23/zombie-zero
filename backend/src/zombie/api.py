@@ -146,7 +146,8 @@ def atender(metodo: str, ruta: str, cuerpo: str | None) -> tuple[int, dict]:
             return 200, resolver(esc, _grupo(Difusion(), "edp", datos.get("edp", {})))
         if metodo == "POST" and ruta in ("/api/informe", "/informe"):
             # Aparte de /api/simular: no la hace más lenta y, si Bedrock falla, la simulación sigue andando.
-            if len(cuerpo or "") > MAX_CUERPO_INFORME:
+            # En bytes UTF-8, no en caracteres: con tildes o emojis un texto ocupa más de lo que mide.
+            if len((cuerpo or "").encode("utf-8")) > MAX_CUERPO_INFORME:
                 raise PeticionInvalida("El resultado es demasiado grande para el informe")
             try:
                 return 200, redactar(_json(cuerpo))

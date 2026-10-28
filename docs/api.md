@@ -240,9 +240,21 @@ para que no tenga que hacer cuentas. Las instrucciones le piden usar solo esas c
 recomendación como garantía e ignorar cualquier instrucción que venga dentro de los datos. Si Bedrock
 falla, en los logs queda solo el tipo de error, nunca los datos.
 
-Variables de entorno de la Lambda (`infra/template.yaml`): `IA_ACTIVA` y `MODELO_IA`. El permiso IAM
+**Tope de gasto.** El endpoint es público y cada llamada a Bedrock se cobra, así que:
+
+- Cada contenedor de la Lambda llama a Bedrock como mucho `IA_LLAMADAS_POR_MINUTO` veces por minuto (4 por
+  defecto). Pasado ese cupo responde la plantilla, sin costo de Bedrock.
+- Si se pide el informe del mismo resultado, se reutiliza el texto ya generado (caché de los últimos 256 por
+  contenedor) y no se vuelve a pagar. Los fallos no se guardan.
+- Cada llamada está acotada a 400 tokens de salida y a unos 1.100 de entrada (cuerpo de 50 KB como máximo,
+  medido en bytes UTF-8).
+- Tiempos de Bedrock: 3 s para conectar, 12 s de lectura y 2 intentos en total (≈ 31 s en el peor caso). Así,
+  si Bedrock no responde, queda tiempo de devolver la plantilla antes del corte de 60 s de la Lambda.
+
+Variables de entorno de la Lambda (`infra/template.yaml`): `IA_ACTIVA`, `MODELO_IA` e `IA_LLAMADAS_POR_MINUTO`. El permiso IAM
 es solo `bedrock:InvokeModel` sobre ese modelo. Si se usa un ID que empieza con `us.` (un *inference
 profile*), la política tiene que permitir también el ARN de ese perfil.
 
-Respuesta 400 si falta algún campo, si las cifras no son números o si `nivel` no es `solida`, `debil`
-o `insuficiente`.
+Respuesta 400 si falta algún campo, si el cuerpo pasa de 50 KB, si alguna cifra no es un número finito
+(se rechazan `NaN`, `Infinity` y valores por encima de 10⁹) o si `nivel` no es `solida`, `debil` o
+`insuficiente`.

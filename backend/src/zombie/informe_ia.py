@@ -5,8 +5,12 @@ Converse API, un texto de pocas frases. Si la IA está apagada o falla, responde
 fija etiquetada como "local" para que la interfaz la muestre como texto sin IA.
 Ver docs/api.md.
 """
+import hashlib
 import json
+import math
 import os
+import time
+from collections import OrderedDict, deque
 
 from .montecarlo import LINEAS_BASE
 
@@ -18,6 +22,22 @@ POBLACION_MANTA = 271_145
 NIVELES = ("solida", "debil", "insuficiente")
 MAX_PLANES = 64
 MAX_TEXTO = 120
+# Ninguna cifra de una simulación llega a esto; más grande es un error o un abuso.
+MAX_CIFRA = 1e9
+
+# Tope de gasto: el endpoint es público y cada llamada a Bedrock se cobra. Cada contenedor de la
+# Lambda llama a Bedrock como mucho LLAMADAS_POR_MINUTO veces; pasado eso responde la plantilla.
+# Con el límite de 10 ejecuciones simultáneas de una cuenta nueva y ~$0,0001 por llamada, el peor
+# caso es 10 × 4 × 60 × 24 × $0,0001 ≈ $5,80 al día, y el AWS Budget avisa (docs/costos.md).
+LLAMADAS_POR_MINUTO = int(os.environ.get("IA_LLAMADAS_POR_MINUTO", "4"))
+# Peor caso de Bedrock: 2 intentos × (3 s + 12 s) + espera entre intentos ≈ 31 s, por debajo de los 60 s
+# de la Lambda y de CloudFront: si Bedrock no responde, todavía da tiempo de devolver la plantilla.
+CONEXION_S, LECTURA_S, INTENTOS = 3, 12, 2
+LIMITE_LAMBDA_S = 60
+# El mismo resultado pedido otra vez no vuelve a pagar Bedrock.
+TAM_CACHE = 256
+_llamadas: deque[float] = deque()
+_cache: OrderedDict[str, dict] = OrderedDict()
 
 SISTEMA = """Eres el asesor del Comité de Contención de Manta. Escribe para el alcalde, en español,
 sin tecnicismos y en máximo 5 frases. Usa SOLO las cifras del JSON; no inventes ni calcules números nuevos.
@@ -37,7 +57,14 @@ def _cifra(valor) -> float:
         valor = valor.get("media")
     if isinstance(valor, bool) or not isinstance(valor, (int, float)):
         raise ResumenInvalido("Las cifras del resultado deben ser números")
-    return round(float(valor), 3)
+    try:
+        numero = float(valor)   # un entero enorme no cabe en un float: OverflowError
+    except OverflowError:
+        raise ResumenInvalido("Las cifras del resultado son demasiado grandes") from None
+    # json.loads acepta NaN e Infinity: se rechazan antes de redondear o convertir a entero.
+    if not math.isfinite(numero) or abs(numero) > MAX_CIFRA:
+        raise ResumenInvalido("Las cifras del resultado deben ser números finitos y razonables")
+    return round(numero, 3)
 
 
 def _texto(valor) -> str:
@@ -138,24 +165,50 @@ def _texto_plantilla(resumen: dict) -> str:
 def _cliente():
     import boto3   # viene incluido en el runtime de Python de Lambda; en local solo hace falta con IA_ACTIVA
     from botocore.config import Config
-    return boto3.client("bedrock-runtime",
-                        config=Config(connect_timeout=5, read_timeout=20, retries={"max_attempts": 2}))
+    return boto3.client("bedrock-runtime", config=Config(
+        connect_timeout=CONEXION_S, read_timeout=LECTURA_S,
+        retries={"total_max_attempts": INTENTOS, "mode": "standard"}))
+
+
+def _hay_cupo(ahora: float) -> bool:
+    """Ventana deslizante de un minuto: True y cuenta la llamada si todavía queda cupo."""
+    while _llamadas and ahora - _llamadas[0] >= 60:
+        _llamadas.popleft()
+    if len(_llamadas) >= LLAMADAS_POR_MINUTO:
+        return False
+    _llamadas.append(ahora)
+    return True
 
 
 def redactar(resultado: dict) -> dict:
     resumen = resumir(resultado)
     if ACTIVA:
-        datos = json.dumps(resumen, ensure_ascii=False)
-        try:
-            respuesta = _cliente().converse(
-                modelId=MODELO,
-                system=[{"text": SISTEMA}],
-                messages=[{"role": "user", "content": [{"text": f"<datos>{datos}</datos>"}]}],
-                inferenceConfig={"maxTokens": 400, "temperature": 0.2},
-            )
-            texto = respuesta["output"]["message"]["content"][0]["text"].strip()
-            if texto:
-                return {"fuente": "bedrock", "modelo": MODELO, "texto": texto}
-        except Exception as error:   # cualquier fallo de Bedrock cae a la plantilla
-            print(f"Bedrock falló: {type(error).__name__}")   # sin registrar los datos
+        datos = json.dumps(resumen, ensure_ascii=False, sort_keys=True)
+        clave = hashlib.sha256(datos.encode("utf-8")).hexdigest()
+        if clave in _cache:
+            _cache.move_to_end(clave)
+            return _cache[clave]
+        informe = _con_bedrock(datos) if _hay_cupo(time.monotonic()) else None
+        if informe:
+            _cache[clave] = informe
+            if len(_cache) > TAM_CACHE:
+                _cache.popitem(last=False)
+            return informe
     return {"fuente": "local", "modelo": None, "texto": _texto_plantilla(resumen)}
+
+
+def _con_bedrock(datos: str) -> dict | None:
+    """El texto de Bedrock, o None si falla (y entonces se usa la plantilla)."""
+    try:
+        respuesta = _cliente().converse(
+            modelId=MODELO,
+            system=[{"text": SISTEMA}],
+            messages=[{"role": "user", "content": [{"text": f"<datos>{datos}</datos>"}]}],
+            inferenceConfig={"maxTokens": 400, "temperature": 0.2},
+        )
+        texto = respuesta["output"]["message"]["content"][0]["text"].strip()
+        if texto:
+            return {"fuente": "bedrock", "modelo": MODELO, "texto": texto}
+    except Exception as error:   # cualquier fallo de Bedrock cae a la plantilla
+        print(f"Bedrock falló: {type(error).__name__}")   # sin registrar los datos
+    return None
