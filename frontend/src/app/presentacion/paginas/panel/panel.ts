@@ -8,6 +8,7 @@ import { Plan, ResultadoDifusion, ResultadoSimulacion } from '../../../dominio/m
 import { POBLACION_MANTA, enManta, factorManta } from '../../../dominio/reglas/escala';
 import { comparacion } from '../../../dominio/reglas/planes';
 import { AntesDespues } from '../../componentes/antes-despues/antes-despues';
+import { Calibracion } from '../../componentes/calibracion/calibracion';
 import { Controles } from '../../componentes/controles/controles';
 import { Grafica } from '../../componentes/grafica/grafica';
 import { Guia } from '../../componentes/guia/guia';
@@ -30,6 +31,12 @@ interface Indicador {
 }
 
 type ModeloMapa = 'red' | 'edp';
+type GraficaId = 'curva' | 'estados';
+
+const GRAFICAS: { id: GraficaId; nombre: string }[] = [
+  { id: 'curva', nombre: 'Curva de contagios' },
+  { id: 'estados', nombre: 'Estados SEIR' },
+];
 
 const MODELOS: { id: ModeloMapa; nombre: string }[] = [
   { id: 'red', nombre: 'Modelo de red' },
@@ -38,7 +45,18 @@ const MODELOS: { id: ModeloMapa; nombre: string }[] = [
 
 @Component({
   selector: 'app-panel',
-  imports: [AntesDespues, Controles, Grafica, Estados, Informe, Mapa, MapaBarrios, Tabla, Guia],
+  imports: [
+    AntesDespues,
+    Calibracion,
+    Controles,
+    Grafica,
+    Estados,
+    Informe,
+    Mapa,
+    MapaBarrios,
+    Tabla,
+    Guia,
+  ],
   templateUrl: './panel.html',
   styleUrl: './panel.css',
 })
@@ -89,6 +107,10 @@ export class Panel implements OnInit {
   protected readonly modelos = MODELOS;
   protected readonly modeloMapa = signal<ModeloMapa>('red');
 
+  // Las dos gráficas grandes comparten lugar: se ve una a la vez.
+  protected readonly graficas = GRAFICAS;
+  protected readonly grafica = signal<GraficaId>('curva');
+
   // El mismo escenario en los dos modelos: infectados sin intervenir y con la intervención de cada uno.
   protected readonly contraste = computed(() => {
     const r = this.resultado();
@@ -103,8 +125,18 @@ export class Panel implements OnInit {
       con: numero(con),
       salvados: Math.max(0, sin - con),
     });
-    const red = fila('Red (decide)', recomendado.nombre, sinIntervencion.infectados.media, recomendado.infectados.media);
-    const zonas = fila('EDP (contraste)', 'Vacunar por zonas', edp('ninguna'), edp('vacunacion_zonal'));
+    const red = fila(
+      'Red (decide)',
+      recomendado.nombre,
+      sinIntervencion.infectados.media,
+      recomendado.infectados.media,
+    );
+    const zonas = fila(
+      'EDP (contraste)',
+      'Vacunar por zonas',
+      edp('ninguna'),
+      edp('vacunacion_zonal'),
+    );
     return {
       filas: [red, zonas].map((f) => ({ ...f, salvados: numero(f.salvados) })),
       veces: zonas.salvados > 0 ? Math.round(red.salvados / zonas.salvados) : null,
@@ -166,7 +198,8 @@ export class Panel implements OnInit {
     const sin = hastaHoy(sinIntervencion);
     const con = hastaHoy(recomendado);
     const salvados = enCurso ? Math.max(0, sin - con) : r.veredicto.salvadosVsNinguna;
-    const manta = (valor: number) => `≈ ${numero(enManta(valor, r.escenario.nPersonas))} en toda Manta`;
+    const manta = (valor: number) =>
+      `≈ ${numero(enManta(valor, r.escenario.nPersonas))} en toda Manta`;
     const pico = `pico hacia el día ${Math.round(sinIntervencion.diaPico)}`;
     return [
       tarjetaPoblacion,

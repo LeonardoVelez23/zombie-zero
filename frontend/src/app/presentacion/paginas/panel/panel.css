@@ -53,7 +53,6 @@
   justify-content: center;
 }
 
-
 .app-shell.sidebar-plegada .sidebar .brand > div:last-child,
 .app-shell.sidebar-plegada .sidebar .nav-label,
 .app-shell.sidebar-plegada .sidebar .nav-item b,
@@ -80,7 +79,6 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
-
 
 .app-shell.sidebar-plegada .sidebar .nav-menu {
   display: flex;
@@ -364,12 +362,16 @@
   font-weight: 400;
   line-height: 1.35;
   letter-spacing: 0;
-  text-shadow: 0 0 18px rgba(168, 85, 247, 0.45), 3px 3px 0 rgba(107, 38, 217, 0.5);
+  text-shadow:
+    0 0 18px rgba(168, 85, 247, 0.45),
+    3px 3px 0 rgba(107, 38, 217, 0.5);
 }
 
 .page-heading h1 span {
   color: var(--orange);
-  text-shadow: 0 0 18px rgba(255, 153, 0, 0.5), 3px 3px 0 rgba(124, 45, 18, 0.7);
+  text-shadow:
+    0 0 18px rgba(255, 153, 0, 0.5),
+    3px 3px 0 rgba(124, 45, 18, 0.7);
 }
 
 .page-heading p {
@@ -416,10 +418,17 @@
   border: 1px solid var(--borde-violeta);
   border-radius: 10px;
   background:
-    radial-gradient(ellipse at 100% 0%, color-mix(in srgb, var(--acento) 12%, transparent), transparent 60%),
+    radial-gradient(
+      ellipse at 100% 0%,
+      color-mix(in srgb, var(--acento) 12%, transparent),
+      transparent 60%
+    ),
     linear-gradient(160deg, rgba(22, 12, 46, 0.96), rgba(8, 7, 26, 0.97) 60%);
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.3);
-  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .metric-card:hover {
@@ -549,9 +558,12 @@
 }
 
 @keyframes seccion-elegida {
-  0%, 35% {
+  0%,
+  35% {
     border-color: var(--orange);
-    box-shadow: 0 0 0 2px rgba(255, 153, 0, 0.35), 0 0 26px rgba(255, 153, 0, 0.3);
+    box-shadow:
+      0 0 0 2px rgba(255, 153, 0, 0.35),
+      0 0 26px rgba(255, 153, 0, 0.3);
   }
   100% {
     border-color: var(--borde-violeta);
@@ -584,6 +596,13 @@
   min-width: 0;
 }
 
+.graficas {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  scroll-margin-top: 16px;
+}
+
 .selector-modelo {
   display: inline-flex;
   align-self: flex-start;
@@ -604,7 +623,9 @@
   font-size: 11px;
   font-weight: 700;
   cursor: pointer;
-  transition: background-color .15s ease, color .15s ease;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .modelo:last-child {
@@ -646,7 +667,7 @@
   color: #8f93b8;
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: .06em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 

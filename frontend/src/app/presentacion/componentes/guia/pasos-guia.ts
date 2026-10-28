@@ -46,18 +46,6 @@ export const PASOS_GUIA: PasoGuia[] = [
     objetivos: ['#mapa-brote'],
   },
   {
-    titulo: 'Zombies activos por día',
-    texto:
-      'Curva de cada plan: la línea es la media de los brotes simulados y la banda cubre del percentil 5 al 95.',
-    objetivos: ['#resultados'],
-  },
-  {
-    titulo: 'Estados SEIR',
-    texto:
-      'Cuántas personas están sanas, mordidas, zombies o exorcizadas cada día. Elige el plan y el día que quieres ver.',
-    objetivos: ['#estados'],
-  },
-  {
     titulo: 'Comparativa de planes',
     texto:
       'Todos los planes con su costo, infectados, personas salvadas, vacunas y cuántas veces ganan al reparto al azar. El recomendado lleva su insignia.',
@@ -68,6 +56,12 @@ export const PASOS_GUIA: PasoGuia[] = [
     texto:
       'El informe en lenguaje simple: qué plan aplicar, cuántas personas salva y qué tan sólido es frente al azar.',
     objetivos: ['app-informe'],
+  },
+  {
+    titulo: 'Curva y estados SEIR',
+    texto:
+      'Dos pestañas: la curva de zombies activos de cada plan (media y banda del percentil 5 al 95) y cuántas personas están sanas, mordidas, zombies o exorcizadas cada día.',
+    objetivos: ['#graficas'],
   },
   {
     titulo: 'Modelo de red o EDP',

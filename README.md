@@ -70,6 +70,13 @@ o se mantiene, y sus infectados, personas salvadas y porcentaje de brotes en que
    de ese día, y la recomendación puede cambiar: con ese corte pasa de *anillo + cerrar colegio* a
    *centralidad + cerrar colegio*.
 
+9. **Se calibra con datos reales de Manta:** con los casos positivos semanales de COVID-19 de 2020 (SNGRE, vía
+   [ecuacovid](https://github.com/andrab/ecuacovid)) ajusta el crecimiento de la segunda ola (23 de agosto al
+   15 de noviembre: +2,04 % por día, se duplicaba cada 34 días) y lo convierte en un **R efectivo de 1,17**
+   (IC 95 %: 1,07–1,27) con las ecuaciones del SEIR. El panel *Calibración con datos reales* muestra los casos
+   reales con el ajuste, y el botón **R de Manta 2020** simula la plaga con ese valor. Detalle en
+   [docs/supuestos.md](docs/supuestos.md#calibración-con-datos-reales-covid-19-en-manta-2020).
+
 ## Cómo probarlo
 
 El repositorio tiene dos partes independientes que se comunican por HTTP:
@@ -282,8 +289,9 @@ las intervenciones, la calibración de la dificultad y la reproducibilidad.
 - **Población parcialmente supuesta:** el reparto entre parroquias urbanas es un supuesto, porque no
   encontramos datos públicos del Censo 2022 por parroquia urbana. Los tamaños de colegios, trabajos y buses
   también son supuestos.
-- **Sin calibración con brotes reales de Manabí:** los parámetros de la plaga vienen de la literatura de
-  COVID-19, no de datos locales (por ejemplo, de dengue).
+- **Calibración con datos reales solo del R efectivo:** el R0 = 2,5 sale de la literatura porque Manta entró en
+  cuarentena con su primer caso y nunca tuvo un brote libre que medir. Con los casos reales de 2020 se calibra
+  el R efectivo con medidas (1,17); la latencia y los días de contagio siguen viniendo de la literatura.
 - **Intervenciones simplificadas:** una sola dosis que protege desde el día en que se aplica, cierres que
   empiezan el día de la detección y duran un tiempo fijo, y una probabilidad de detección constante.
 - **No se modela la mortalidad:** el objetivo es minimizar los contagios.
