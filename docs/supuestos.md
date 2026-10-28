@@ -115,6 +115,35 @@ contagia más que la red (sin intervención, unos 7.960 contra unos 4.000 desde 
 aeropuerto) y vacunar por zonas salva poco. La red sabe quién es contacto de quién
 y por eso la vacunación en anillo es mucho más eficaz con las mismas dosis.
 
+## Calibración con datos reales (COVID-19 en Manta, 2020)
+
+**Datos:** casos positivos confirmados de COVID-19 en el cantón Manta, de los informes de situación de la
+SNGRE, recopilados en el repositorio abierto [ecuacovid](https://github.com/andrab/ecuacovid)
+(`datos_crudos/positivas/2020/cantones.csv`). Se guardan sumados por semana ISO en
+`backend/src/zombie/datos/covid_manta_2020.csv` (2.125 casos entre marzo y diciembre). Cuando el acumulado
+baja por una reclasificación (por ejemplo, −49 el 8 de mayo), se mantiene su máximo.
+
+**Por qué no se calibra el R0:** Manta entró en cuarentena con su primer caso (17 de marzo de 2020), las pruebas
+eran escasas y los casos se cargaban por lotes (+84 de golpe el 4 de mayo). Los datos nunca muestran un brote
+libre, así que no sirven para estimar el R0: miden cuánto contagiaba la enfermedad **con medidas**.
+
+**Método** (`backend/src/zombie/calibracion.py`):
+
+1. Ventana: la segunda ola, desde la semana con menos casos del valle entre olas (semanas 27 a 40) hasta la
+   semana con más casos después de ella. Resulta del 23 de agosto al 15 de noviembre de 2020 (semanas 34 a 46).
+2. Regresión log-lineal de los casos semanales: crecimiento r = 2,04 % por día (se duplicaba cada 34 días).
+3. Conversión a R con la relación de un SEIR con latencia y contagio fijos (Wallinga y Lipsitch, *Proc R Soc B*
+   2007): R = (1 + r × 3)(1 + r × 5) = **1,17**, con IC 95 % de 1,07 a 1,27 (por el error de la pendiente).
+
+**Lectura:** sin medidas, cada caso contagia a unos 2,5 (literatura); en Manta, con cuarentena, mascarillas y
+cierres, a 1,17. El botón **R de Manta 2020** simula la plaga con ese R efectivo: el brote crece lento, muchos
+brotes se apagan solos y la recomendación sigue siendo sólida (semilla 42: anillo + cerrar colegio, gana al
+azar en el 98 % de los brotes en que hubo diferencia).
+
+**Limitaciones:** los casos confirmados dependen de cuántas pruebas se hacían, y el R efectivo de la segunda ola
+mezcla el efecto de las medidas con la inmunidad que dejó la primera. Es una calibración del orden de magnitud
+del contagio con medidas, no una predicción.
+
 ## Referencias de datos abiertos
 
 1. INEC, Censo de Población y Vivienda 2022: población del cantón Manta por área y grupos de edad, vía [citypopulation.de](https://www.citypopulation.de/en/ecuador/admin/manab%C3%AD/1308__manta/) y [ecuadorencifras.gob.ec](https://www.ecuadorencifras.gob.ec/institucional/201-279-personas-mas-viven-en-manabi/).
@@ -123,6 +152,9 @@ y por eso la vacunación en anillo es mucho más eficaz con las mismas dosis.
 4. El Diario, "La Parroquia Tarqui está de fiesta…" (2025): [eldiario.ec](https://www.eldiario.ec/manta/la-parroquia-tarqui-esta-de-fiesta-este-9-de-octubre-celebra-96-anos-de-historia-y-empuje-26092025/).
 
 5. Munz, P., Hudea, I., Imad, J. y Smith?, R. J. (2009). "When zombies attack!: Mathematical modelling of an outbreak of zombie infection". En *Infectious Disease Modelling Research Progress*, Nova Science, pp. 133-150.
+
+6. SNGRE, informes de situación COVID-19, casos positivos por cantón (2020), recopilados en [github.com/andrab/ecuacovid](https://github.com/andrab/ecuacovid).
+7. Wallinga, J. y Lipsitch, M. (2007). "How generation intervals shape the relationship between growth rates and reproductive numbers". *Proc R Soc B* 274: 599-604.
 
 ## Monte Carlo
 

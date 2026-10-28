@@ -8,6 +8,7 @@ import base64
 import json
 from dataclasses import asdict, fields, replace
 
+from .calibracion import manta_2020
 from .config import Escenario, Plaga, Recursos
 from .edp import Difusion, resolver
 from .montecarlo import comparar
@@ -116,6 +117,7 @@ def parametros() -> dict:
         "limites": {g: {k: list(v) for k, v in campos.items()} for g, campos in LIMITES.items()},
         "inicios": list(INICIOS),
         "repeticiones": {"por_defecto": REPETICIONES_POR_DEFECTO, "limites": list(REPETICIONES)},
+        "calibracion": manta_2020(),
     }
 
 

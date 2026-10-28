@@ -1,4 +1,4 @@
-import { Component, OnInit, input, output, signal } from '@angular/core';
+import { Component, OnInit, computed, input, output, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
@@ -171,7 +171,19 @@ export class Controles implements OnInit {
   protected readonly avanzadas = SECCIONES.filter((s) => s.avanzada);
   // «Más parámetros» desplegado; se abre solo si un Brote Sorpresa cambia alguno de esos campos.
   protected readonly verAvanzado = signal(false);
-  protected readonly sorpresas = SORPRESAS;
+  // Además de los Brotes Sorpresa, el escenario con el R efectivo medido en Manta (datos reales de 2020).
+  protected readonly sorpresas = computed<Sorpresa[]>(() => {
+    const calibracion = this.parametros().calibracion;
+    if (!calibracion) return SORPRESAS;
+    return [
+      ...SORPRESAS,
+      {
+        nombre: 'R de Manta 2020',
+        detalle: `R efectivo de la COVID-19 en Manta con medidas (datos reales): ${calibracion.rEfectivo}`,
+        valores: () => ({ r0: calibracion.rEfectivo }),
+      },
+    ];
+  });
   protected readonly etiquetaInicio = (inicio: string): string =>
     ETIQUETAS_INICIO[inicio] ?? capitalizar(inicio);
   protected formulario = new FormGroup<Record<string, FormControl>>({});

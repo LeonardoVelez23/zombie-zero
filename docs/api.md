@@ -24,7 +24,12 @@ Valores por defecto y límites de cada parámetro, para armar los controles de l
                "plaga": {"r0": [0.5, 10.0], ...},
                "recursos": {...} },
   "inicios": ["aleatorio", "aeropuerto", "mercado", "colegio", "Tarqui", "Manta", "Los Esteros", "Eloy Alfaro", "San Mateo", "Rural"],
-  "repeticiones": {"por_defecto": 100, "limites": [5, 200]}
+  "repeticiones": {"por_defecto": 100, "limites": [5, 200]},
+  "calibracion": { "fuente": "SNGRE, casos positivos por cantón (repositorio ecuacovid)",
+                   "url_fuente": "https://github.com/andrab/ecuacovid",
+                   "semanas": [{"semana": 12, "fin": "2020-03-22", "acumulado": 18, "nuevos": 18}, ...],
+                   "ventana": [34, 46], "ajuste": [18.8, 21.7, ...],
+                   "r_diario": 0.0204, "duplicacion_dias": 34.0, "r_efectivo": 1.17, "ic95": [1.07, 1.27] }
 }
 ```
 

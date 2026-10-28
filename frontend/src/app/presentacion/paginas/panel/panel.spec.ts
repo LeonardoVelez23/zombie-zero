@@ -155,13 +155,19 @@ describe('Panel: menú lateral', () => {
   it('resalta el enlace elegido en lugar de dejar siempre «Dashboard»', async () => {
     const { fixture, raiz } = await renderizar();
     expect(activos(raiz)).toEqual(['#dashboard']);
-    expect(raiz.querySelector('.nav-item[href="#dashboard"]')!.getAttribute('aria-current')).toBe('location');
+    expect(raiz.querySelector('.nav-item[href="#dashboard"]')!.getAttribute('aria-current')).toBe(
+      'location',
+    );
 
     raiz.querySelector<HTMLAnchorElement>('.nav-item[href="#estrategias"]')!.click();
     await fixture.whenStable();
     expect(activos(raiz)).toEqual(['#estrategias']);
-    expect(raiz.querySelector('.nav-item[href="#estrategias"]')!.getAttribute('aria-current')).toBe('location');
-    expect(raiz.querySelector('.nav-item[href="#dashboard"]')!.hasAttribute('aria-current')).toBe(false);
+    expect(raiz.querySelector('.nav-item[href="#estrategias"]')!.getAttribute('aria-current')).toBe(
+      'location',
+    );
+    expect(raiz.querySelector('.nav-item[href="#dashboard"]')!.hasAttribute('aria-current')).toBe(
+      false,
+    );
 
     raiz.querySelector<HTMLAnchorElement>('.brand')!.click();
     await fixture.whenStable();

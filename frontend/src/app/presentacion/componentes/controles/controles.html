@@ -11,7 +11,7 @@
   <fieldset class="sorpresas">
     <legend>🎃 Brote Sorpresa en un clic</legend>
     <div class="sorpresas-botones">
-      @for (s of sorpresas; track s.nombre) {
+      @for (s of sorpresas(); track s.nombre) {
         <button
           type="button"
           class="sorpresa"
@@ -24,7 +24,12 @@
           {{ s.nombre }}
         </button>
       }
-      <button type="button" class="sorpresa restablecer" [disabled]="cargando()" (click)="restablecer()">
+      <button
+        type="button"
+        class="sorpresa restablecer"
+        [disabled]="cargando()"
+        (click)="restablecer()"
+      >
         ↺ Restablecer
       </button>
     </div>
@@ -63,7 +68,11 @@
     </fieldset>
   }
 
-  <details class="avanzado" [open]="verAvanzado()" (toggle)="verAvanzado.set($any($event.target).open)">
+  <details
+    class="avanzado"
+    [open]="verAvanzado()"
+    (toggle)="verAvanzado.set($any($event.target).open)"
+  >
     <summary>
       Más parámetros
       <small>población, duración, casos iniciales y corte de vacunas</small>

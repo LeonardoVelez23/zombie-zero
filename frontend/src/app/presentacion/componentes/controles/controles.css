@@ -28,7 +28,7 @@ fieldset {
   padding: 7px 10px;
   border: 1px solid #3a2f5c;
   border-radius: 4px;
-  background: rgba(255, 186, 82, .06);
+  background: rgba(255, 186, 82, 0.06);
   color: #ffd79a;
   font-size: 10px;
   font-weight: 700;
@@ -37,7 +37,7 @@ fieldset {
 
 .sorpresa.activa {
   border-color: var(--orange);
-  background: rgba(255, 186, 82, .18);
+  background: rgba(255, 186, 82, 0.18);
   color: #fff;
 }
 
@@ -48,7 +48,7 @@ fieldset {
 
 .sorpresa:disabled {
   cursor: not-allowed;
-  opacity: .6;
+  opacity: 0.6;
 }
 
 legend {
@@ -79,7 +79,7 @@ legend {
 .field-label span {
   color: #777c9f;
   font-size: 8px;
-  letter-spacing: .7px;
+  letter-spacing: 0.7px;
 }
 
 input,
@@ -99,7 +99,7 @@ select {
 input:focus,
 select:focus {
   border-color: var(--violet);
-  box-shadow: 0 0 0 2px rgba(168, 85, 247, .12);
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.12);
 }
 
 input.ng-invalid {
@@ -109,9 +109,9 @@ input.ng-invalid {
 /* Parámetros secundarios, plegados por defecto. */
 .avanzado {
   margin-top: 18px;
-  border: 1px solid rgba(168, 85, 247, .2);
+  border: 1px solid rgba(168, 85, 247, 0.2);
   border-radius: 4px;
-  background: rgba(168, 85, 247, .055);
+  background: rgba(168, 85, 247, 0.055);
 }
 
 .avanzado summary {
@@ -162,7 +162,7 @@ input.ng-invalid {
 
 .run-button:disabled {
   cursor: not-allowed;
-  opacity: .65;
+  opacity: 0.65;
 }
 
 .button-arrow {
@@ -185,25 +185,32 @@ input.ng-invalid {
 input:focus,
 select:focus {
   border-color: var(--orange);
-  box-shadow: 0 0 0 3px rgba(255, 153, 0, .16), 0 0 14px rgba(255, 153, 0, .18);
+  box-shadow:
+    0 0 0 3px rgba(255, 153, 0, 0.16),
+    0 0 14px rgba(255, 153, 0, 0.18);
 }
 
 input,
 select {
-  transition: border-color .2s ease, box-shadow .2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .sorpresa {
-  transition: border-color .15s ease, background-color .15s ease, color .15s ease;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .sorpresa:hover:not(:disabled) {
-  border-color: rgba(255, 153, 0, .6);
+  border-color: rgba(255, 153, 0, 0.6);
   color: #fff;
 }
 
 .sorpresa.activa {
-  box-shadow: 0 0 12px rgba(255, 153, 0, .25);
+  box-shadow: 0 0 12px rgba(255, 153, 0, 0.25);
 }
 
 legend {
@@ -216,20 +223,32 @@ legend {
   background: linear-gradient(180deg, #ffb02e, #ff9900);
   color: #1a0b00;
   font-family: var(--font-mono);
-  letter-spacing: .5px;
-  box-shadow: 0 0 18px rgba(255, 153, 0, .3), 0 4px 0 #7c2d12, 0 8px 18px rgba(0, 0, 0, .45);
-  transition: transform .15s ease, box-shadow .2s ease, filter .2s ease;
+  letter-spacing: 0.5px;
+  box-shadow:
+    0 0 18px rgba(255, 153, 0, 0.3),
+    0 4px 0 #7c2d12,
+    0 8px 18px rgba(0, 0, 0, 0.45);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.2s ease,
+    filter 0.2s ease;
 }
 
 .run-button:hover:not(:disabled) {
   filter: brightness(1.06);
   transform: translateY(-1px);
-  box-shadow: 0 0 28px rgba(255, 153, 0, .5), 0 5px 0 #7c2d12, 0 10px 22px rgba(0, 0, 0, .5);
+  box-shadow:
+    0 0 28px rgba(255, 153, 0, 0.5),
+    0 5px 0 #7c2d12,
+    0 10px 22px rgba(0, 0, 0, 0.5);
 }
 
 .run-button:active:not(:disabled) {
   transform: translateY(2px);
-  box-shadow: 0 0 14px rgba(255, 153, 0, .35), 0 2px 0 #7c2d12, 0 4px 10px rgba(0, 0, 0, .45);
+  box-shadow:
+    0 0 14px rgba(255, 153, 0, 0.35),
+    0 2px 0 #7c2d12,
+    0 4px 10px rgba(0, 0, 0, 0.45);
 }
 
 .run-button:disabled {
