@@ -45,6 +45,11 @@ export class Panel implements OnInit {
   // El mapa EDP usa el escenario de la última simulación (o el por defecto si aún no hay).
   private ultimaConfiguracion: ConfiguracionSimulacion = {};
 
+  // Número de la última petición enviada: si una respuesta vieja llega tarde, se descarta
+  // para que no reemplace el resultado de una configuración más reciente.
+  private peticionSimulacion = 0;
+  private peticionDifusion = 0;
+
   protected readonly indicadores = computed<Indicador[]>(() => {
     const r = this.resultado();
     const poblacion = r?.escenario.nPersonas ?? this.parametros()?.porDefecto.nPersonas;
@@ -101,29 +106,36 @@ export class Panel implements OnInit {
   }
 
   protected async simular(configuracion: ConfiguracionSimulacion): Promise<void> {
+    const peticion = ++this.peticionSimulacion;
+    const vigente = () => peticion === this.peticionSimulacion;
     this.simulando.set(true);
     this.error.set(null);
     try {
-      this.resultado.set(await this.simularBrote.ejecutar(configuracion));
+      const resultado = await this.simularBrote.ejecutar(configuracion);
+      if (!vigente()) return;
+      this.resultado.set(resultado);
       this.ultimaConfiguracion = configuracion;
     } catch (e) {
-      this.error.set(mensaje(e));
+      if (vigente()) this.error.set(mensaje(e));
     } finally {
-      this.simulando.set(false);
+      if (vigente()) this.simulando.set(false);
     }
   }
 
   protected async calcularDifusion(): Promise<void> {
+    const peticion = ++this.peticionDifusion;
+    const vigente = () => peticion === this.peticionDifusion;
     this.calculandoDifusion.set(true);
     this.errorDifusion.set(null);
     try {
-      this.difusion.set(
-        await this.modelarDifusion.ejecutar({ escenario: this.ultimaConfiguracion.escenario }),
-      );
+      const difusion = await this.modelarDifusion.ejecutar({
+        escenario: this.ultimaConfiguracion.escenario,
+      });
+      if (vigente()) this.difusion.set(difusion);
     } catch (e) {
-      this.errorDifusion.set(mensaje(e));
+      if (vigente()) this.errorDifusion.set(mensaje(e));
     } finally {
-      this.calculandoDifusion.set(false);
+      if (vigente()) this.calculandoDifusion.set(false);
     }
   }
 }
