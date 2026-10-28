@@ -11,6 +11,7 @@ from dataclasses import asdict, fields, replace
 from .calibracion import manta_2020
 from .config import Escenario, Plaga, Recursos
 from .edp import Difusion, resolver
+from .guardado import guardar
 from .informe_ia import ResumenInvalido, redactar
 from .montecarlo import comparar
 from .poblacion import BARRIOS
@@ -141,7 +142,10 @@ def atender(metodo: str, ruta: str, cuerpo: str | None) -> tuple[int, dict]:
             return 200, {"estado": "ok"}
         if metodo == "POST" and ruta in ("/api/simular", "/simular"):
             esc, repeticiones = leer_peticion(_json(cuerpo))
-            return 200, comparar(esc, repeticiones)
+            resultado = comparar(esc, repeticiones)
+            # Resumen en S3 para consultarlo con Athena; si falla, la respuesta sale igual.
+            resultado["guardado"] = guardar(resultado)
+            return 200, resultado
         if metodo == "POST" and ruta in ("/api/edp", "/edp"):
             datos = _json(cuerpo)
             esc, _ = leer_peticion(datos)

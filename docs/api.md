@@ -80,6 +80,7 @@ Todo es opcional: lo que no se envía toma el valor por defecto.
     "salvados_vs_ninguna": 4812.0,
     "salvados_vs_azar": 3896.0
   },
+  "guardado": "3f9c...e1",          // id del resumen guardado en S3 (docs/resultados.md); null si no se guardó
   "planes": [
     {
       "id": "anillo+mercado",

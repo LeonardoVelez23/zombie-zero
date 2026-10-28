@@ -103,6 +103,8 @@ Resources:
                 Resource:
                   - !Sub arn:aws:s3:::${Pila}-frontendbucket-*
                   - !Sub arn:aws:s3:::${Pila}-frontendbucket-*/*
+                  - !Sub arn:aws:s3:::${Pila}-resultados-${AWS::AccountId}
+                  - !Sub arn:aws:s3:::${Pila}-resultados-${AWS::AccountId}/*
                   - arn:aws:s3:::aws-sam-cli-managed-default-samclisourcebucket-*
                   - arn:aws:s3:::aws-sam-cli-managed-default-samclisourcebucket-*/*
               - Effect: Allow
@@ -113,6 +115,33 @@ Resources:
               - Effect: Allow
                 Action: logs:DescribeLogGroups
                 Resource: '*'
+              # Resultados: la base y la tabla de Glue y el grupo de trabajo de Athena.
+              - Effect: Allow
+                Action:
+                  - glue:CreateDatabase
+                  - glue:GetDatabase
+                  - glue:UpdateDatabase
+                  - glue:DeleteDatabase
+                  - glue:CreateTable
+                  - glue:GetTable
+                  - glue:UpdateTable
+                  - glue:DeleteTable
+                  - glue:GetPartitions
+                  - glue:BatchDeletePartition
+                Resource:
+                  - !Sub arn:aws:glue:${AWS::Region}:${AWS::AccountId}:catalog
+                  - !Sub arn:aws:glue:${AWS::Region}:${AWS::AccountId}:database/zombie_zero
+                  - !Sub arn:aws:glue:${AWS::Region}:${AWS::AccountId}:table/zombie_zero/*
+              - Effect: Allow
+                Action:
+                  - athena:CreateWorkGroup
+                  - athena:GetWorkGroup
+                  - athena:UpdateWorkGroup
+                  - athena:DeleteWorkGroup
+                  - athena:TagResource
+                  - athena:UntagResource
+                  - athena:ListTagsForResource
+                Resource: !Sub arn:aws:athena:${AWS::Region}:${AWS::AccountId}:workgroup/${Pila}
               # Monitoreo: las alarmas, el dashboard y el tema SNS de avisos de esta pila.
               - Effect: Allow
                 Action:
@@ -164,7 +193,7 @@ Resources:
                 Resource: '*'
               # IAM: sin crear roles ni escribir políticas (evita escalar a administrador).
               # Solo puede entregar a Lambda el rol de ejecución que ya existe y adjuntarle
-              # o quitarle una única política: la de invocar Bedrock, definida abajo.
+              # o quitarle dos políticas fijas, definidas abajo: invocar Bedrock y guardar resultados.
               - Effect: Allow
                 Action: iam:GetRole
                 Resource: !Sub arn:aws:iam::${AWS::AccountId}:role/${Pila}-ApiFunctionRole-*
@@ -181,7 +210,9 @@ Resources:
                 Resource: !Sub arn:aws:iam::${AWS::AccountId}:role/${Pila}-ApiFunctionRole-*
                 Condition:
                   ArnEquals:
-                    iam:PolicyARN: !Ref PoliticaBedrock
+                    iam:PolicyARN:
+                      - !Ref PoliticaBedrock
+                      - !Ref PoliticaResultados
 
   # Lo único que la Lambda puede hacer en Bedrock: invocar nova-micro para redactar el informe.
   PoliticaBedrock:
@@ -195,6 +226,19 @@ Resources:
           - Effect: Allow
             Action: bedrock:InvokeModel
             Resource: !Sub arn:aws:bedrock:${AWS::Region}::foundation-model/amazon.nova-micro-v1:0
+
+  # Lo único que la Lambda puede hacer con los resultados: escribir resúmenes nuevos.
+  PoliticaResultados:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: !Sub ${Pila}-guardar-resultados
+      Description: Zombie Zero - la Lambda solo puede escribir en simulaciones/ del bucket de resultados
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action: s3:PutObject
+            Resource: !Sub arn:aws:s3:::${Pila}-resultados-${AWS::AccountId}/simulaciones/*
 
   # --- Corte de gasto de Bedrock para toda la cuenta ------------------------------------------
   # La Function URL es pública y el cupo de llamadas a Bedrock es por contenedor. Si el gasto real

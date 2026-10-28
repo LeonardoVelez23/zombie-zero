@@ -200,6 +200,7 @@ Todo está en `infra/` y se despliega en `us-east-1` con una sola plantilla
 | AWS Budget | Alerta por correo al 80 % del gasto mensual y si el pronóstico pasa del 100 % |
 | CloudWatch Logs | Logs de la API, guardados 7 días |
 | CloudWatch (alarmas + dashboard) y SNS | Correo si la API da errores, si una simulación pasa de 50 s o si se llega al límite de concurrencia; un dashboard `zombie-zero` con simulaciones, duración, errores y llamadas a Bedrock (salida `TableroUrl`) |
+| S3 de resultados + Glue + Athena | Un resumen por simulación, consultable con SQL ([`docs/resultados.md`](docs/resultados.md)) |
 | Bedrock (`amazon.nova-micro-v1:0`) | Redacta el informe para el alcalde con las cifras que ya calculó el motor |
 
 ### Servicios sugeridos por el reto: cuáles usamos y por qué
@@ -208,7 +209,7 @@ Todo está en `infra/` y se despliega en `us-east-1` con una sola plantilla
 |---|---|---|
 | Lambda / ECS Fargate / Batch | **Lambda** | Una simulación completa (100 repeticiones × 10 planes) tarda ~10 s con 2 vCPU: cabe de sobra en una Lambda y se paga solo por uso. Fargate o Batch cobran por tener capacidad lista |
 | Step Functions (Distributed Map) / Batch | No | Repartir el Monte Carlo entre muchas Lambdas sumaría costo por transición y arranques en frío para ahorrar segundos; el paralelismo está dentro de la Lambda (2 procesos) |
-| S3 + Athena / DynamoDB | No | El resultado es reproducible: la misma configuración y la misma semilla dan siempre el mismo resultado, así que guardarlo no agrega información |
+| S3 + Athena / DynamoDB | **S3 + Athena** | Cada simulación guarda un resumen de ~3 kB (sin curvas: se recalculan con la semilla). Athena responde, por ejemplo, qué plan se recomendó más en todos los Brote Sorpresa; con tope de 100 MB por consulta y borrado a los 90 días ([detalle](docs/resultados.md)). DynamoDB no hace falta: no hay lecturas por clave |
 | Amplify / S3 + CloudFront | **S3 + CloudFront** | Bucket privado con OAC; la API sale por el mismo dominio (`/api/*`) |
 | SageMaker | No | No hay un modelo que entrenar: el motor es un modelo SEIR sobre una red de contactos |
 | Bedrock | **Sí** | Informe en lenguaje simple con nova-micro, el modelo más barato; con tope de llamadas y un Budget que corta la IA si pasa de 3 USD |
@@ -249,8 +250,8 @@ Archivo fuente editable: [`docs/arquitectura.drawio`](docs/arquitectura.drawio) 
   **Privado:** el bucket S3, que solo CloudFront puede leer mediante OAC.
 - **Flujo de una visita:** el navegador pide la página a CloudFront, que la toma de S3. Las simulaciones van
   a `/api/*` en el mismo dominio y CloudFront las pasa a la Lambda sin caché (hasta 60 s). La Lambda arma la
-  red de contactos, corre el Monte Carlo y devuelve el resultado; no hay base de datos, porque con la misma
-  semilla el resultado es siempre el mismo. Los mosaicos del mapa los pide el navegador directamente a Esri y
+  red de contactos, corre el Monte Carlo y devuelve el resultado. Además guarda un resumen en S3 (sin las curvas, que se recalculan
+  con la semilla) para consultarlo con Athena. Los mosaicos del mapa los pide el navegador directamente a Esri y
   OpenStreetMap.
 - **Despliegue:** cada merge a `main` corre las pruebas en GitHub Actions y, si pasan, despliega con un rol de
   IAM que se obtiene por OIDC. No hay llaves de AWS guardadas en GitHub y el rol solo puede tocar los recursos
