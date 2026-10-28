@@ -4,18 +4,22 @@ import { ModelarDifusion } from '../../../aplicacion/casos-uso/modelar-difusion'
 import { ObtenerParametros } from '../../../aplicacion/casos-uso/obtener-parametros';
 import { SimularBrote } from '../../../aplicacion/casos-uso/simular-brote';
 import { ConfiguracionSimulacion, Parametros } from '../../../dominio/modelos/escenario';
-import { Plan, ResultadoDifusion, ResultadoSimulacion } from '../../../dominio/modelos/resultado';
+import { ResultadoDifusion, ResultadoSimulacion } from '../../../dominio/modelos/resultado';
+import { mordidosHasta, salvadosHasta } from '../../../dominio/reglas/dias';
 import { POBLACION_MANTA, enManta, factorManta } from '../../../dominio/reglas/escala';
 import { comparacion } from '../../../dominio/reglas/planes';
 import { AntesDespues } from '../../componentes/antes-despues/antes-despues';
+import { Calibracion } from '../../componentes/calibracion/calibracion';
 import { Controles } from '../../componentes/controles/controles';
 import { Grafica } from '../../componentes/grafica/grafica';
 import { Guia } from '../../componentes/guia/guia';
 import { MapaBarrios } from '../../componentes/mapa-barrios/mapa-barrios';
 import { Informe } from '../../componentes/informe/informe';
+import { LineaTiempo } from '../../componentes/linea-tiempo/linea-tiempo';
 import { Estados } from '../../componentes/estados/estados';
 import { Mapa } from '../../componentes/mapa/mapa';
 import { Tabla } from '../../componentes/tabla/tabla';
+import { RelojBrote } from '../../servicios/reloj-brote';
 import { numero } from '../../utilidades/formato';
 
 interface Indicador {
@@ -30,6 +34,12 @@ interface Indicador {
 }
 
 type ModeloMapa = 'red' | 'edp';
+type GraficaId = 'curva' | 'estados';
+
+const GRAFICAS: { id: GraficaId; nombre: string }[] = [
+  { id: 'curva', nombre: 'Curva de contagios' },
+  { id: 'estados', nombre: 'Estados SEIR' },
+];
 
 const MODELOS: { id: ModeloMapa; nombre: string }[] = [
   { id: 'red', nombre: 'Modelo de red' },
@@ -38,9 +48,23 @@ const MODELOS: { id: ModeloMapa; nombre: string }[] = [
 
 @Component({
   selector: 'app-panel',
-  imports: [AntesDespues, Controles, Grafica, Estados, Informe, Mapa, MapaBarrios, Tabla, Guia],
+  imports: [
+    AntesDespues,
+    Calibracion,
+    Controles,
+    Grafica,
+    Estados,
+    Informe,
+    LineaTiempo,
+    Mapa,
+    MapaBarrios,
+    Tabla,
+    Guia,
+  ],
   templateUrl: './panel.html',
   styleUrl: './panel.css',
+  // Un reloj por panel: todas sus pantallas de resultados muestran el mismo día.
+  providers: [RelojBrote],
 })
 export class Panel implements OnInit {
   // Nombre que el operador o jurado escribió en la bienvenida (solo se muestra).
@@ -81,13 +105,17 @@ export class Panel implements OnInit {
   protected readonly simulando = signal(false);
   protected readonly calculandoDifusion = signal(false);
   protected readonly error = signal<string | null>(null);
-  // Día que muestra el mapa del brote: los indicadores cuentan lo ocurrido hasta ese día.
-  protected readonly diaVivo = signal(0);
+  // Día que muestran todas las pantallas: los indicadores cuentan lo ocurrido hasta ese día.
+  protected readonly reloj = inject(RelojBrote);
   protected readonly errorDifusion = signal<string | null>(null);
 
   // Modelo que muestra el mapa principal: el de red (el que decide) o la EDP de contraste.
   protected readonly modelos = MODELOS;
   protected readonly modeloMapa = signal<ModeloMapa>('red');
+
+  // Las dos gráficas grandes comparten lugar: se ve una a la vez.
+  protected readonly graficas = GRAFICAS;
+  protected readonly grafica = signal<GraficaId>('curva');
 
   // El mismo escenario en los dos modelos: infectados sin intervenir y con la intervención de cada uno.
   protected readonly contraste = computed(() => {
@@ -103,8 +131,18 @@ export class Panel implements OnInit {
       con: numero(con),
       salvados: Math.max(0, sin - con),
     });
-    const red = fila('Red (decide)', recomendado.nombre, sinIntervencion.infectados.media, recomendado.infectados.media);
-    const zonas = fila('EDP (contraste)', 'Vacunar por zonas', edp('ninguna'), edp('vacunacion_zonal'));
+    const red = fila(
+      'Red (decide)',
+      recomendado.nombre,
+      sinIntervencion.infectados.media,
+      recomendado.infectados.media,
+    );
+    const zonas = fila(
+      'EDP (contraste)',
+      'Vacunar por zonas',
+      edp('ninguna'),
+      edp('vacunacion_zonal'),
+    );
     return {
       filas: [red, zonas].map((f) => ({ ...f, salvados: numero(f.salvados) })),
       veces: zonas.salvados > 0 ? Math.round(red.salvados / zonas.salvados) : null,
@@ -155,18 +193,18 @@ export class Panel implements OnInit {
       ];
     }
     const { sinIntervencion, recomendado } = comparacion(r);
-    // Mientras el mapa reproduce el brote se muestran los mordidos acumulados hasta ese día;
+    // Mientras se reproduce el brote se muestran los mordidos acumulados hasta ese día;
     // en el último día, los totales de la simulación (son los mismos valores).
-    const dia = this.diaVivo();
-    const enCurso = dia < r.escenario.dias;
-    const hastaHoy = (plan: Plan) => {
-      const fila = plan.mapaAfectados?.[dia];
-      return enCurso && fila ? fila.reduce((a, b) => a + b, 0) : plan.infectados.media;
-    };
-    const sin = hastaHoy(sinIntervencion);
-    const con = hastaHoy(recomendado);
-    const salvados = enCurso ? Math.max(0, sin - con) : r.veredicto.salvadosVsNinguna;
-    const manta = (valor: number) => `≈ ${numero(enManta(valor, r.escenario.nPersonas))} en toda Manta`;
+    const dia = this.reloj.dia();
+    const dias = r.escenario.dias;
+    const enCurso = dia < dias;
+    const sin = mordidosHasta(sinIntervencion, dia, dias);
+    const con = mordidosHasta(recomendado, dia, dias);
+    const salvados = enCurso
+      ? salvadosHasta(recomendado, sinIntervencion, dia, dias)
+      : r.veredicto.salvadosVsNinguna;
+    const manta = (valor: number) =>
+      `≈ ${numero(enManta(valor, r.escenario.nPersonas))} en toda Manta`;
     const pico = `pico hacia el día ${Math.round(sinIntervencion.diaPico)}`;
     return [
       tarjetaPoblacion,
@@ -220,6 +258,7 @@ export class Panel implements OnInit {
       if (!this.referencia()) this.referencia.set(resultado);
       this.ultimaConfiguracion = configuracion;
       this.resultado.set(resultado);
+      this.reloj.nuevoBrote(resultado.escenario.dias);
       // La EDP anterior era de otro escenario: se descarta (y también la que esté en camino).
       this.peticionDifusion++;
       this.difusion.set(null);
@@ -236,9 +275,10 @@ export class Panel implements OnInit {
   protected elegirModelo(modelo: ModeloMapa): void {
     this.modeloMapa.set(modelo);
     if (modelo !== 'edp') return;
-    // Sin el mapa de red a la vista, los indicadores muestran el brote completo.
+    // Sin el mapa de red a la vista, todas las pantallas saltan al brote completo
+    // (la línea de tiempo sigue disponible para recorrerlo).
     const r = this.resultado();
-    if (r) this.diaVivo.set(r.escenario.dias);
+    if (r) this.reloj.irA(r.escenario.dias);
     if (!this.difusion() && !this.calculandoDifusion()) void this.calcularDifusion();
   }
 

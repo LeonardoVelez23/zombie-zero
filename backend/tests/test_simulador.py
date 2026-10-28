@@ -5,8 +5,8 @@ import pytest
 
 from zombie.config import Escenario
 from zombie.estrategias import Estrategia, crear
-from zombie.modelo import E, I, calibrar_beta, casos_iniciales, estimar_r0, simular
-from zombie.montecarlo import _veredicto, comparar
+from zombie.modelo import E, I, Observacion, calibrar_beta, casos_iniciales, estimar_r0, simular
+from zombie.montecarlo import Plan, _veredicto, comparar
 from zombie.poblacion import TRABAJO, construir_red
 
 ESC = Escenario(n_personas=3000, dias=120)
@@ -55,10 +55,42 @@ def test_la_poblacion_se_conserva(red, beta):
     assert (res.serie.sum(axis=1) == red.n).all()
 
 
-@pytest.mark.parametrize("nombre", ["azar", "centralidad", "anillo"])
+@pytest.mark.parametrize("nombre", ["azar", "centralidad", "anillo", "adaptativa"])
 def test_respeta_el_limite_de_vacunas(red, beta, nombre):
     res = simular(red, ESC, crear(nombre, red), beta, 0)
     assert res.vacunas_usadas <= ESC.recursos.vacunas_disponibles
+
+
+def _observar(red, visibles):
+    visible = np.zeros(red.n, dtype=bool)
+    visible[visibles] = True
+    return Observacion(30, red, visible, np.zeros(red.n, dtype=bool), np.asarray(visibles))
+
+
+def test_adaptativa_hace_anillo_mientras_el_brote_es_chico(red):
+    obs = _observar(red, np.arange(5))
+    rng = np.random.default_rng(0)
+    assert np.array_equal(crear("adaptativa", red).elegir(obs, 50, rng), crear("anillo", red).elegir(obs, 50, rng))
+
+
+def test_adaptativa_con_brote_extendido_se_aleja_de_los_zombies(red):
+    # Brote detectado solo en el barrio 0 y por encima del umbral: vacuna en otros barrios y nunca a un contacto.
+    conocidos = np.flatnonzero(red.barrio == 0)[:100]
+    elegidos = crear("adaptativa", red).elegir(_observar(red, conocidos), 50, np.random.default_rng(0))
+    contactos = red.destino[red.aristas_de(conocidos)]
+    assert len(elegidos) == 50
+    assert not np.isin(elegidos, contactos).any()
+    assert (red.barrio[elegidos] != 0).all()
+
+
+def test_con_el_doble_de_contagio_la_adaptativa_supera_al_azar():
+    # El Brote Sorpresa que rompía a las otras estrategias: con R0 = 5 el anillo y los
+    # superpropagadores gastan dosis en mordidos ocultos y quedan por debajo del azar.
+    esc = Escenario.desde_dict({"plaga": {"r0": 5}})
+    res = comparar(esc, 40, [Plan("ninguna"), Plan("azar"), Plan("adaptativa")], procesos=1)
+    _, azar, adaptativa = res["planes"]
+    assert adaptativa["infectados"]["media"] < azar["infectados"]["media"]
+    assert adaptativa["gana_a_azar"] > 0.7
 
 
 class VacunaZombies(Estrategia):

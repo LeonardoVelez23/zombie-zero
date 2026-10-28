@@ -13,7 +13,7 @@
 
 table {
   width: 100%;
-  min-width: 560px;
+  min-width: 660px;
   border-collapse: collapse;
   font-size: 10px;
 }
@@ -133,4 +133,32 @@ td {
 
 .insignia.base {
   box-shadow: none;
+}
+
+/* Columna que sigue a la línea de tiempo: se resalta para distinguirla de los totales. */
+th.al-dia,
+td.al-dia {
+  background: rgba(168, 85, 247, 0.07);
+  font-variant-numeric: tabular-nums;
+}
+
+.ver-todos {
+  margin-top: 12px;
+  padding: 8px 12px;
+  border: 1px solid #282b4d;
+  border-radius: 4px;
+  background: #070a1d;
+  color: #d8b4fe;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ver-todos:hover {
+  background: rgba(168, 85, 247, 0.1);
+}
+
+.ver-todos:focus-visible {
+  outline: 2px solid var(--violet);
+  outline-offset: 2px;
 }

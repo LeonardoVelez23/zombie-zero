@@ -24,7 +24,12 @@ Valores por defecto y límites de cada parámetro, para armar los controles de l
                "plaga": {"r0": [0.5, 10.0], ...},
                "recursos": {...} },
   "inicios": ["aleatorio", "aeropuerto", "mercado", "colegio", "Tarqui", "Manta", "Los Esteros", "Eloy Alfaro", "San Mateo", "Rural"],
-  "repeticiones": {"por_defecto": 100, "limites": [5, 200]}
+  "repeticiones": {"por_defecto": 100, "limites": [5, 200]},
+  "calibracion": { "fuente": "SNGRE, casos positivos por cantón (repositorio ecuacovid)",
+                   "url_fuente": "https://github.com/andrab/ecuacovid",
+                   "semanas": [{"semana": 12, "fin": "2020-03-22", "acumulado": 18, "nuevos": 18}, ...],
+                   "ventana": [34, 46], "ajuste": [18.8, 21.7, ...],
+                   "r_diario": 0.0204, "duplicacion_dias": 34.0, "r_efectivo": 1.17, "ic95": [1.07, 1.27] }
 }
 ```
 
@@ -141,10 +146,11 @@ de 2,8 GHz; la Lambda de 2 GB es unas 2,4 veces más lenta (con el motor anterio
 
 Esa tabla es de la versión en serie. Ahora los planes se reparten entre procesos (2 en la Lambda de
 3.008 MB, todos los núcleos en la CLI) y los lotes son de 50 repeticiones: en local, con 6 procesos,
-300 repeticiones tardan 5,6 s. Falta medirlo en AWS después del despliegue.
+300 repeticiones tardan 5,6 s. Con la estrategia adaptativa son 14 planes; con 2 procesos en local, 100
+repeticiones tardan 9,4 s (escenario por defecto) y 17 s (R0 = 5). Falta medirlo en AWS después del despliegue.
 
 Por eso la API usa 100 repeticiones por defecto y acepta hasta 300: el reto pide
-1.000 por defecto, pero con 10 planes no caben en los 60 s de la Lambda. La CLI
+1.000 por defecto, pero con 14 planes no caben en los 60 s de la Lambda. La CLI
 (`python -m zombie.cli`, sin límite de tiempo) sí usa 1.000. Escala lineal con
 `repeticiones` y con `n_personas`. Se puede verificar en AWS con la métrica
 `Duration` de CloudWatch.
@@ -196,3 +202,65 @@ parámetros propios de la EDP. Todo es opcional.
   columna 0 el oeste, según `malla`. Sirve para el mapa de calor.
 
 Tarda alrededor de 1,5 s y responde unos 450 KB.
+
+## `POST /api/informe`
+
+Informe para el alcalde en lenguaje simple. **El motor calcula y la IA solo redacta:** recibe el
+resultado de una simulación ya hecha, no vuelve a simular y no cambia la recomendación ni el veredicto.
+Ver `backend/src/zombie/informe_ia.py`.
+
+Es un endpoint aparte de `/api/simular` por dos razones: la simulación no se vuelve más lenta, y si
+Bedrock falla en vivo, la simulación sigue funcionando.
+
+### Petición
+
+Un resumen del resultado de `/api/simular` (la interfaz lo arma en `resumenParaInforme`). Las cifras
+pueden ir sueltas o como rango `{ "media": ... }`. Máximo 50 KB y 64 planes.
+
+```json
+{
+  "escenario": { "n_personas": 5000 },
+  "repeticiones": 100,
+  "recomendado": "centralidad",
+  "veredicto": { "nivel": "solida", "gana_a_azar": 0.9, "empates_con_azar": 0.1,
+                 "salvados_vs_ninguna": 812.4, "salvados_vs_azar": 120.0 },
+  "planes": [
+    { "id": "centralidad", "nombre": "centralidad", "tipo": "candidato", "vacunas": 1000, "costo": 5000,
+      "infectados": 2287.6, "salvados_vs_ninguna": 812.4, "salvados_vs_azar": 120.0, "gana_a_azar": 0.9 }
+  ]
+}
+```
+
+### Respuesta
+
+```json
+{ "fuente": "bedrock", "modelo": "amazon.nova-micro-v1:0", "texto": "Se recomienda ..." }
+```
+
+- `fuente: "bedrock"`: lo redactó Amazon Bedrock (Converse API, máximo 400 tokens, temperatura 0,2).
+- `fuente: "local"` y `modelo: null`: plantilla fija sin IA. Se usa cuando `IA_ACTIVA` no es `true` (por
+  defecto en local) o cuando Bedrock falla; la interfaz la muestra como «Texto automático (sin IA)».
+
+Al modelo solo le llega lo necesario (sin mapas ni curvas), más la cifra ya calculada para toda Manta,
+para que no tenga que hacer cuentas. Las instrucciones le piden usar solo esas cifras, no presentar la
+recomendación como garantía e ignorar cualquier instrucción que venga dentro de los datos. Si Bedrock
+falla, en los logs queda solo el tipo de error, nunca los datos.
+
+**Tope de gasto.** El endpoint es público y cada llamada a Bedrock se cobra, así que:
+
+- Cada contenedor de la Lambda llama a Bedrock como mucho `IA_LLAMADAS_POR_MINUTO` veces por minuto (4 por
+  defecto). Pasado ese cupo responde la plantilla, sin costo de Bedrock.
+- Si se pide el informe del mismo resultado, se reutiliza el texto ya generado (caché de los últimos 256 por
+  contenedor) y no se vuelve a pagar. Los fallos no se guardan.
+- Cada llamada está acotada a 400 tokens de salida y a unos 1.100 de entrada (cuerpo de 50 KB como máximo,
+  medido en bytes UTF-8).
+- Tiempos de Bedrock: 3 s para conectar, 12 s de lectura y 2 intentos en total (≈ 31 s en el peor caso). Así,
+  si Bedrock no responde, queda tiempo de devolver la plantilla antes del corte de 60 s de la Lambda.
+
+Variables de entorno de la Lambda (`infra/template.yaml`): `IA_ACTIVA`, `MODELO_IA` e `IA_LLAMADAS_POR_MINUTO`. El permiso IAM
+es solo `bedrock:InvokeModel` sobre ese modelo. Si se usa un ID que empieza con `us.` (un *inference
+profile*), la política tiene que permitir también el ARN de ese perfil.
+
+Respuesta 400 si falta algún campo, si el cuerpo pasa de 50 KB, si alguna cifra no es un número finito
+(se rechazan `NaN`, `Infinity` y valores por encima de 10⁹) o si `nivel` no es `solida`, `debil` o
+`insuficiente`.

@@ -23,7 +23,7 @@ interface PanelExpuesto {
 
 interface Indicadores {
   resultado: { set: (r: ResultadoSimulacion) => void };
-  diaVivo: { set: (dia: number) => void };
+  reloj: { dia: { set: (dia: number) => void } };
   indicadores: () => { etiqueta: string; valor: string }[];
 }
 
@@ -39,6 +39,7 @@ describe('Panel: simulaciones que se cruzan', () => {
         pendientes.push(d);
         return d.promesa;
       },
+      informe: () => Promise.reject(new Error('no se usa')),
       difusion: () => Promise.reject(new Error('sin EDP en esta prueba')),
     };
     await TestBed.configureTestingModule({
@@ -98,6 +99,7 @@ describe('Panel: indicadores en vivo', () => {
     const simulador: SimuladorRepositorio = {
       parametros: () => Promise.resolve(parametrosDePrueba),
       simular: () => Promise.resolve(resultadoDePrueba),
+      informe: () => Promise.reject(new Error('no se usa')),
       difusion: () => Promise.reject(new Error('sin EDP en esta prueba')),
     };
     await TestBed.configureTestingModule({
@@ -118,14 +120,14 @@ describe('Panel: indicadores en vivo', () => {
   function valores(dia: number): string[] {
     const p = TestBed.createComponent(Panel).componentInstance as unknown as Indicadores;
     p.resultado.set(conSeries);
-    p.diaVivo.set(dia);
+    p.reloj.dia.set(dia);
     return p
       .indicadores()
       .slice(1)
       .map((i) => i.valor);
   }
 
-  it('cuentan lo ocurrido hasta el día que muestra el mapa', () => {
+  it('cuentan lo ocurrido hasta el día de la línea de tiempo', () => {
     expect(valores(1)).toEqual(['300', '50', '250']);
   });
 
@@ -139,6 +141,7 @@ describe('Panel: menú lateral', () => {
     const simulador: SimuladorRepositorio = {
       parametros: () => Promise.resolve(parametrosDePrueba),
       simular: () => Promise.reject(new Error('no se usa')),
+      informe: () => Promise.reject(new Error('no se usa')),
       difusion: () => Promise.reject(new Error('no se usa')),
     };
     TestBed.configureTestingModule({
@@ -155,13 +158,19 @@ describe('Panel: menú lateral', () => {
   it('resalta el enlace elegido en lugar de dejar siempre «Dashboard»', async () => {
     const { fixture, raiz } = await renderizar();
     expect(activos(raiz)).toEqual(['#dashboard']);
-    expect(raiz.querySelector('.nav-item[href="#dashboard"]')!.getAttribute('aria-current')).toBe('location');
+    expect(raiz.querySelector('.nav-item[href="#dashboard"]')!.getAttribute('aria-current')).toBe(
+      'location',
+    );
 
     raiz.querySelector<HTMLAnchorElement>('.nav-item[href="#estrategias"]')!.click();
     await fixture.whenStable();
     expect(activos(raiz)).toEqual(['#estrategias']);
-    expect(raiz.querySelector('.nav-item[href="#estrategias"]')!.getAttribute('aria-current')).toBe('location');
-    expect(raiz.querySelector('.nav-item[href="#dashboard"]')!.hasAttribute('aria-current')).toBe(false);
+    expect(raiz.querySelector('.nav-item[href="#estrategias"]')!.getAttribute('aria-current')).toBe(
+      'location',
+    );
+    expect(raiz.querySelector('.nav-item[href="#dashboard"]')!.hasAttribute('aria-current')).toBe(
+      false,
+    );
 
     raiz.querySelector<HTMLAnchorElement>('.brand')!.click();
     await fixture.whenStable();
@@ -204,6 +213,7 @@ describe('Panel: selector de modelo del mapa', () => {
     const simulador: SimuladorRepositorio = {
       parametros: () => Promise.resolve(parametrosDePrueba),
       simular: () => Promise.resolve(resultadoDePrueba),
+      informe: () => Promise.reject(new Error('no se usa')),
       difusion: () => {
         difusiones++;
         return Promise.resolve(difusion);

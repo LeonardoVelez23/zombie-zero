@@ -50,3 +50,21 @@ describe('Brote Sorpresa en un clic', () => {
     expect(boton('Variante').getAttribute('aria-pressed')).toBe('false');
   });
 });
+
+describe('Más parámetros', () => {
+  it('empieza plegado y se abre si un Brote Sorpresa cambia uno de sus campos', () => {
+    const fixture = TestBed.createComponent(Controles);
+    fixture.componentRef.setInput('parametros', parametrosDePrueba);
+    fixture.detectChanges();
+    const raiz = fixture.nativeElement as HTMLElement;
+    const avanzado = raiz.querySelector<HTMLDetailsElement>('details.avanzado')!;
+    expect(avanzado.open).toBe(false);
+    expect(raiz.querySelector('#semilla')).not.toBeNull(); // la semilla siempre a la vista
+
+    [...raiz.querySelectorAll<HTMLButtonElement>('.sorpresa')]
+      .find((b) => b.textContent?.includes('Corte de vacunas'))!
+      .click();
+    fixture.detectChanges();
+    expect(avanzado.open).toBe(true);
+  });
+});

@@ -10,6 +10,7 @@ el 28/10/2026. No se cuentan los créditos del plan gratuito.
 | Simulación completa (`POST /api/simular`, 100 repeticiones × 10 planes) | Lambda de 2 GB | 10,4 a 12,3 s facturados → usamos **12 s = 24 GB-s**. Respuesta de 48,6 KB |
 | Mapa EDP (`POST /api/edp`) | Lambda de 2 GB | 1,7 s facturados → usamos **2 s = 4 GB-s**. Respuesta de 27,5 KB |
 | Parámetros y salud (`GET /api/...`) | Lambda | 2 ms (despreciable) |
+| Informe para el alcalde (`POST /api/informe`) | Amazon Bedrock (Nova Micro) + Lambda | Resumen de 2,6 KB + instrucciones ≈ **1.100 tokens de entrada**; respuesta de **400 tokens como máximo**. Lambda: ~2 s esperando a Bedrock |
 | Primera visita a la web | CloudFront + S3 | 8 archivos, **0,52 MB** comprimidos (el código de MapLibre es la mayor parte) |
 | Mosaicos del mapa | Esri, OpenStreetMap | Fuera de AWS y sin costo para nosotros |
 
@@ -25,15 +26,53 @@ La tabla anterior se midió con la Lambda de 2 GB. Desde la versión con Monte C
 - **La Lambda tiene 3.008 MB** (2 vCPU) y simula los planes en 2 procesos. Se cobra 1,47 veces más por segundo,
   pero cada simulación debería tardar menos: en local, con 2 procesos y lotes de 50 repeticiones, la misma
   simulación tarda menos de la mitad.
+- **14 planes en vez de 10** (se sumó la estrategia adaptativa): cada simulación hace un 40 % más de cómputo.
+  En local, con 2 procesos, tarda 9,4 s en el escenario por defecto y 17 s con R0 = 5.
 - **El mapa trae un fotograma por día** en vez de uno cada 10 días: la respuesta pasa de 27,5 KB a unos
   85 KB comprimidos (4 MB sin comprimir; CloudFront la comprime).
 
-Si la duración no bajara nada (peor caso), una simulación costaría 12 s × 2,94 GB = **35 GB-s** y un mapa
+Si la duración no bajara nada (peor caso, sin contar los 4 planes nuevos), una simulación costaría 12 s × 2,94 GB = **35 GB-s** y un mapa
 2 s × 2,94 GB = **6 GB-s**. Con eso el uso normal pasaría de $1,46 a **≈ $2,12** al mes (sigue en $0 con la
 capa gratuita) y el brote activo de $14,57 a **≈ $21,22** (≈ $13,80 con la capa gratuita, por encima del Budget
-de 10 USD, que avisaría). Las cifras definitivas se recalculan con `infra/costos.sh` después del despliegue.
+de 10 USD, que avisaría). Con los 4 planes nuevos y la duración proporcional (12 s × 1,4 = 17 s), serían 49 GB-s por simulación:
+≈ $2,82 al mes en uso normal y ≈ $28,22 en un brote activo, sin la capa gratuita (3.000 y 30.000 simulaciones con su mapa, a $0,0000166667 por GB-s, más los mismos ≈ $0,07 y ≈ $0,72 del resto de servicios). Las cifras definitivas se
+recalculan con `infra/costos.sh` después del despliegue.
 `infra/costos.sh` multiplica los segundos de todo el mes por la memoria actual, así que las filas de ese mes
 mezclan invocaciones de 2 GB y de 3.008 MB y sobreestiman un poco el cómputo.
+
+### Informe con IA (Amazon Bedrock)
+
+Solo se llama cuando alguien pulsa «Explicar al alcalde»; si Bedrock falla, responde la plantilla sin IA y
+no se cobra nada de Bedrock. Precio on-demand de Amazon Nova Micro en us-east-1: **$0,035 por millón de
+tokens de entrada** y **$0,14 por millón de tokens de salida** (precio de lista de la página de Bedrock;
+falta confirmarlo con `aws pricing get-products`, como el resto de la tabla).
+
+| | Cálculo | Costo |
+|---|---|---|
+| Un informe (peor caso, 400 tokens de salida) | 1.100 × $0,035/M + 400 × $0,14/M | ≈ **$0,0001** |
+| Lambda por informe | 2 s × 2,94 GB = 6 GB-s | ≈ $0,0001 |
+| Uso normal, un informe por simulación (peor caso) | 3.000 × ($0,0001 + $0,0001) | ≈ **$0,59 al mes** |
+| Brote activo, un informe por simulación | 30.000 × ($0,0001 + $0,0001) | ≈ **$5,90 al mes** |
+
+**Tope de gasto.** El endpoint es público y no pide inicio de sesión, por eso el gasto en Bedrock tiene un
+techo por diseño, en dos capas:
+
+1. **Por contenedor:** cada contenedor de la Lambda llama a Bedrock una vez por minuto como máximo
+   (`IA_LLAMADAS_POR_MINUTO`). Pasado ese cupo responde la plantilla sin IA, y el mismo resultado pedido otra
+   vez sale de la caché. La cuenta admite 10 ejecuciones simultáneas de Lambda, así que aunque alguien enviara
+   peticiones sin parar a varios contenedores, el peor caso sería 10 × 1 × 60 × 24 = 14.400 llamadas al día
+   ≈ **$1,45 al día**.
+2. **Para toda la cuenta (corte de gasto):** el Budget `zombie-zero-bedrock` mide solo el gasto real en Bedrock.
+   Si en el mes pasa de **3 USD**, una acción de presupuesto adjunta sola la política `zombie-zero-sin-bedrock`
+   al rol de la Lambda: Bedrock queda negado, el informe sigue saliendo con la plantilla sin IA y llega un
+   correo. AWS Budgets actualiza el gasto varias veces al día, así que el corte llega con unas horas de
+   retraso; con la capa 1, ese retraso cuesta como mucho unos centavos por hora. Está en
+   `infra/github-oidc.yaml`, la pila que despliega un administrador; para reactivar la IA se quita la
+   política del rol.
+
+Bedrock no tiene capa gratuita. Los segundos de Lambda sí entran en la capa gratuita junto con los demás.
+Las cifras son un techo: en la práctica el informe se pide mucho menos que la simulación. El gasto real de
+Bedrock aparece en AWS Budgets con el resto de la cuenta.
 
 ## Costo mensual estimado de operación
 

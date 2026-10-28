@@ -40,6 +40,26 @@ export interface Difusion {
   alfa: number;
 }
 
+// Casos reales de COVID-19 en Manta (2020) y el R efectivo que se ajusta con ellos (ver docs/supuestos.md).
+export interface SemanaCasos {
+  semana: number;
+  fin: string;
+  acumulado: number;
+  nuevos: number;
+}
+
+export interface Calibracion {
+  fuente: string;
+  urlFuente: string;
+  semanas: SemanaCasos[];
+  ventana: [number, number];
+  ajuste: number[];
+  rDiario: number;
+  duplicacionDias: number | null;
+  rEfectivo: number;
+  ic95: [number, number];
+}
+
 export interface Parametros {
   porDefecto: Escenario;
   edpPorDefecto: Difusion;
@@ -51,6 +71,7 @@ export interface Parametros {
   };
   inicios: string[];
   repeticiones: { porDefecto: number; limites: Rango };
+  calibracion?: Calibracion;
 }
 
 // Lo que no se indica toma el valor por defecto del simulador.
