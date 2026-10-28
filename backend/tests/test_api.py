@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from zombie.api import PeticionInvalida, atender, lambda_handler, leer_peticion
+from zombie.api import REPETICIONES_POR_DEFECTO, PeticionInvalida, atender, lambda_handler, leer_peticion
 
 PEQUENO = {"escenario": {"n_personas": 1000, "dias": 60}, "repeticiones": 5}
 
@@ -10,7 +10,7 @@ PEQUENO = {"escenario": {"n_personas": 1000, "dias": 60}, "repeticiones": 5}
 def test_lo_que_falta_toma_el_valor_por_defecto():
     esc, repeticiones = leer_peticion({})
     assert esc.plaga.r0 == 2.5
-    assert repeticiones == 50
+    assert repeticiones == REPETICIONES_POR_DEFECTO == 100
 
 
 def test_lee_parametros_anidados():
