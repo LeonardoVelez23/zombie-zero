@@ -1,0 +1,76 @@
+<button
+  #disparador
+  type="button"
+  class="guia-boton"
+  aria-haspopup="dialog"
+  [attr.aria-expanded]="abierta()"
+  [title]="estado() ? 'Repetir el recorrido guiado por el panel' : 'Recorrido guiado por el panel'"
+  (click)="abrir()"
+>
+  <span class="guia-icono" aria-hidden="true">?</span>
+  <span class="guia-texto">Ver recorrido</span>
+  @if (!estado()) {
+    <span class="guia-nuevo" aria-hidden="true"></span>
+  }
+</button>
+
+@if (abierta()) {
+  @if (foco(); as f) {
+    <div
+      class="guia-foco"
+      aria-hidden="true"
+      [style.top.px]="f.top"
+      [style.left.px]="f.left"
+      [style.width.px]="f.width"
+      [style.height.px]="f.height"
+    ></div>
+  } @else {
+    <div class="guia-velo" aria-hidden="true"></div>
+  }
+
+  <section
+    #tarjeta
+    class="guia-tarjeta"
+    [class.centrada]="modo() === 'centrada'"
+    [class.anclada]="modo() === 'anclada'"
+    role="dialog"
+    aria-modal="false"
+    aria-labelledby="guia-titulo"
+    aria-describedby="guia-texto"
+    [style.top.px]="posicion()?.top"
+    [style.left.px]="posicion()?.left"
+    (keydown)="alTeclear($event)"
+  >
+    <header class="guia-cabecera">
+      <span class="guia-progreso" aria-live="polite">
+        Paso {{ indice() + 1 }} de {{ pasos.length }}
+      </span>
+      <button type="button" class="guia-cerrar" aria-label="Cerrar recorrido" (click)="saltar()">
+        ✕
+      </button>
+    </header>
+
+    <div class="guia-barra" aria-hidden="true">
+      <span [style.width.%]="((indice() + 1) / pasos.length) * 100"></span>
+    </div>
+
+    <h2 #titulo id="guia-titulo" tabindex="-1">{{ paso().titulo }}</h2>
+    <p id="guia-texto">{{ paso().texto }}</p>
+
+    <footer class="guia-acciones">
+      @if (!esUltimo()) {
+        <button type="button" class="guia-saltar" (click)="saltar()">Saltar</button>
+      }
+      <span class="guia-espacio"></span>
+      <button type="button" class="guia-secundario" [disabled]="esPrimero()" (click)="anterior()">
+        ← Anterior
+      </button>
+      @if (esUltimo()) {
+        <button type="button" class="guia-principal" (click)="finalizar()">Finalizar</button>
+      } @else {
+        <button type="button" class="guia-principal" (click)="siguiente()">Siguiente →</button>
+      }
+    </footer>
+    <small class="guia-atajos">Teclas: ← → para moverte · Esc para salir</small>
+  </section>
+}

@@ -185,3 +185,32 @@ input[type='range'] {
 :host ::ng-deep .maplibregl-ctrl-attrib {
   font-size: 9px;
 }
+
+/* Identidad Zombie Zero: estados hover y activo de los selectores de plan. */
+.vista {
+  transition: background-color .15s ease, color .15s ease;
+}
+
+.vista:hover:not(.vista.activa) {
+  background: rgba(168, 85, 247, 0.1);
+  color: #f3e8ff;
+}
+
+.vista.activa {
+  background: linear-gradient(180deg, rgba(168, 85, 247, 0.32), rgba(107, 38, 217, 0.22));
+  box-shadow: inset 0 -2px 0 var(--orange);
+}
+
+.boton {
+  transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
+}
+
+.boton:hover:not(:disabled) {
+  border-color: var(--violet);
+  background: rgba(168, 85, 247, 0.2);
+  box-shadow: 0 0 14px rgba(168, 85, 247, 0.3);
+}
+
+select:focus-visible {
+  border-color: var(--orange);
+}
