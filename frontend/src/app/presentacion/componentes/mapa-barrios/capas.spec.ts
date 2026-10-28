@@ -1,6 +1,8 @@
 import {
   ZonaBarrio,
   circulo,
+  corredoresDe,
+  corredoresGeoJSON,
   radioZona,
   zombiesGeoJSON,
   zombiesPorPunto,
@@ -48,5 +50,38 @@ describe('Capas del mapa por barrio', () => {
       const km = Math.hypot((lng - z.centro[0]) * 111.3, (lat - z.centro[1]) * 110.6);
       expect(km).toBeLessThan(z.radioKm);
     }
+  });
+});
+
+describe('Corredores de contagio', () => {
+  const nombres = ['Tarqui', 'Manta', 'Rural'];
+  // Fila: barrio de origen; columna: barrio mordido.
+  const matriz = [
+    [50, 10, 0.2],
+    [6, 40, 0],
+    [0.3, 0, 5],
+  ];
+
+  it('suma ambos sentidos, ignora lo de dentro del barrio y lo menor a una mordida', () => {
+    expect(corredoresDe(nombres, matriz)).toEqual([{ a: 'Tarqui', b: 'Manta', mordidas: 16 }]);
+    expect(corredoresDe(nombres, undefined)).toEqual([]);
+  });
+
+  it('dibuja una línea entre los centros con grosor relativo al mayor corredor', () => {
+    const centros = { Tarqui: [-80.71, -0.95], Manta: [-80.73, -0.94] } as Record<
+      string,
+      [number, number]
+    >;
+    const { features } = corredoresGeoJSON(
+      [{ a: 'Tarqui', b: 'Manta', mordidas: 16 }],
+      centros,
+      32,
+    );
+    expect(features[0].geometry.coordinates).toEqual([centros['Tarqui'], centros['Manta']]);
+    expect(features[0].properties).toEqual({ mordidas: 16, ancho: 5 });
+    // Con un corredor mayor de 200 mordidas en otro plan, este (menos del 10 %) no se dibuja.
+    expect(
+      corredoresGeoJSON([{ a: 'Tarqui', b: 'Manta', mordidas: 16 }], centros, 200).features,
+    ).toEqual([]);
   });
 });

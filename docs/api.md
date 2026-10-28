@@ -95,6 +95,7 @@ Todo es opcional: lo que no se envía toma el valor por defecto.
       },
       "mapa": [[zombies promedio por barrio el día 0], [día 1], ...],   // (dias+1) × 6
       "mapa_afectados": [[mordidos acumulados por barrio el día 0], ...], // (dias+1) × 6, lo pinta el mapa por barrio
+      "corredores": [[mordidas del barrio 0 a cada barrio], ...],      // 6 × 6, fila = origen, columna = mordido; promedio en todo el brote. Una mordida se reparte entre los barrios de los zombies que presionaban ese día, según su peso de contacto
       "vacunas_perdidas": 12.3,
       "salvados_vs_ninguna": { "media": ..., "mediana": ..., "p5": ..., "p95": ... },
       "salvados_vs_azar":    { "media": ..., "mediana": ..., "p5": ..., "p95": ... },

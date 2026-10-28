@@ -18,8 +18,11 @@ import { Plan, ResultadoSimulacion } from '../../../dominio/modelos/resultado';
 import { numero } from '../../utilidades/formato';
 import { SECTORES, estiloBase, urlDelWorker } from '../mapa/vistas';
 import {
+  Corredor,
   NIVELES,
   ZonaBarrio,
+  corredoresDe,
+  corredoresGeoJSON,
   nivelDe,
   radioZona,
   zombiesGeoJSON,
@@ -41,6 +44,8 @@ const PLANES: { id: PlanMapa; nombre: string }[] = [
 ];
 
 // Milisegundos entre un día y el siguiente (180 días duran ~22 s a 1×).
+const CENTROS = Object.fromEntries(SECTORES.map((s) => [s.nombre, s.lngLat]));
+
 const VELOCIDADES = [
   { nombre: '1×', ms: 120 },
   { nombre: '2×', ms: 60 },
@@ -163,6 +168,21 @@ export class MapaBarrios {
     });
   });
 
+  // Corredores de contagio del plan elegido (todo el brote) y el mayor de los tres planes, para
+  // que el grosor de las líneas se compare entre planes.
+  protected readonly corredores = computed<Corredor[]>(() => {
+    const r = this.resultado();
+    return r ? corredoresDe(r.barrios, this.plan()?.corredores) : [];
+  });
+  private readonly corredorMayor = computed(() => {
+    const r = this.resultado();
+    if (!r) return 1;
+    const mayores = PLANES.map(
+      (p) => corredoresDe(r.barrios, this.buscarPlan(p.id)?.corredores)[0],
+    );
+    return Math.max(1, ...mayores.map((c) => c?.mordidas ?? 0));
+  });
+
   protected readonly barrioHover = computed(() => {
     const nombre = this.hover()?.nombre;
     return nombre ? (this.barrios().find((b) => b.nombre === nombre) ?? null) : null;
@@ -224,6 +244,12 @@ export class MapaBarrios {
       });
     });
     effect(() => this.pintar(this.barrios()));
+    effect(() => {
+      if (!this.capasListas()) return;
+      this.fuente('zz-corredores')?.setData(
+        corredoresGeoJSON(this.corredores(), CENTROS, this.corredorMayor()),
+      );
+    });
     effect(() => {
       if (!this.capasListas()) return;
       this.fuente('zz-zonas')?.setData(zonasGeoJSON(this.zonas()));
@@ -306,6 +332,14 @@ export class MapaBarrios {
       type: 'line',
       source: 'zz-zonas',
       paint: { 'line-color': ['get', 'color'], 'line-width': 1.5, 'line-opacity': 0.75 },
+    });
+    mapa.addSource('zz-corredores', { type: 'geojson', data: vacio });
+    mapa.addLayer({
+      id: 'zz-corredores',
+      type: 'line',
+      source: 'zz-corredores',
+      layout: { 'line-cap': 'round' },
+      paint: { 'line-color': '#ff8fa3', 'line-width': ['get', 'ancho'], 'line-opacity': 0.55 },
     });
     mapa.addSource('zz-zombies', { type: 'geojson', data: vacio });
     mapa.addLayer({

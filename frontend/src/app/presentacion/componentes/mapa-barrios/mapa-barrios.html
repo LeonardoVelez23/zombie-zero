@@ -109,6 +109,7 @@
         <span class="zombie"></span
         >{{ escala() === 1 ? '1 zombie activo' : escala() + ' zombies activos' }}
       </li>
+      <li><span class="linea"></span>Mordidas entre barrios</li>
       <li><small class="sin-margen">Zona: tamaño según población</small></li>
     </ul>
   }
@@ -122,6 +123,13 @@
       frente al <strong>{{ porcentaje(s.sinPlan) }}</strong> sin intervenir
     }
   </p>
+  @if (corredores()[0]; as c) {
+    <p class="resumen corredor">
+      Corredor principal de contagio: <strong>{{ c.a }} ↔ {{ c.b }}</strong
+      >, con {{ numero(c.mordidas) }} mordidas entre ambos en todo el brote. Los barrios se
+      contagian entre sí por el trabajo y el mercado.
+    </p>
+  }
   <ul class="barrios">
     @for (b of barrios(); track b.nombre) {
       <li>

@@ -6,7 +6,7 @@
 //   su zona. La posición de cada punto es fija (el k-ésimo punto de un barrio siempre está en el
 //   mismo lugar) y solo oscila un poco para que se vea vivo; no representa movimiento real.
 
-import type { Feature, FeatureCollection, Point, Polygon } from 'geojson';
+import type { Feature, FeatureCollection, LineString, Point, Polygon } from 'geojson';
 
 // Color de cada barrio según la fracción de su población que ya fue mordida.
 export const NIVELES = [
@@ -104,6 +104,52 @@ export function zombiesGeoJSON(
         },
       });
     }
+  });
+  return { type: 'FeatureCollection', features };
+}
+
+// Corredores de contagio: mordidas entre dos barrios, sumando ambos sentidos, en todo el brote.
+// Por debajo de una mordida en promedio no se dibuja la línea.
+export interface Corredor {
+  a: string;
+  b: string;
+  mordidas: number;
+}
+
+export function corredoresDe(nombres: string[], matriz: number[][] | undefined): Corredor[] {
+  if (!matriz) return [];
+  const lista: Corredor[] = [];
+  nombres.forEach((a, i) =>
+    nombres.forEach((b, j) => {
+      if (j <= i) return;
+      const mordidas = (matriz[i]?.[j] ?? 0) + (matriz[j]?.[i] ?? 0);
+      if (mordidas >= 1) lista.push({ a, b, mordidas });
+    }),
+  );
+  return lista.sort((x, y) => y.mordidas - x.mordidas);
+}
+
+// El grosor va de 1 a 9 px según las mordidas, con el mismo máximo para todos los planes.
+// Los corredores con menos del 10 % del mayor no se dibujan, para que se lean los importantes.
+export function corredoresGeoJSON(
+  corredores: Corredor[],
+  centros: Record<string, LngLat>,
+  mayor: number,
+): FeatureCollection<LineString> {
+  const features = corredores.flatMap((c): Feature<LineString>[] => {
+    const desde = centros[c.a];
+    const hasta = centros[c.b];
+    if (!desde || !hasta || c.mordidas < 0.1 * mayor) return [];
+    return [
+      {
+        type: 'Feature',
+        properties: {
+          mordidas: Math.round(c.mordidas),
+          ancho: 1 + (8 * c.mordidas) / Math.max(1, mayor),
+        },
+        geometry: { type: 'LineString', coordinates: [desde, hasta] },
+      },
+    ];
   });
   return { type: 'FeatureCollection', features };
 }

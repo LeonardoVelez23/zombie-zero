@@ -155,6 +155,20 @@ input[type='range'] {
   margin-left: 0;
 }
 
+.linea {
+  display: inline-block;
+  width: 14px;
+  height: 3px;
+  margin: 0 6px 2px 0;
+  border-radius: 2px;
+  background: #ff8fa3;
+  vertical-align: middle;
+}
+
+.resumen.corredor {
+  margin-top: 0;
+}
+
 .zombie {
   display: inline-block;
   width: 6px;
