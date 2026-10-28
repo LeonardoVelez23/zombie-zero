@@ -15,6 +15,12 @@
           <th scope="col">Costo</th>
           <th scope="col">Infectados <small>media (p5–p95)</small></th>
           <th scope="col">Salvados <small>vs. no intervenir</small></th>
+          <th
+            scope="col"
+            title="Perdidas: dosis que fueron a personas que parecían sanas pero ya estaban mordidas o se habían recuperado sin detectarse"
+          >
+            Vacunas <small>del plan · perdidas</small>
+          </th>
           <th scope="col" title="Entre los brotes en que hubo diferencia">Gana al azar</th>
         </tr>
       </thead>
@@ -36,6 +42,14 @@
               <small>{{ numero(plan.infectados.p5) }}–{{ numero(plan.infectados.p95) }}</small>
             </td>
             <td>{{ plan.salvadosVsNinguna ? numero(plan.salvadosVsNinguna.media) : '—' }}</td>
+            <td>
+              @if (plan.vacunas > 0) {
+                {{ numero(plan.vacunas) }}
+                <small>{{ numero(plan.vacunasPerdidas) }} perdidas</small>
+              } @else {
+                —
+              }
+            </td>
             <td>{{ plan.ganaAAzar !== undefined && plan.id !== 'azar' ? porcentaje(plan.ganaAAzar) : '—' }}</td>
           </tr>
         }

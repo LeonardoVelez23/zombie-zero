@@ -23,6 +23,12 @@ describe('Informe para el alcalde', () => {
     expect(texto).toContain('En 20 % de los brotes todos los planes terminaron igual');
   });
 
+  it('dice cuántas vacunas del plan fueron a personas ya mordidas sin saberlo', async () => {
+    const texto = await renderizar({ nivel: 'solida' });
+    expect(texto).toContain('Nunca se vacuna a un zombie detectado');
+    expect(texto).toContain('De sus 1.000 vacunas, en promedio 0 fueron');
+  });
+
   it('sin recursos suficientes no presenta el plan como una victoria', async () => {
     const texto = await renderizar({ nivel: 'insuficiente', ganaAAzar: 0.14, salvadosVsAzar: -31 });
     expect(texto).toContain('Recursos insuficientes');
