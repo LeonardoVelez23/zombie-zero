@@ -7,14 +7,13 @@ import {
   effect,
   inject,
   input,
-  model,
   signal,
-  untracked,
   viewChild,
 } from '@angular/core';
 import type { GeoJSONSource, Map as MapaLibre } from 'maplibre-gl';
 
 import { Plan, ResultadoSimulacion } from '../../../dominio/modelos/resultado';
+import { RelojBrote, prefiereMenosMovimiento } from '../../servicios/reloj-brote';
 import { numero } from '../../utilidades/formato';
 import { SECTORES, estiloBase, urlDelWorker } from '../mapa/vistas';
 import {
@@ -43,14 +42,7 @@ const PLANES: { id: PlanMapa; nombre: string }[] = [
   { id: 'recomendado', nombre: 'Plan recomendado' },
 ];
 
-// Milisegundos entre un día y el siguiente (180 días duran ~22 s a 1×).
 const CENTROS = Object.fromEntries(SECTORES.map((s) => [s.nombre, s.lngLat]));
-
-const VELOCIDADES = [
-  { nombre: '1×', ms: 120 },
-  { nombre: '2×', ms: 60 },
-  { nombre: '4×', ms: 30 },
-];
 
 export { NIVELES, nivelDe } from './capas';
 
@@ -91,14 +83,13 @@ export class MapaBarrios {
   readonly resultado = input<ResultadoSimulacion | null>(null);
 
   protected readonly planes = PLANES;
-  protected readonly velocidades = VELOCIDADES;
   protected readonly niveles = NIVELES;
   protected readonly nivelDe = nivelDe;
   protected readonly planElegido = signal<PlanMapa>('recomendado');
-  // Día que se muestra; el panel lo lee para que los indicadores avancen con el mapa.
-  readonly dia = model(0);
-  protected readonly reproduciendo = signal(false);
-  protected readonly velocidad = signal(VELOCIDADES[0].ms);
+  // Día que se muestra: lo marca la línea de tiempo del panel, igual para todas las pantallas.
+  private readonly reloj = inject(RelojBrote);
+  protected readonly dia = this.reloj.dia;
+  protected readonly reproduciendo = this.reloj.reproduciendo;
   protected readonly errorMapa = signal<string | null>(null);
   protected readonly numero = numero;
   // Barrio bajo el ratón y dónde mostrar su ficha (píxeles dentro del mapa).
@@ -109,7 +100,6 @@ export class MapaBarrios {
   private urlWorker: string | null = null;
   private destruido = false;
   private readonly marcadores = new Map<string, HTMLElement>();
-  private temporizador: ReturnType<typeof setInterval> | null = null;
   // El estilo ya cargó y existen las capas de zonas y zombies.
   private readonly capasListas = signal(false);
   private animacion = 0;
@@ -123,7 +113,6 @@ export class MapaBarrios {
     if (elegido === 'recomendado') return this.plan()?.nombre ?? 'el plan recomendado';
     return elegido === 'azar' ? 'vacunas al azar' : 'ningún plan';
   });
-  protected readonly totalDias = computed(() => (this.plan()?.mapaAfectados?.length ?? 1) - 1);
 
   // Barrios del día elegido con la fracción de su población que ya fue mordida.
   protected readonly barrios = computed<Barrio[]>(() => {
@@ -224,25 +213,10 @@ export class MapaBarrios {
     destruir.onDestroy(() => {
       this.destruido = true;
       cancelAnimationFrame(this.animacion);
-      this.detener();
       this.mapa?.remove();
       if (this.urlWorker) URL.revokeObjectURL(this.urlWorker);
     });
 
-    // Con una simulación nueva el brote se reproduce en vivo desde el día 0. Con movimiento
-    // reducido se muestra directamente el último día: cómo termina el brote completo.
-    effect(() => {
-      const hay = !!this.resultado();
-      untracked(() => {
-        this.detener();
-        if (hay && this.totalDias() > 0 && !prefiereMenosMovimiento()) {
-          this.dia.set(0);
-          this.alternarReproduccion();
-        } else {
-          this.dia.set(hay ? this.totalDias() : 0);
-        }
-      });
-    });
     effect(() => this.pintar(this.barrios()));
     effect(() => {
       if (!this.capasListas()) return;
@@ -259,27 +233,6 @@ export class MapaBarrios {
 
   protected porcentaje(fraccion: number): string {
     return `${Math.round(fraccion * 100)} %`;
-  }
-
-  protected alternarReproduccion(): void {
-    if (this.reproduciendo()) {
-      this.detener();
-      return;
-    }
-    if (this.totalDias() < 1) return;
-    if (this.dia() >= this.totalDias()) this.dia.set(0);
-    this.reproduciendo.set(true);
-    this.programar();
-  }
-
-  protected cambiarVelocidad(ms: number): void {
-    this.velocidad.set(ms);
-    if (this.reproduciendo()) this.programar();
-  }
-
-  protected elegirDia(dia: number): void {
-    this.detener();
-    this.dia.set(dia);
   }
 
   private buscarPlan(id: PlanMapa): Plan | null {
@@ -382,20 +335,6 @@ export class MapaBarrios {
     this.animacion = requestAnimationFrame(cuadro);
   }
 
-  private programar(): void {
-    if (this.temporizador) clearInterval(this.temporizador);
-    this.temporizador = setInterval(() => {
-      this.dia.update((d) => Math.min(d + 1, this.totalDias()));
-      if (this.dia() >= this.totalDias()) this.detener();
-    }, this.velocidad());
-  }
-
-  private detener(): void {
-    if (this.temporizador) clearInterval(this.temporizador);
-    this.temporizador = null;
-    this.reproduciendo.set(false);
-  }
-
   private async crearMapa(): Promise<void> {
     const elemento = this.contenedor()?.nativeElement;
     if (!elemento) return;
@@ -461,10 +400,6 @@ export class MapaBarrios {
       );
     }
   }
-}
-
-function prefiereMenosMovimiento(): boolean {
-  return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
 function texto(clase: string, contenido: string): HTMLElement {

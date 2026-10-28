@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { ResultadoSimulacion } from '../../../dominio/modelos/resultado';
 import { resultadoDePrueba } from '../../../../testing/datos';
+import { RelojBrote } from '../../servicios/reloj-brote';
 import { MapaBarrios, nivelDe } from './mapa-barrios';
 
 // Dos barrios de 100 personas, tres días: sin intervenir llegan a 40 y 60 mordidos; con el plan, a 2 y 4.
@@ -27,27 +28,22 @@ const resultado: ResultadoSimulacion = {
 };
 
 describe('Mapa del brote por barrio', () => {
-  beforeEach(() => vi.useFakeTimers());
-  afterEach(() => vi.useRealTimers());
-
-  function renderizar() {
+  // El día lo marca el reloj compartido (la línea de tiempo del panel).
+  function renderizar(dia = 2) {
+    const reloj = TestBed.inject(RelojBrote);
+    reloj.total.set(2);
+    reloj.irA(dia);
     const fixture = TestBed.createComponent(MapaBarrios);
     fixture.componentRef.setInput('resultado', resultado);
     fixture.detectChanges();
     const panel = fixture.nativeElement as HTMLElement;
     const texto = () => panel.textContent?.replace(/\s+/g, ' ') ?? '';
-    // El brote se reproduce solo: se adelanta hasta el último día.
-    const terminar = () => {
-      vi.advanceTimersByTime(240);
-      fixture.detectChanges();
-    };
-    return { fixture, panel, texto, terminar };
+    return { fixture, panel, texto, reloj };
   }
 
-  it('muestra el último día del plan recomendado frente a no intervenir', () => {
-    const { texto, terminar } = renderizar();
-    terminar();
-    expect(texto()).toContain('Día 2 de 2');
+  it('muestra el día del reloj con el plan recomendado frente a no intervenir', () => {
+    const { texto } = renderizar();
+    expect(texto()).toContain('PAUSA · DÍA 2');
     expect(texto()).toContain(
       'con anillo está mordido el 3 % de la ciudad frente al 50 % sin intervenir',
     );
@@ -55,8 +51,7 @@ describe('Mapa del brote por barrio', () => {
   });
 
   it('al elegir otro plan cambian los barrios', () => {
-    const { fixture, panel, texto, terminar } = renderizar();
-    terminar();
+    const { fixture, panel, texto } = renderizar();
     [...panel.querySelectorAll<HTMLButtonElement>('.plan')]
       .find((b) => b.textContent?.includes('Sin intervenir'))!
       .click();
@@ -65,23 +60,17 @@ describe('Mapa del brote por barrio', () => {
     expect(texto()).toContain('Manta60 %');
   });
 
-  it('con una simulación nueva el brote se reproduce en vivo desde el día 0', () => {
-    const { texto, terminar } = renderizar();
-    expect(texto()).toContain('Día 0 de 2');
-    expect(texto()).toContain('EN VIVO · DÍA 0');
-    terminar();
-    expect(texto()).toContain('Día 2 de 2');
-    expect(texto()).toContain('PAUSA · DÍA 2');
+  it('sigue al reloj cuando cambia el día', () => {
+    const { fixture, texto, reloj } = renderizar();
+    reloj.irA(1);
+    fixture.detectChanges();
+    expect(texto()).toContain('Día 1: con anillo está mordido el 2 % de la ciudad frente al 15 %');
   });
 
-  it('se puede volver a reproducir desde el principio', () => {
-    const { fixture, panel, texto, terminar } = renderizar();
-    terminar();
-    panel.querySelector<HTMLButtonElement>('.reproduccion .boton')!.click();
-    fixture.detectChanges();
-    expect(texto()).toContain('Día 0 de 2');
-    terminar();
-    expect(texto()).toContain('Día 2 de 2');
+  it('ya no tiene un reproductor propio: lo maneja la línea de tiempo', () => {
+    const { panel } = renderizar();
+    expect(panel.querySelector('.reproduccion')).toBeNull();
+    expect(panel.querySelector('input[type="range"]')).toBeNull();
   });
 
   it('colorea según la fracción mordida', () => {
