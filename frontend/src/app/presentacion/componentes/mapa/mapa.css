@@ -6,7 +6,7 @@
   padding: 9px 12px;
   border: 1px solid #6b399e;
   border-radius: 4px;
-  background: rgba(168, 85, 247, .12);
+  background: rgba(168, 85, 247, 0.12);
   color: #e9d5ff;
   font-size: 10px;
   font-weight: 700;
@@ -16,7 +16,7 @@
 
 .boton:disabled {
   cursor: not-allowed;
-  opacity: .65;
+  opacity: 0.65;
 }
 
 .controles-mapa {
@@ -54,15 +54,6 @@ input[type='range'] {
   accent-color: var(--violet);
 }
 
-canvas {
-  display: block;
-  width: 100%;
-  height: auto;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  image-rendering: pixelated;
-}
-
 .resumen {
   display: flex;
   flex-wrap: wrap;
@@ -76,11 +67,113 @@ canvas {
   color: #e9eaf5;
 }
 
-.marca-aeropuerto {
+.vistas {
+  display: inline-flex;
+  align-self: end;
+  border: 1px solid #282b4d;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.vista {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 0;
+  border-right: 1px solid #282b4d;
+  background: #070a1d;
+  color: #b7bad3;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.vista:last-child {
+  border-right: 0;
+}
+
+.vista.activa {
+  background: rgba(168, 85, 247, 0.22);
+  color: #f3e8ff;
+}
+
+.vista:focus-visible {
+  outline: 2px solid var(--violet);
+  outline-offset: -2px;
+}
+
+.opacidad {
+  min-width: 150px;
+}
+
+.mapa-contenedor {
+  position: relative;
+}
+
+.mapa {
+  width: 100%;
+  height: clamp(320px, 58vh, 560px);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  background: #070a1d;
+}
+
+.mapa-aviso {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  max-width: calc(100% - 32px);
+  padding: 8px 12px;
+  border: 1px solid #6b399e;
+  border-radius: 4px;
+  background: rgba(7, 10, 29, 0.88);
+  color: #e9d5ff;
+  font-size: 11px;
+  text-align: center;
+  pointer-events: none;
+}
+
+.mapa-aviso.suave {
+  border-color: #282b4d;
+  color: #d8daeb;
+}
+
+.leyenda {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.escala {
   display: inline-block;
-  width: 8px;
+  width: 56px;
   height: 8px;
-  margin-right: 4px;
-  border: 2px solid var(--orange);
-  vertical-align: -1px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, rgba(255, 45, 85, 0.08), rgba(255, 45, 85, 1));
+}
+
+/* Marcas de los sectores y del aeropuerto: MapLibre las crea fuera de la plantilla. */
+:host ::ng-deep .marca-mapa {
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+:host ::ng-deep .marca-sector {
+  background: rgba(7, 10, 29, 0.78);
+  color: #f1f2fb;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+:host ::ng-deep .marca-aeropuerto {
+  background: #ff9900;
+  color: #1a1000;
+}
+
+:host ::ng-deep .maplibregl-ctrl-attrib {
+  font-size: 9px;
 }
