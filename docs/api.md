@@ -18,7 +18,7 @@ Valores por defecto y límites de cada parámetro, para armar los controles de l
 
 ```json
 {
-  "por_defecto": { "n_personas": 5000, "dias": 180, "semilla": 42, "inicio": "aleatorio", "casos_iniciales": 5,
+  "por_defecto": { "n_personas": 5000, "dias": 180, "semilla": 42, "inicio": "aeropuerto", "casos_iniciales": 5,
                    "plaga": {...}, "recursos": {...} },
   "limites": { "escenario": {"n_personas": [1000, 20000], ...},
                "plaga": {"r0": [0.5, 10.0], ...},

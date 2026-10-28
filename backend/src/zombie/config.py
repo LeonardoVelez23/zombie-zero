@@ -33,7 +33,7 @@ class Escenario:
     n_personas: int = 5_000      # ~1:54 de Manta; el reto pide 2.000-5.000 nodos (docs/supuestos.md)
     dias: int = 180
     semilla: int = 42
-    inicio: str = "aleatorio"     # "aleatorio", "mercado", "colegio" o un barrio de poblacion.BARRIOS
+    inicio: str = "aeropuerto"    # historia del pitch; también "aleatorio", "mercado", "colegio" o un barrio
     casos_iniciales: int = 5
     plaga: Plaga = field(default_factory=Plaga)
     recursos: Recursos = field(default_factory=Recursos)

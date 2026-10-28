@@ -11,7 +11,7 @@
   <label class="field-label" for="inicio">Punto de origen del brote</label>
   <select id="inicio" formControlName="inicio">
     @for (inicio of parametros().inicios; track inicio) {
-      <option [value]="inicio">{{ capitalizar(inicio) }}</option>
+      <option [value]="inicio">{{ etiquetaInicio(inicio) }}</option>
     }
   </select>
 

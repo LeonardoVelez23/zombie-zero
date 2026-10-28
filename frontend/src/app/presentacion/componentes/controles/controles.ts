@@ -6,6 +6,14 @@ import { capitalizar } from '../../utilidades/formato';
 
 type Grupo = 'escenario' | 'plaga' | 'recursos';
 
+// Los barrios se muestran con su nombre; estos puntos de origen necesitan una explicación.
+const ETIQUETAS_INICIO: Record<string, string> = {
+  aeropuerto: 'Aeropuerto (avión con zombies)',
+  aleatorio: 'Al azar en la ciudad',
+  mercado: 'Mercado',
+  colegio: 'Colegio',
+};
+
 interface Campo {
   grupo: Grupo;
   nombre: string;
@@ -57,7 +65,8 @@ export class Controles implements OnInit {
   readonly ejecutar = output<ConfiguracionSimulacion>();
 
   protected readonly secciones = SECCIONES;
-  protected readonly capitalizar = capitalizar;
+  protected readonly etiquetaInicio = (inicio: string): string =>
+    ETIQUETAS_INICIO[inicio] ?? capitalizar(inicio);
   protected formulario = new FormGroup<Record<string, FormControl>>({});
 
   ngOnInit(): void {
