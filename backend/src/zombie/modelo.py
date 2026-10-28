@@ -141,6 +141,9 @@ class Lote:
     vacunas_usadas: np.ndarray  # (R,)
     vacunas_perdidas: np.ndarray  # (R,)
     afectados_barrio: np.ndarray | None = None  # (R, dias + 1, len(BARRIOS)); opcional como en Resultado
+    # (R, origen, destino): mordidas de cada barrio a cada barrio en todo el brote. Una mordida se
+    # reparte entre los barrios de los zombies que presionaban ese día, según su peso de contacto.
+    corredores: np.ndarray | None = None
 
     @property
     def infectados_total(self) -> np.ndarray:
@@ -239,6 +242,7 @@ def simular_lote(red: Red, esc: Escenario, estrategia, beta: float, repeticiones
     serie_barrio[:, 0] = por_barrio(zombies)
     afectados_barrio = np.zeros_like(serie_barrio)   # quienes ya no están sanos (E, I o R)
     afectados_barrio[:, 0] = por_barrio(np.flatnonzero(est != S))
+    corredores = np.zeros((nr, nb, nb))
     vivas = conteo[:, E] + conteo[:, I] > 0
 
     for dia in range(1, dias + 1):
@@ -273,6 +277,14 @@ def simular_lote(red: Red, esc: Escenario, estrategia, beta: float, repeticiones
             tasa[vac[expuestos]] *= 1.0 - recursos.eficacia
             presion_acumulada[expuestos] = presion_acumulada[expuestos] + tasa
             mordidos = np.unique(expuestos[presion_acumulada[expuestos] >= umb[expuestos]])
+            if mordidos.size:
+                # Cada mordida se reparte entre los barrios de origen según su parte de la presión del día.
+                hacia = np.isin(destino, mordidos)
+                victima = destino[hacia]
+                parte = peso[hacia] / presion[victima]
+                origen = red.barrio[np.repeat(persona, grado)[hacia]]
+                celda = ((victima // n) * nb + origen) * nb + red.barrio[victima % n]
+                corredores += np.bincount(celda, weights=parte, minlength=nr * nb * nb).reshape(nr, nb, nb)
 
         # 3. Progresión con el estado del inicio del día.
         pendientes = agenda.pop(dia, [])
@@ -309,7 +321,7 @@ def simular_lote(red: Red, esc: Escenario, estrategia, beta: float, repeticiones
             break
 
     return Lote(serie=serie, serie_barrio=serie_barrio, afectados_barrio=afectados_barrio, nuevos=nuevos,
-                vacunas_usadas=usadas, vacunas_perdidas=perdidas)
+                vacunas_usadas=usadas, vacunas_perdidas=perdidas, corredores=corredores)
 
 
 def _validar(elegidos: np.ndarray, obs: Observacion, dosis: int, estrategia) -> None:

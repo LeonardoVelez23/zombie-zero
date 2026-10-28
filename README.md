@@ -45,7 +45,12 @@ Central. El Comité de Contención tiene pocas vacunas, un presupuesto limitado 
 6. **Muestra el brote barrio por barrio** en un mapa de Manta junto a los controles: qué porcentaje de cada barrio
    ya fue mordido, día a día, con el mismo modelo de red que hace la recomendación. Se elige el plan (sin
    intervenir, al azar o el recomendado) y se reproduce con ▶; cada barrio cambia de color según esté
-   contenido (< 5 %), en alerta (5–20 %) o fuera de control (≥ 20 %).
+   contenido (< 5 %), en alerta (5–20 %) o fuera de control (≥ 20 %). Al terminar cada simulación el mapa
+   arranca **en vivo** desde el día 0: puntos rojos para los zombies activos de cada barrio, un panel con el
+   día, el contador de zombies y los eventos del brote (llegada a cada barrio, cambios de nivel, vacunas,
+   cortes, cierres y pico), y las tarjetas de arriba cuentan lo ocurrido hasta ese día. Las líneas entre
+   barrios son los **corredores de contagio**: cuántas mordidas cruzaron de un barrio a otro en todo el
+   brote (por el trabajo y el mercado); con el plan recomendado se adelgazan.
 7. **Lo contrasta con un mapa de difusión continua** (modelo EDP, abajo en la página): se reproduce día por día
    con ▶ y tres velocidades, o se recorre a mano con el deslizador (en simulaciones de más de 180 días,
    un fotograma cada 2 días o más, por el límite de 6 MB de respuesta de Lambda).
@@ -56,6 +61,9 @@ en que se empieza a actuar, las vacunas por día, la población, la duración y 
 Para la prueba de fuego, los botones **Brote Sorpresa en un clic** aplican los cambios típicos del jurado
 (R0 doble, mitad de vacunas, inicio en el mercado, variante con la mitad de eficacia y un corte de vacunas de
 30 días), se pueden combinar y simulan de inmediato; **Restablecer** vuelve al escenario por defecto.
+Cada simulación nueva se compara con una **referencia** (la primera, o la que se fija con *Fijar como
+referencia*, por ejemplo la de la semilla del jurado): qué cambió en el escenario, si la recomendación cambia
+o se mantiene, y sus infectados, personas salvadas y porcentaje de brotes en que gana al azar, lado a lado.
 
 8. **Recalcula ante imprevistos:** se puede simular un corte en la entrega de vacunas (por ejemplo, un bloqueo
    de la vía desde el día 21 durante 30 días). Al reanudarse la entrega, cada plan vuelve a decidir con el brote

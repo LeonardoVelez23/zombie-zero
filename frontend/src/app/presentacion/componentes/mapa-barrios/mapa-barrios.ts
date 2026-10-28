@@ -7,13 +7,33 @@ import {
   effect,
   inject,
   input,
+  model,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
-import type { Map as MapaLibre } from 'maplibre-gl';
+import type { GeoJSONSource, Map as MapaLibre } from 'maplibre-gl';
 
 import { Plan, ResultadoSimulacion } from '../../../dominio/modelos/resultado';
+import { numero } from '../../utilidades/formato';
 import { SECTORES, estiloBase, urlDelWorker } from '../mapa/vistas';
+import {
+  Corredor,
+  NIVELES,
+  ZonaBarrio,
+  corredoresDe,
+  corredoresGeoJSON,
+  nivelDe,
+  radioZona,
+  zombiesGeoJSON,
+  zombiesPorPunto,
+  zonasGeoJSON,
+} from './capas';
+import { Evento, eventosDelBrote } from './eventos';
+
+// Cada cuánto se redibujan los puntos al oscilar (ms) y cuánto dura una oscilación completa.
+const CUADRO_MS = 90;
+const OSCILACION_MS = 2400;
 
 type PlanMapa = 'ninguna' | 'azar' | 'recomendado';
 
@@ -24,20 +44,15 @@ const PLANES: { id: PlanMapa; nombre: string }[] = [
 ];
 
 // Milisegundos entre un día y el siguiente (180 días duran ~22 s a 1×).
+const CENTROS = Object.fromEntries(SECTORES.map((s) => [s.nombre, s.lngLat]));
+
 const VELOCIDADES = [
   { nombre: '1×', ms: 120 },
   { nombre: '2×', ms: 60 },
   { nombre: '4×', ms: 30 },
 ];
 
-// Color de cada barrio según la fracción de su población que ya fue mordida.
-export const NIVELES = [
-  { desde: 0.2, nombre: 'Fuera de control', rango: '≥ 20 %', color: '#f43f5e' },
-  { desde: 0.05, nombre: 'En alerta', rango: '5–20 %', color: '#ffba52' },
-  { desde: 0, nombre: 'Contenido', rango: '< 5 %', color: '#4ade80' },
-];
-
-export const nivelDe = (fraccion: number) => NIVELES.find((n) => fraccion >= n.desde)!;
+export { NIVELES, nivelDe } from './capas';
 
 // Encuadre justo de los seis barrios (más cerca que el mapa EDP, que muestra todo el cantón).
 const LIMITES_BARRIOS: [number, number, number, number] = [
@@ -62,6 +77,8 @@ export interface Barrio {
   poblacion: number;
   mordidos: number;
   fraccion: number;
+  // Zombies activos ese día (promedio de los brotes): los puntos del mapa.
+  activos: number;
 }
 
 @Component({
@@ -78,10 +95,14 @@ export class MapaBarrios {
   protected readonly niveles = NIVELES;
   protected readonly nivelDe = nivelDe;
   protected readonly planElegido = signal<PlanMapa>('recomendado');
-  protected readonly dia = signal(0);
+  // Día que se muestra; el panel lo lee para que los indicadores avancen con el mapa.
+  readonly dia = model(0);
   protected readonly reproduciendo = signal(false);
   protected readonly velocidad = signal(VELOCIDADES[0].ms);
   protected readonly errorMapa = signal<string | null>(null);
+  protected readonly numero = numero;
+  // Barrio bajo el ratón y dónde mostrar su ficha (píxeles dentro del mapa).
+  protected readonly hover = signal<{ nombre: string; x: number; y: number } | null>(null);
 
   private readonly contenedor = viewChild<ElementRef<HTMLDivElement>>('contenedor');
   private mapa: MapaLibre | null = null;
@@ -89,6 +110,10 @@ export class MapaBarrios {
   private destruido = false;
   private readonly marcadores = new Map<string, HTMLElement>();
   private temporizador: ReturnType<typeof setInterval> | null = null;
+  // El estilo ya cargó y existen las capas de zonas y zombies.
+  private readonly capasListas = signal(false);
+  private animacion = 0;
+  private fase = 0;
 
   private readonly plan = computed(() => this.buscarPlan(this.planElegido()));
   private readonly sinIntervenir = computed(() => this.buscarPlan('ninguna'));
@@ -105,6 +130,7 @@ export class MapaBarrios {
     const r = this.resultado();
     const fila = this.fila(this.plan());
     if (!r || !fila) return [];
+    const activos = this.filaActivos(this.plan());
     return r.barrios.map((nombre, i) => {
       const poblacion = r.poblacionBarrio[i];
       return {
@@ -112,8 +138,54 @@ export class MapaBarrios {
         poblacion,
         mordidos: fila[i],
         fraccion: poblacion ? fila[i] / poblacion : 0,
+        activos: activos?.[i] ?? 0,
       };
     });
+  });
+
+  // Zombies por punto: fijo para toda la simulación, así los planes se comparan a la misma escala.
+  protected readonly escala = computed(() =>
+    zombiesPorPunto(PLANES.map((p) => this.buscarPlan(p.id)?.mapa)),
+  );
+
+  // Barrios que tienen ubicación en el mapa, con el tamaño y el color de su zona.
+  private readonly zonas = computed<(ZonaBarrio & { activos: number })[]>(() => {
+    const barrios = this.barrios();
+    const mayor = Math.max(1, ...barrios.map((b) => b.poblacion));
+    return barrios.flatMap((b) => {
+      const sector = SECTORES.find((s) => s.nombre === b.nombre);
+      if (!sector) return [];
+      return [
+        {
+          nombre: b.nombre,
+          centro: sector.lngLat,
+          radioKm: radioZona(b.poblacion, mayor),
+          fraccion: b.fraccion,
+          color: nivelDe(b.fraccion).color,
+          activos: b.activos,
+        },
+      ];
+    });
+  });
+
+  // Corredores de contagio del plan elegido (todo el brote) y el mayor de los tres planes, para
+  // que el grosor de las líneas se compare entre planes.
+  protected readonly corredores = computed<Corredor[]>(() => {
+    const r = this.resultado();
+    return r ? corredoresDe(r.barrios, this.plan()?.corredores) : [];
+  });
+  private readonly corredorMayor = computed(() => {
+    const r = this.resultado();
+    if (!r) return 1;
+    const mayores = PLANES.map(
+      (p) => corredoresDe(r.barrios, this.buscarPlan(p.id)?.corredores)[0],
+    );
+    return Math.max(1, ...mayores.map((c) => c?.mordidas ?? 0));
+  });
+
+  protected readonly barrioHover = computed(() => {
+    const nombre = this.hover()?.nombre;
+    return nombre ? (this.barrios().find((b) => b.nombre === nombre) ?? null) : null;
   });
 
   // Fracción de toda la ciudad mordida ese día, con el plan elegido y sin intervenir.
@@ -127,23 +199,62 @@ export class MapaBarrios {
     return { conPlan: suma(conPlan) / total, sinPlan: suma(sinPlan) / total };
   });
 
+  // Zombies activos en toda la ciudad ese día: el contador del modo en vivo.
+  protected readonly activosHoy = computed(() =>
+    Math.round(this.barrios().reduce((suma, b) => suma + b.activos, 0)),
+  );
+
+  private readonly eventos = computed<Evento[]>(() => {
+    const r = this.resultado();
+    const plan = this.plan();
+    return r && plan ? eventosDelBrote(r, plan) : [];
+  });
+
+  // Lo último que pasó hasta el día que se muestra, de lo más reciente a lo más antiguo.
+  protected readonly eventosRecientes = computed(() =>
+    this.eventos()
+      .filter((e) => e.dia <= this.dia())
+      .reverse()
+      .slice(0, 5),
+  );
+
   constructor() {
     const destruir = inject(DestroyRef);
     afterNextRender(() => void this.crearMapa());
     destruir.onDestroy(() => {
       this.destruido = true;
+      cancelAnimationFrame(this.animacion);
       this.detener();
       this.mapa?.remove();
       if (this.urlWorker) URL.revokeObjectURL(this.urlWorker);
     });
 
-    // Con una simulación nueva se muestra el último día: cómo termina el brote completo.
+    // Con una simulación nueva el brote se reproduce en vivo desde el día 0. Con movimiento
+    // reducido se muestra directamente el último día: cómo termina el brote completo.
     effect(() => {
-      const total = this.resultado() ? this.totalDias() : 0;
-      this.detener();
-      this.dia.set(total);
+      const hay = !!this.resultado();
+      untracked(() => {
+        this.detener();
+        if (hay && this.totalDias() > 0 && !prefiereMenosMovimiento()) {
+          this.dia.set(0);
+          this.alternarReproduccion();
+        } else {
+          this.dia.set(hay ? this.totalDias() : 0);
+        }
+      });
     });
     effect(() => this.pintar(this.barrios()));
+    effect(() => {
+      if (!this.capasListas()) return;
+      this.fuente('zz-corredores')?.setData(
+        corredoresGeoJSON(this.corredores(), CENTROS, this.corredorMayor()),
+      );
+    });
+    effect(() => {
+      if (!this.capasListas()) return;
+      this.fuente('zz-zonas')?.setData(zonasGeoJSON(this.zonas()));
+      this.pintarZombies();
+    });
   }
 
   protected porcentaje(fraccion: number): string {
@@ -182,14 +293,100 @@ export class MapaBarrios {
     return filas?.length ? filas[Math.min(this.dia(), filas.length - 1)] : null;
   }
 
+  private filaActivos(plan: Plan | null): number[] | null {
+    const filas = plan?.mapa;
+    return filas?.length ? filas[Math.min(this.dia(), filas.length - 1)] : null;
+  }
+
+  private fuente(id: string): GeoJSONSource | undefined {
+    return this.mapa?.getSource(id) as GeoJSONSource | undefined;
+  }
+
+  private pintarZombies(): void {
+    const zonas = this.zonas();
+    this.fuente('zz-zombies')?.setData(
+      zombiesGeoJSON(
+        zonas,
+        zonas.map((z) => z.activos),
+        this.escala(),
+        this.fase,
+      ),
+    );
+  }
+
+  // Capas propias sobre el mapa base: zonas por barrio debajo y zombies activos encima.
+  private agregarCapas(mapa: MapaLibre): void {
+    const vacio = { type: 'FeatureCollection' as const, features: [] };
+    mapa.addSource('zz-zonas', { type: 'geojson', data: vacio });
+    mapa.addLayer({
+      id: 'zz-zonas-relleno',
+      type: 'fill',
+      source: 'zz-zonas',
+      paint: {
+        'fill-color': ['get', 'color'],
+        'fill-opacity': ['interpolate', ['linear'], ['get', 'fraccion'], 0, 0.1, 0.3, 0.42],
+      },
+    });
+    mapa.addLayer({
+      id: 'zz-zonas-borde',
+      type: 'line',
+      source: 'zz-zonas',
+      paint: { 'line-color': ['get', 'color'], 'line-width': 1.5, 'line-opacity': 0.75 },
+    });
+    mapa.addSource('zz-corredores', { type: 'geojson', data: vacio });
+    mapa.addLayer({
+      id: 'zz-corredores',
+      type: 'line',
+      source: 'zz-corredores',
+      layout: { 'line-cap': 'round' },
+      paint: { 'line-color': '#ff8fa3', 'line-width': ['get', 'ancho'], 'line-opacity': 0.55 },
+    });
+    mapa.addSource('zz-zombies', { type: 'geojson', data: vacio });
+    mapa.addLayer({
+      id: 'zz-zombies',
+      type: 'circle',
+      source: 'zz-zombies',
+      paint: {
+        'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 1.8, 14, 4],
+        'circle-color': '#ff4d6d',
+        'circle-stroke-color': '#1a0610',
+        'circle-stroke-width': 0.8,
+        'circle-opacity': 0.9,
+      },
+    });
+
+    mapa.on('mousemove', 'zz-zonas-relleno', (e) => {
+      const nombre = e.features?.[0]?.properties?.['nombre'];
+      mapa.getCanvas().style.cursor = 'pointer';
+      if (typeof nombre === 'string') this.hover.set({ nombre, x: e.point.x, y: e.point.y });
+    });
+    mapa.on('mouseleave', 'zz-zonas-relleno', () => {
+      mapa.getCanvas().style.cursor = '';
+      this.hover.set(null);
+    });
+
+    this.capasListas.set(true);
+
+    // Los puntos oscilan en su lugar; con movimiento reducido quedan quietos.
+    if (prefiereMenosMovimiento()) return;
+    let ultimo = 0;
+    const cuadro = (t: number) => {
+      if (this.destruido) return;
+      if (t - ultimo >= CUADRO_MS) {
+        ultimo = t;
+        this.fase = (t % OSCILACION_MS) / OSCILACION_MS;
+        this.pintarZombies();
+      }
+      this.animacion = requestAnimationFrame(cuadro);
+    };
+    this.animacion = requestAnimationFrame(cuadro);
+  }
+
   private programar(): void {
     if (this.temporizador) clearInterval(this.temporizador);
     this.temporizador = setInterval(() => {
-      if (this.dia() >= this.totalDias()) {
-        this.detener();
-        return;
-      }
-      this.dia.update((d) => d + 1);
+      this.dia.update((d) => Math.min(d + 1, this.totalDias()));
+      if (this.dia() >= this.totalDias()) this.detener();
     }, this.velocidad());
   }
 
@@ -216,7 +413,7 @@ export class MapaBarrios {
         container: elemento,
         style: estiloBase('oscuro'),
         bounds: LIMITES_BARRIOS,
-        fitBoundsOptions: { padding: { top: 60, bottom: 70, left: 70, right: 110 } },
+        fitBoundsOptions: { padding: { top: 60, bottom: 90, left: 70, right: 110 } },
         minZoom: 9,
         maxZoom: 16,
         attributionControl: { compact: true },
@@ -231,6 +428,8 @@ export class MapaBarrios {
         this.marcadores.set(sector.nombre, marca);
       }
       this.pintar(this.barrios());
+      const mapa = this.mapa;
+      mapa.on('load', () => this.agregarCapas(mapa));
       this.mapa.on('error', () =>
         this.errorMapa.set('No se pudo cargar parte del mapa base. Revisa la conexión a internet.'),
       );
@@ -249,7 +448,7 @@ export class MapaBarrios {
       if (!barrio) continue;
       marca.style.setProperty(
         '--diametro',
-        `${Math.round(22 + 22 * Math.sqrt(barrio.poblacion / mayor))}px`,
+        `${Math.round(28 + 8 * Math.sqrt(barrio.poblacion / mayor))}px`,
       );
       marca.style.setProperty('--color', nivelDe(barrio.fraccion).color);
       marca.replaceChildren(
@@ -262,6 +461,10 @@ export class MapaBarrios {
       );
     }
   }
+}
+
+function prefiereMenosMovimiento(): boolean {
+  return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
 function texto(clase: string, contenido: string): HTMLElement {

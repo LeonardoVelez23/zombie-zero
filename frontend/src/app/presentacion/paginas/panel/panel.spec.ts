@@ -21,6 +21,12 @@ interface PanelExpuesto {
   error: () => string | null;
 }
 
+interface Indicadores {
+  resultado: { set: (r: ResultadoSimulacion) => void };
+  diaVivo: { set: (dia: number) => void };
+  indicadores: () => { etiqueta: string; valor: string }[];
+}
+
 describe('Panel: simulaciones que se cruzan', () => {
   let pendientes: ReturnType<typeof diferida<ResultadoSimulacion>>[];
 
@@ -84,6 +90,47 @@ describe('Panel: simulaciones que se cruzan', () => {
     await primera;
     expect(p.error()).toBeNull();
     expect(p.resultado()?.repeticiones).toBe(22);
+  });
+});
+
+describe('Panel: indicadores en vivo', () => {
+  beforeEach(async () => {
+    const simulador: SimuladorRepositorio = {
+      parametros: () => Promise.resolve(parametrosDePrueba),
+      simular: () => Promise.resolve(resultadoDePrueba),
+      difusion: () => Promise.reject(new Error('sin EDP en esta prueba')),
+    };
+    await TestBed.configureTestingModule({
+      imports: [Panel],
+      providers: [{ provide: SimuladorRepositorio, useValue: simulador }, ...casosDeUso],
+    }).compileComponents();
+  });
+
+  // Mordidos acumulados por día (un barrio): sin intervenir y con el plan recomendado.
+  const conSeries: ResultadoSimulacion = {
+    ...resultadoDePrueba,
+    planes: resultadoDePrueba.planes.map((p) => ({
+      ...p,
+      mapaAfectados: p.id === 'ninguna' ? [[5], [300], [2000], [4637]] : [[5], [50], [150], [212]],
+    })),
+  };
+
+  function valores(dia: number): string[] {
+    const p = TestBed.createComponent(Panel).componentInstance as unknown as Indicadores;
+    p.resultado.set(conSeries);
+    p.diaVivo.set(dia);
+    return p
+      .indicadores()
+      .slice(1)
+      .map((i) => i.valor);
+  }
+
+  it('cuentan lo ocurrido hasta el día que muestra el mapa', () => {
+    expect(valores(1)).toEqual(['300', '50', '250']);
+  });
+
+  it('en el último día muestran los totales de la simulación', () => {
+    expect(valores(3)).toEqual(['4.637', '212', '4.425']);
   });
 });
 

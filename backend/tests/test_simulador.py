@@ -260,3 +260,15 @@ def test_la_firma_anterior_de_los_resultados_sigue_sirviendo():
     assert lote.afectados_barrio is None
     assert lote.resultado(0).afectados_barrio is None
     assert Resultado(vacio[0], np.zeros((2, 6)), np.zeros(2), 0, 0, 0).afectados_barrio is None
+
+
+def test_los_corredores_reparten_cada_mordida_una_sola_vez(red, beta):
+    from zombie.modelo import simular_lote
+    lote = simular_lote(red, ESC, crear("ninguna", red), beta, range(4))
+    iniciales = lote.afectados_barrio[:, 0].sum(axis=1)
+    mordidas = lote.afectados_barrio[:, -1].sum(axis=1) - iniciales
+    assert np.allclose(lote.corredores.sum(axis=(1, 2)), mordidas)
+    assert (lote.corredores >= 0).all()
+    # El trabajo y el mercado mezclan barrios: hay mordidas entre barrios distintos.
+    fuera_de_la_diagonal = lote.corredores.sum(axis=0) * (1 - np.eye(lote.corredores.shape[1]))
+    assert fuera_de_la_diagonal.sum() > 0
