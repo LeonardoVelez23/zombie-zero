@@ -1,6 +1,7 @@
 import { Component, computed, input } from '@angular/core';
 
 import { ResultadoSimulacion, Veredicto } from '../../../dominio/modelos/resultado';
+import { POBLACION_MANTA, enManta } from '../../../dominio/reglas/escala';
 import { comparacion } from '../../../dominio/reglas/planes';
 import { numero, porcentaje } from '../../utilidades/formato';
 
@@ -22,6 +23,8 @@ export class Informe {
   protected readonly numero = numero;
   protected readonly porcentaje = porcentaje;
   protected readonly titulos = TITULOS;
+  protected readonly poblacionManta = POBLACION_MANTA;
+  protected readonly enManta = enManta;
 
   protected readonly recomendado = computed(() => {
     const r = this.resultado();

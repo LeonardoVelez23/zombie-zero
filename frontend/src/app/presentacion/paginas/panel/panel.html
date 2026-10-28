@@ -95,6 +95,9 @@
               <span>{{ indicador.unidad }}</span>
             }
           </div>
+          @if (indicador.manta) {
+            <div class="metric-manta">{{ indicador.manta }}</div>
+          }
           <div class="metric-foot"><span class="mini-square"></span> {{ indicador.nota }}</div>
         </article>
       }

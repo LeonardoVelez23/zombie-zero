@@ -46,7 +46,10 @@
         </div>
         <div>
           <dt>Personas salvadas</dt>
-          <dd>{{ numero(col.salvados) }}</dd>
+          <dd>
+            {{ numero(col.salvados) }}
+            <small>(≈ {{ numero(col.salvadosManta) }} en Manta)</small>
+          </dd>
         </div>
         <div>
           <dt>Gana al azar</dt>

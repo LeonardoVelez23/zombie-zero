@@ -5,6 +5,7 @@ import { ObtenerParametros } from '../../../aplicacion/casos-uso/obtener-paramet
 import { SimularBrote } from '../../../aplicacion/casos-uso/simular-brote';
 import { ConfiguracionSimulacion, Parametros } from '../../../dominio/modelos/escenario';
 import { Plan, ResultadoDifusion, ResultadoSimulacion } from '../../../dominio/modelos/resultado';
+import { POBLACION_MANTA, enManta, factorManta } from '../../../dominio/reglas/escala';
 import { comparacion } from '../../../dominio/reglas/planes';
 import { AntesDespues } from '../../componentes/antes-despues/antes-despues';
 import { Controles } from '../../componentes/controles/controles';
@@ -21,6 +22,8 @@ interface Indicador {
   etiqueta: string;
   valor: string;
   unidad?: string;
+  // La misma cifra llevada a toda Manta (la red simulada es una muestra de la ciudad).
+  manta?: string;
   nota: string;
   color: 'violet' | 'red' | 'green' | 'orange';
   icono: string;
@@ -90,6 +93,9 @@ export class Panel implements OnInit {
       etiqueta: 'POBLACIÓN SIMULADA',
       valor: poblacion ? numero(poblacion) : '—',
       unidad: 'hab.',
+      manta: poblacion
+        ? `Representa a ${numero(POBLACION_MANTA)} hab. (1 : ${Math.round(factorManta(poblacion))})`
+        : undefined,
       nota: 'Red de contactos sintética de Manta',
       color: 'violet',
       icono: '⌂',
@@ -126,12 +132,15 @@ export class Panel implements OnInit {
     };
     const sin = hastaHoy(sinIntervencion);
     const con = hastaHoy(recomendado);
+    const salvados = enCurso ? Math.max(0, sin - con) : r.veredicto.salvadosVsNinguna;
+    const manta = (valor: number) => `≈ ${numero(enManta(valor, r.escenario.nPersonas))} en toda Manta`;
     const pico = `pico hacia el día ${Math.round(sinIntervencion.diaPico)}`;
     return [
       tarjetaPoblacion,
       {
         etiqueta: 'INFECTADOS SIN INTERVENIR',
         valor: numero(sin),
+        manta: manta(sin),
         nota: enCurso
           ? `Día ${dia} de ${r.escenario.dias} · ${pico}`
           : `Pico hacia el día ${Math.round(sinIntervencion.diaPico)}`,
@@ -141,13 +150,15 @@ export class Panel implements OnInit {
       {
         etiqueta: 'INFECTADOS CON EL PLAN',
         valor: numero(con),
+        manta: manta(con),
         nota: recomendado.nombre,
         color: 'green',
         icono: '✓',
       },
       {
         etiqueta: 'PERSONAS SALVADAS',
-        valor: numero(enCurso ? Math.max(0, sin - con) : r.veredicto.salvadosVsNinguna),
+        valor: numero(salvados),
+        manta: manta(salvados),
         nota: enCurso
           ? `Hasta el día ${dia}, frente a no intervenir`
           : 'Frente a no intervenir (media)',
