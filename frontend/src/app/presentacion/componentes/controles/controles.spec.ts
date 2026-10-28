@@ -68,3 +68,38 @@ describe('Más parámetros', () => {
     expect(avanzado.open).toBe(true);
   });
 });
+
+describe('Volver a simular desde el historial', () => {
+  it('pone en el formulario los valores usados, sin simular, y abre «Más parámetros» si hace falta', () => {
+    const fixture = TestBed.createComponent(Controles);
+    fixture.componentRef.setInput('parametros', parametrosDePrueba);
+    fixture.detectChanges();
+    const enviados: ConfiguracionSimulacion[] = [];
+    fixture.componentInstance.ejecutar.subscribe((c) => enviados.push(c));
+    const d = parametrosDePrueba.porDefecto;
+
+    fixture.componentInstance.cargar({
+      repeticiones: 50,
+      escenario: {
+        ...d,
+        semilla: 7,
+        inicio: 'mercado',
+        plaga: { ...d.plaga, r0: 5 },
+        recursos: { ...d.recursos, vacunasDisponibles: 250, corteDesde: 21, corteDias: 30 },
+      },
+    });
+    fixture.detectChanges();
+    expect(enviados).toHaveLength(0);
+
+    // Al simular desde el formulario sale exactamente esa configuración.
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLFormElement>('form')!.requestSubmit();
+    const escenario = enviados[0].escenario!;
+    expect(enviados[0].repeticiones).toBe(50);
+    expect(escenario.semilla).toBe(7);
+    expect(escenario.inicio).toBe('mercado');
+    expect(escenario.plaga?.r0).toBe(5);
+    expect(escenario.recursos?.vacunasDisponibles).toBe(250);
+    expect(escenario.recursos?.corteDias).toBe(30);
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Corte');
+  });
+});
