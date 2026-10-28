@@ -86,10 +86,11 @@ o se mantiene, y sus infectados, personas salvadas y porcentaje de brotes en que
 
 11. **Guarda cada simulación y muestra las anteriores:** cada corrida guarda un resumen en S3. La sección
     **Resultados anteriores** lista las últimas 10 con la configuración usada (origen, R0, vacunas,
-    presupuesto, semilla) y lo que salió (plan recomendado y salvados). **Volver a simular** repite una con
-    la misma semilla y da el mismo resultado; **Descargar informe** baja un archivo con la configuración, la
-    recomendación y todos los planes, encabezado con el nombre ZOMBIE ZERO. Los mismos resúmenes se consultan
-    con SQL en Athena ([docs/resultados.md](docs/resultados.md)).
+    presupuesto, semilla) y lo que salió (plan recomendado y salvados). **Volver a simular** carga esa
+    configuración en el formulario y la repite con la misma semilla, así que da el mismo resultado;
+    **Descargar PDF** arma un informe con el encabezado ZOMBIE ZERO, la recomendación, la configuración, todos
+    los planes y las gráficas («Guardar como PDF» en el diálogo de impresión). Los mismos resúmenes se
+    consultan con SQL en Athena ([docs/resultados.md](docs/resultados.md)).
 
 ## Cómo probarlo
 
@@ -344,7 +345,8 @@ las intervenciones, la calibración de la dificultad y la reproducibilidad.
 
 - **Historial compartido y corto:** «Resultados anteriores» muestra las simulaciones de todos los que usan la
   aplicación (sin nombres ni IP) y solo las de hoy y ayer (UTC). Las más viejas siguen en S3 hasta los 90 días
-  y se consultan con Athena. «Volver a simular» recalcula, pero no carga esos valores en el formulario.
+  y se consultan con Athena. El PDF depende del diálogo de impresión del navegador: el resultado puede verse
+  un poco distinto entre Chrome, Firefox y Safari.
 
 - **Escala:** se simulan 5.000 personas (cerca de 1 de cada 54 habitantes de Manta), no la ciudad completa.
   La interfaz permite hasta 20.000, a costa de más tiempo de cálculo (35 s en local; 271.145 personas
