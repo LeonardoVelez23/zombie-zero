@@ -14,8 +14,13 @@ La respuesta de la API trae ese id en `guardado` (o `null` si no se guardó).
   que lea más de 100 MB (Athena cobra 5 USD por TB leído: 100 MB ≈ 0,0005 USD).
 - **En la interfaz:** la sección «Resultados anteriores» muestra las últimas 10 (de hoy y de
   ayer) con su configuración y su resultado, vía `GET /api/historial`. «Volver a simular»
-  repite la misma configuración con la misma semilla y da el mismo resultado; «Descargar
-  informe» baja un .txt con la configuración, la recomendación y todos los planes.
+  carga esa configuración en el formulario y la repite con la misma semilla, así que da el mismo
+  resultado. «Descargar PDF» abre el diálogo de impresión del navegador («Guardar como PDF») con un
+  informe de unas tres páginas: quién lo descargó, la recomendación y su solidez, la configuración,
+  todos los planes, el texto para el alcalde si ya se generó y las gráficas (curva de contagios,
+  estados SEIR y calibración, con su leyenda). Si no es la simulación que está en pantalla, primero
+  la vuelve a simular para dibujar sus gráficas. El PDF se arma en el navegador: el nombre del
+  operador no se envía al backend ni se guarda.
 - **Permisos:** la Lambda solo puede escribir y leer en `simulaciones/` (política
   `zombie-zero-guardar-resultados` en `infra/github-oidc.yaml`); no puede borrar.
 

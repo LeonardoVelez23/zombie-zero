@@ -213,6 +213,29 @@ export class Controles implements OnInit {
     this.enviar();
   }
 
+  // Pone en el formulario una configuración ya simulada (por ejemplo, del historial) sin simular.
+  cargar(configuracion: ConfiguracionSimulacion): void {
+    const escenario = configuracion.escenario ?? {};
+    const grupos: Record<Grupo, object | undefined> = {
+      escenario,
+      plaga: escenario.plaga,
+      recursos: escenario.recursos,
+    };
+    const valores: Record<string, number | string> = {};
+    if (configuracion.repeticiones !== undefined)
+      valores['repeticiones'] = configuracion.repeticiones;
+    if (escenario.inicio !== undefined) valores['inicio'] = escenario.inicio;
+    for (const campo of CAMPOS) {
+      const valor = (grupos[campo.grupo] as Record<string, number> | undefined)?.[campo.nombre];
+      if (valor !== undefined) valores[campo.nombre] = valor;
+    }
+    const porDefecto = this.valoresPorDefecto();
+    if (Object.keys(valores).some((n) => AVANZADOS.has(n) && valores[n] !== porDefecto[n])) {
+      this.verAvanzado.set(true);
+    }
+    this.formulario.patchValue(valores);
+  }
+
   protected restablecer(): void {
     this.formulario.setValue(this.valoresPorDefecto());
     this.enviar();

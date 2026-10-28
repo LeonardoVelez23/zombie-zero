@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { ConfiguracionSimulacion } from '../../../dominio/modelos/escenario';
 import { SimulacionGuardada } from '../../../dominio/modelos/resultado';
 import { resultadoDePrueba } from '../../../../testing/datos';
-import { informeTexto, nombreInforme } from '../../utilidades/informe-descarga';
+import { informeHtml } from '../../utilidades/informe-descarga';
 import { Historial } from './historial';
 
 const esc = resultadoDePrueba.escenario;
@@ -81,27 +81,54 @@ describe('Resultados anteriores', () => {
   });
 });
 
-describe('Informe descargable', () => {
-  it('trae la configuración, la recomendación y todos los planes', () => {
-    const texto = informeTexto(guardada);
-    expect(texto.split('\n')[1]).toContain('Z O M B I E   Z E R O');
-    expect(texto).toContain('Origen del brote: Mercado');
-    expect(texto).toContain('semilla 7');
-    expect(texto).toContain('R0 5');
-    expect(texto).toContain('Plan recomendado: Vacunación en anillo');
-    expect(texto).toContain('Confianza: sólida (gana al reparto al azar en 90 %');
-    expect(texto).toContain('- Vacunación en anillo (RECOMENDADO): 300 infectados (10–900), 4.321 salvados');
+describe('Informe en PDF', () => {
+  it('trae la configuración, la recomendación, todos los planes y quién lo descargó', () => {
+    const html = informeHtml(guardada, { operador: 'Jurado 3' });
+    expect(html).toContain('<title>zombie-zero-20261028-2140-semilla7</title>');
+    expect(html).toContain('Descargado por: <b>Jurado 3</b>');
+    expect(html).toContain('Origen del brote: Mercado');
+    expect(html).toContain('semilla 7');
+    expect(html).toContain('R0 5');
+    expect(html).toContain('<b>Plan recomendado:</b> Vacunación en anillo');
+    expect(html).toContain('sólida · gana al reparto al azar en 90 %');
+    expect(html).toContain('<td>Vacunación en anillo <b>(recomendado)</b></td>');
+    expect(html).toContain('4.321');
   });
 
-  it('el nombre del archivo lleva la fecha y la semilla', () => {
-    expect(nombreInforme(guardada)).toBe('zombie-zero-20261028-2140-semilla7.txt');
+  it('incluye las gráficas y el texto para el alcalde, y escapa lo que escribe el usuario', () => {
+    const html = informeHtml(guardada, {
+      operador: '<script>x</script>',
+      alcalde: 'Se recomienda vacunar en anillo.',
+      graficas: [{ titulo: 'Curva de contagios', svg: '<svg viewBox="0 0 10 10"></svg>' }],
+    });
+    expect(html).not.toContain('<script>x</script>');
+    expect(html).toContain('&lt;script&gt;x&lt;/script&gt;');
+    expect(html).toContain('<div class="alcalde">Se recomienda vacunar en anillo.</div>');
+    expect(html).toContain('<figcaption>Curva de contagios</figcaption>');
+    expect(html).toContain('<svg viewBox="0 0 10 10"></svg>');
   });
 
-  it('cada fila tiene su botón de descarga', () => {
+  it('sin operador ni gráficas no deja secciones vacías', () => {
+    const html = informeHtml(guardada);
+    expect(html).not.toContain('Descargado por');
+    expect(html).not.toContain('Gráficas');
+    expect(html).not.toContain('Para el alcalde');
+  });
+
+  it('cada fila tiene su botón de PDF, que avisa al panel con la simulación', () => {
     const fixture = TestBed.createComponent(Historial);
     fixture.componentRef.setInput('simulaciones', [guardada]);
     fixture.detectChanges();
-    const botones = [...(fixture.nativeElement as HTMLElement).querySelectorAll('tbody button')];
-    expect(botones.map((b) => b.textContent?.trim())).toEqual(['Volver a simular', 'Descargar informe']);
+    let pedida: SimulacionGuardada | null = null;
+    fixture.componentInstance.descargar.subscribe((s) => (pedida = s));
+    const botones = [
+      ...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('tbody button'),
+    ];
+    expect(botones.map((b) => b.textContent?.trim())).toEqual([
+      'Volver a simular',
+      'Descargar PDF',
+    ]);
+    botones[1].click();
+    expect(pedida).toBe(guardada);
   });
 });

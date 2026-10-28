@@ -329,7 +329,8 @@
       <app-historial
         [simulaciones]="historial()"
         [cargando]="simulando()"
-        (repetir)="simular($event)"
+        (repetir)="repetir($event)"
+        (descargar)="descargarPdf($event)"
       />
     </section>
 

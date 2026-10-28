@@ -3,7 +3,6 @@ import { Component, computed, input, output } from '@angular/core';
 import { ConfiguracionSimulacion } from '../../../dominio/modelos/escenario';
 import { SimulacionGuardada } from '../../../dominio/modelos/resultado';
 import { capitalizar, numero } from '../../utilidades/formato';
-import { descargarInforme } from '../../utilidades/informe-descarga';
 
 const hora = new Intl.DateTimeFormat('es-EC', {
   day: '2-digit',
@@ -25,9 +24,10 @@ export class Historial {
   readonly simulaciones = input<SimulacionGuardada[]>([]);
   readonly cargando = input(false);
   readonly repetir = output<ConfiguracionSimulacion>();
+  // El panel arma el PDF: necesita las gráficas, que se dibujan allí.
+  readonly descargar = output<SimulacionGuardada>();
 
   protected readonly numero = numero;
-  protected readonly descargar = descargarInforme;
 
   protected readonly filas = computed(() =>
     this.simulaciones().map((s) => ({
