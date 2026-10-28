@@ -19,7 +19,7 @@ La respuesta de la API trae ese id en `guardado` (o `null` si no se guardó).
   resultado. «Descargar PDF» abre el diálogo de impresión del navegador («Guardar como PDF») con un
   informe de unas tres páginas: quién lo descargó, la recomendación y su solidez, la configuración,
   todos los planes, el texto para el alcalde si ya se generó y las gráficas (curva de contagios,
-  estados SEIR y calibración, con su leyenda). Si no es la simulación que está en pantalla, primero
+  estados SEIR, con su leyenda). Si no es la simulación que está en pantalla, primero
   la vuelve a simular para dibujar sus gráficas. El PDF se arma en el navegador: el nombre del
   operador no se envía al backend ni se guarda.
 - **Permisos:** la Lambda solo puede escribir y leer en `simulaciones/` (política

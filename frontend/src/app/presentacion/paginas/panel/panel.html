@@ -93,17 +93,6 @@
         (click)="seccionActiva.set('historial')"
         ><span>↺</span> Resultados anteriores</a
       >
-      @if (parametros()?.calibracion) {
-        <a
-          class="nav-item"
-          href="#calibracion"
-          title="Datos reales"
-          [class.active]="seccionActiva() === 'calibracion'"
-          [attr.aria-current]="seccionActiva() === 'calibracion' ? 'location' : null"
-          (click)="irA('calibracion')"
-          ><span aria-hidden="true">◎</span> Datos reales</a
-        >
-      }
     </nav>
 
     <div class="sidebar-bottom">
@@ -333,12 +322,6 @@
         (descargar)="descargarPdf($event)"
       />
     </section>
-
-    @if (parametros()?.calibracion; as calibracion) {
-      <section class="full-grid">
-        <app-calibracion [calibracion]="calibracion" />
-      </section>
-    }
 
     <footer class="page-footer">
       <span>ZOMBIE ZERO <span class="footer-separator">/</span> PROTOTIPO ACADÉMICO</span>

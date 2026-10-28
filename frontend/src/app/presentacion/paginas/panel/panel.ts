@@ -24,7 +24,6 @@ import { mordidosHasta, salvadosHasta } from '../../../dominio/reglas/dias';
 import { POBLACION_MANTA, enManta, factorManta } from '../../../dominio/reglas/escala';
 import { comparacion } from '../../../dominio/reglas/planes';
 import { AntesDespues } from '../../componentes/antes-despues/antes-despues';
-import { Calibracion } from '../../componentes/calibracion/calibracion';
 import { Controles } from '../../componentes/controles/controles';
 import { Grafica } from '../../componentes/grafica/grafica';
 import { Guia } from '../../componentes/guia/guia';
@@ -80,7 +79,6 @@ const MODELOS: { id: ModeloMapa; nombre: string }[] = [
   selector: 'app-panel',
   imports: [
     AntesDespues,
-    Calibracion,
     Controles,
     Grafica,
     Estados,
@@ -396,13 +394,6 @@ export class Panel implements OnInit {
     }
     this.grafica.set(pestana);
     this.reloj.irA(dia);
-    const calibracion = mayorSvg('#calibracion');
-    if (calibracion) {
-      graficas.push({
-        titulo: 'Calibración con datos reales (Manta, 2020)',
-        svg: capturarSvg(calibracion),
-      });
-    }
     imprimirInforme(informeHtml(s, { operador: this.operador(), alcalde, graficas }));
   }
 

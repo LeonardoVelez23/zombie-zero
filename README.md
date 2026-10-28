@@ -74,9 +74,10 @@ o se mantiene, y sus infectados, personas salvadas y porcentaje de brotes en que
 9. **Se calibra con datos reales de Manta:** con los casos positivos semanales de COVID-19 de 2020 (SNGRE, vía
    [ecuacovid](https://github.com/andrab/ecuacovid)) ajusta el crecimiento de la segunda ola (23 de agosto al
    15 de noviembre: +2,04 % por día, se duplicaba cada 34 días) y lo convierte en un **R efectivo de 1,17**
-   (IC 95 %: 1,07–1,27) con las ecuaciones del SEIR. El panel *Calibración con datos reales* muestra los casos
-   reales con el ajuste, y el botón **R de Manta 2020** simula la plaga con ese valor. Detalle en
-   [docs/supuestos.md](docs/supuestos.md#calibración-con-datos-reales-covid-19-en-manta-2020).
+   (IC 95 %: 1,07–1,27) con las ecuaciones del SEIR. El botón **R de Manta 2020** de los parámetros simula la
+   plaga con ese valor. La gráfica de los casos reales con el ajuste y el detalle del cálculo están en
+   [docs/supuestos.md](docs/supuestos.md#calibración-con-datos-reales-covid-19-en-manta-2020); no van en el
+   panel, que se queda con lo que sirve para decidir.
 
 10. **Explica el resultado al alcalde:** el botón **Explicar al alcalde** del panel de recomendación pide a
     Amazon Bedrock (Nova Micro) un párrafo en lenguaje simple con el plan, cuántos salva, qué tan sólido es y
