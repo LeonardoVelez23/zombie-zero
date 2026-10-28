@@ -14,7 +14,7 @@ import numpy as np
 
 from .config import Escenario, Recursos
 from .estrategias import CANDIDATAS, ESTRATEGIAS, crear
-from .modelo import CERRABLES, I, calibrar_beta, estimar_r0, simular
+from .modelo import CERRABLES, I, calibrar_beta, estimar_r0, simular_lote
 from .poblacion import BARRIOS, construir_red
 
 
@@ -63,9 +63,14 @@ def planes_candidatos(rec: Recursos) -> list[Plan]:
     return planes
 
 
+# Repeticiones que se simulan juntas en un lote (acota la memoria: ~40 MB por lote de 10.000 personas).
+TAM_LOTE = 250
+
+
 def _rango(valores: np.ndarray, eje=0) -> dict:
     return {
         "media": np.mean(valores, axis=eje).round(1).tolist(),
+        "mediana": np.median(valores, axis=eje).round(1).tolist(),
         "p5": np.percentile(valores, 5, axis=eje).round(1).tolist(),
         "p95": np.percentile(valores, 95, axis=eje).round(1).tolist(),
     }
@@ -86,12 +91,13 @@ def comparar(esc: Escenario, repeticiones: int = 100, planes: list[Plan] | None 
         curvas = np.zeros((repeticiones, esc.dias + 1))
         mapa = np.zeros((esc.dias + 1, len(BARRIOS)))
         perdidas = np.zeros(repeticiones)
-        for r in range(repeticiones):
-            res = simular(red, esc, estrategia, beta, r, plan.cierres, vacunas)
-            tot[r] = res.infectados_total
-            curvas[r] = res.serie[:, I]
-            mapa += res.serie_barrio
-            perdidas[r] = res.vacunas_perdidas
+        for desde in range(0, repeticiones, TAM_LOTE):
+            hasta = min(desde + TAM_LOTE, repeticiones)
+            lote = simular_lote(red, esc, estrategia, beta, range(desde, hasta), plan.cierres, vacunas)
+            tot[desde:hasta] = lote.infectados_total
+            curvas[desde:hasta] = lote.serie[:, :, I]
+            mapa += lote.serie_barrio.sum(axis=0)
+            perdidas[desde:hasta] = lote.vacunas_perdidas
         totales[plan.id] = tot
         resumen.append({
             "id": plan.id,

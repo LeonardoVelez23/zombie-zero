@@ -3,7 +3,13 @@
 Ejemplos:
     python -m zombie.cli
     python -m zombie.cli --r0 5 --vacunas 500 --inicio mercado --semilla 7
-    python -m zombie.cli --json > resultado.json
+    python -m zombie.cli --n-sims 200 --json > resultado.json
+
+Brote Sorpresa (todo cambia por bandera, sin tocar el código):
+    el doble de contagiosa        --r0 5
+    la mitad de vacunas           --vacunas 500
+    brote en el mercado           --inicio mercado
+    vacuna que cubre a medias     --eficacia-vacuna 0.5
 """
 import argparse
 import json
@@ -13,13 +19,16 @@ from dataclasses import replace
 from .config import Escenario
 from .montecarlo import comparar
 
+N_SIMS_POR_DEFECTO = 1000   # lo que pide el reto; en la API es menor por el límite de 60 s de Lambda
+
 
 def _argumentos() -> argparse.Namespace:
     base = Escenario()
     p, r = base.plaga, base.recursos
     a = argparse.ArgumentParser(description="Simulador de la plaga zombie en Manta")
     a.add_argument("--semilla", type=int, default=base.semilla)
-    a.add_argument("--repeticiones", type=int, default=100)
+    a.add_argument("--n-sims", "--repeticiones", dest="repeticiones", type=int, default=N_SIMS_POR_DEFECTO,
+                   help=f"simulaciones Monte Carlo por plan (por defecto {N_SIMS_POR_DEFECTO})")
     a.add_argument("--personas", type=int, default=base.n_personas)
     a.add_argument("--dias", type=int, default=base.dias)
     a.add_argument("--inicio", default=base.inicio)
@@ -30,7 +39,8 @@ def _argumentos() -> argparse.Namespace:
     a.add_argument("--vacunas", type=int, default=r.vacunas_disponibles)
     a.add_argument("--por-dia", type=int, default=r.vacunas_por_dia)
     a.add_argument("--dia-inicio", type=int, default=r.dia_inicio)
-    a.add_argument("--eficacia", type=float, default=r.eficacia)
+    a.add_argument("--eficacia-vacuna", "--eficacia", dest="eficacia", type=float, default=r.eficacia,
+                   help="fracción en que la vacuna reduce el riesgo de ser mordido (0 a 1)")
     a.add_argument("--json", action="store_true", help="imprime el resultado completo en JSON")
     return a.parse_args()
 
@@ -54,15 +64,19 @@ def main() -> None:
 
     print(f"R0 {res['r0']} · beta {res['beta']} · {a.repeticiones} repeticiones · "
           f"semilla {a.semilla} · {time.perf_counter() - inicio:.1f} s\n")
-    print(f"{'plan':<34} {'vacunas':>7} {'costo':>8} {'infectados':>11} {'rango p5-p95':>16} "
-          f"{'salvados':>9} {'gana al azar':>13}")
+    print("Infectados totales, pico de zombies y salvados frente a no intervenir: media / mediana (p5-p95)\n")
+    print(f"{'plan':<30} {'vacunas':>7} {'costo':>7} {'infectados':>24} {'pico':>18} "
+          f"{'salvados':>22} {'gana al azar':>12}")
+
+    def rango(r: dict) -> str:
+        return f"{r['media']:,.0f} / {r['mediana']:,.0f} ({r['p5']:,.0f}-{r['p95']:,.0f})"
+
     for d in res["planes"]:
-        inf = d["infectados"]
-        salv = d.get("salvados_vs_ninguna", {}).get("media", 0)
+        salvados = d.get("salvados_vs_ninguna")
         gana = d.get("gana_a_azar")
-        gana_txt = f"{gana:.0%}" if gana is not None else "-"
-        print(f"{d['nombre']:<34} {d['vacunas']:>7} {d['costo']:>8,.0f} {inf['media']:>11,.0f} "
-              f"{inf['p5']:>7,.0f} - {inf['p95']:<7,.0f} {salv:>9,.0f} {gana_txt:>13}")
+        print(f"{d['nombre']:<30} {d['vacunas']:>7} {d['costo']:>7,.0f} {rango(d['infectados']):>24} "
+              f"{rango(d['pico']):>18} {rango(salvados) if salvados else '-':>22} "
+              f"{f'{gana:.0%}' if gana is not None else '-':>12}")
     v = res["veredicto"]
     print(f"\nRecomendación: {res['recomendado']} · confianza {v['nivel']} "
           f"(gana al azar en {v['gana_a_azar']:.0%} de los brotes)")
