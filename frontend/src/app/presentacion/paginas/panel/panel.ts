@@ -1,4 +1,13 @@
-import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
+import {
+  ApplicationRef,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  input,
+  signal,
+  viewChild,
+} from '@angular/core';
 
 import { ObtenerHistorial } from '../../../aplicacion/casos-uso/obtener-historial';
 import { ModelarDifusion } from '../../../aplicacion/casos-uso/modelar-difusion';
@@ -19,7 +28,7 @@ import { Calibracion } from '../../componentes/calibracion/calibracion';
 import { Controles } from '../../componentes/controles/controles';
 import { Grafica } from '../../componentes/grafica/grafica';
 import { Guia } from '../../componentes/guia/guia';
-import { Historial } from '../../componentes/historial/historial';
+import { Historial, aConfiguracion } from '../../componentes/historial/historial';
 import { MapaBarrios } from '../../componentes/mapa-barrios/mapa-barrios';
 import { Informe } from '../../componentes/informe/informe';
 import { LineaTiempo } from '../../componentes/linea-tiempo/linea-tiempo';
@@ -28,6 +37,13 @@ import { Mapa } from '../../componentes/mapa/mapa';
 import { Tabla } from '../../componentes/tabla/tabla';
 import { RelojBrote } from '../../servicios/reloj-brote';
 import { numero, porcentaje } from '../../utilidades/formato';
+import {
+  GraficaInforme,
+  capturarLeyenda,
+  capturarSvg,
+  imprimirInforme,
+  informeHtml,
+} from '../../utilidades/informe-descarga';
 
 // Mismo texto que la tarjeta de recomendación (componentes/informe).
 const NIVELES: Record<Veredicto['nivel'], string> = {
@@ -121,6 +137,8 @@ export class Panel implements OnInit {
   private readonly simularBrote = inject(SimularBrote);
   private readonly modelarDifusion = inject(ModelarDifusion);
   private readonly obtenerHistorial = inject(ObtenerHistorial);
+  private readonly appRef = inject(ApplicationRef);
+  private readonly controles = viewChild(Controles);
 
   protected readonly parametros = signal<Parametros | null>(null);
   protected readonly resultado = signal<ResultadoSimulacion | null>(null);
@@ -338,6 +356,56 @@ export class Panel implements OnInit {
     }
   }
 
+  // «Volver a simular» desde el historial: el formulario muestra los valores que se usaron.
+  protected async repetir(configuracion: ConfiguracionSimulacion): Promise<void> {
+    this.controles()?.cargar(configuracion);
+    await this.simular(configuracion);
+  }
+
+  // PDF de una simulación guardada con sus gráficas. Si no es la que está en pantalla, se vuelve a
+  // simular con la misma semilla (da el mismo resultado) para dibujar sus gráficas.
+  protected async descargarPdf(s: SimulacionGuardada): Promise<void> {
+    const configuracion = aConfiguracion(s);
+    const actual = this.resultado();
+    const enPantalla =
+      actual !== null &&
+      actual.repeticiones === s.repeticiones &&
+      canonico(actual.escenario) === canonico(configuracion.escenario);
+    const alcalde = enPantalla
+      ? (document.querySelector('app-explicar-alcalde .informe-ia')?.textContent ?? null)
+      : null;
+    if (!enPantalla) {
+      await this.repetir(configuracion);
+      if (this.error()) return;
+    }
+    // Las gráficas se copian con el brote completo (último día) y se deja todo como estaba.
+    const pestana = this.grafica();
+    const dia = this.reloj.dia();
+    this.reloj.irA(s.dias);
+    const graficas: GraficaInforme[] = [];
+    for (const g of GRAFICAS) {
+      this.grafica.set(g.id);
+      this.appRef.tick();
+      const svg = mayorSvg('#graficas');
+      const leyenda = capturarLeyenda([
+        ...document.querySelectorAll(
+          '#graficas .chart-legend > span, #graficas .leyenda-estados > li',
+        ),
+      ]);
+      if (svg) graficas.push({ titulo: g.nombre, svg: capturarSvg(svg), leyenda });
+    }
+    this.grafica.set(pestana);
+    this.reloj.irA(dia);
+    const calibracion = mayorSvg('#calibracion');
+    if (calibracion) {
+      graficas.push({
+        titulo: 'Calibración con datos reales (Manta, 2020)',
+        svg: capturarSvg(calibracion),
+      });
+    }
+    imprimirInforme(informeHtml(s, { operador: this.operador(), alcalde, graficas }));
+  }
+
   protected elegirModelo(modelo: ModeloMapa): void {
     this.modeloMapa.set(modelo);
     if (modelo !== 'edp') return;
@@ -373,3 +441,20 @@ function pantallaEstrecha(): boolean {
 
 const mensaje = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
+
+// JSON con las claves ordenadas: compara configuraciones sin importar el orden de los campos.
+function canonico(valor: unknown): string {
+  return JSON.stringify(valor, (_, v) =>
+    v && typeof v === 'object' && !Array.isArray(v)
+      ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => a.localeCompare(b)))
+      : v,
+  );
+}
+
+// La gráfica principal de una sección: el SVG más grande (los demás son iconos o leyendas).
+function mayorSvg(selector: string): SVGSVGElement | null {
+  const svgs = [...document.querySelectorAll<SVGSVGElement>(`${selector} svg`)];
+  const area = (e: SVGSVGElement) =>
+    e.getBoundingClientRect().width * e.getBoundingClientRect().height;
+  return svgs.sort((a, b) => area(b) - area(a))[0] ?? null;
+}
