@@ -25,7 +25,12 @@ export const parametrosDePrueba: Parametros = {
   },
   edpPorDefecto: { dSanos: 0.1, dZombies: 0.05, alfa: 0.02 },
   limites: {
-    escenario: { nPersonas: [1000, 20000], dias: [3, 365], semilla: [0, 100], casosIniciales: [1, 100] },
+    escenario: {
+      nPersonas: [1000, 20000],
+      dias: [3, 365],
+      semilla: [0, 100],
+      casosIniciales: [1, 100],
+    },
     plaga: { r0: [0.5, 10], deteccion: [0, 1] },
     recursos: { presupuesto: [0, 1e6], vacunasDisponibles: [0, 20000], eficacia: [0, 1] },
     edp: {},
@@ -52,9 +57,19 @@ const plan = (id: string, tipo: Plan['tipo'], infectados: number): Plan => ({
     p5: [5, 6, 2, 0],
     p95: [5, 14, 8, 3],
   },
+  estados: {
+    S: serie([9995, 9980, 9970, 9968]),
+    E: serie([0, 10, 6, 1]),
+    I: serie([5, 10, 4, 1]),
+    R: serie([0, 0, 20, 30]),
+  },
   mapa: [],
   vacunasPerdidas: 0,
 });
+
+function serie(media: number[]) {
+  return { media, mediana: media, p5: media.map((v) => v * 0.8), p95: media.map((v) => v * 1.2) };
+}
 
 export const resultadoDePrueba: ResultadoSimulacion = {
   escenario: parametrosDePrueba.porDefecto,
@@ -68,6 +83,10 @@ export const resultadoDePrueba: ResultadoSimulacion = {
   planes: [
     plan('ninguna', 'linea_base', 4637),
     plan('azar', 'linea_base', 3741),
-    { ...plan('anillo', 'candidato', 212), salvadosVsNinguna: { media: 4425, mediana: 4430, p5: 2, p95: 5331 }, ganaAAzar: 0.98 },
+    {
+      ...plan('anillo', 'candidato', 212),
+      salvadosVsNinguna: { media: 4425, mediana: 4430, p5: 2, p95: 5331 },
+      ganaAAzar: 0.98,
+    },
   ],
 };

@@ -15,6 +15,9 @@ export interface Serie {
   p95: number[];
 }
 
+// 🟢 S sano · 🟡 E mordido (incubando) · 🔴 I zombie (contagia) · 🔵 R exorcizado (inmune).
+export type EstadoSeir = 'S' | 'E' | 'I' | 'R';
+
 export interface Plan {
   id: string;
   nombre: string;
@@ -28,6 +31,8 @@ export interface Plan {
   pico: Estadistico;
   diaPico: number;
   curvaZombies: Serie;
+  // Personas en cada estado por día (media, mediana y p5–p95 entre repeticiones).
+  estados: Record<EstadoSeir, Serie>;
   mapa: number[][];
   vacunasPerdidas: number;
   salvadosVsNinguna?: Estadistico;

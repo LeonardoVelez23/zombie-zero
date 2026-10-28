@@ -1,0 +1,146 @@
+<div class="panel-heading">
+  <div>
+    <span class="section-index">02B / ESTADOS DÍA A DÍA</span>
+    <h2>Sanos, mordidos, zombies y exorcizados</h2>
+  </div>
+  <span class="chart-tag">MODELO SEIR</span>
+</div>
+<p class="panel-description">
+  Cada persona de la red está en uno de cuatro estados y cambia día a día: 🟢 sana → 🟡 mordida → 🔴
+  zombie → 🔵 exorcizada. Las áreas suman toda la población (promedio de los brotes simulados).
+</p>
+
+@if (plan(); as p) {
+  <div class="controles-estados">
+    <div class="opciones" role="radiogroup" aria-label="Plan a mostrar">
+      @for (o of opciones; track o.id) {
+        <button
+          type="button"
+          role="radio"
+          class="opcion"
+          [class.activa]="opcion() === o.id"
+          [attr.aria-checked]="opcion() === o.id"
+          (click)="elegirPlan(o.id)"
+        >
+          {{ o.nombre }}
+        </button>
+      }
+    </div>
+    <label class="deslizador">
+      Día {{ dia() }} de {{ dias() }}
+      <input
+        type="range"
+        min="0"
+        [max]="dias()"
+        [value]="dia()"
+        (input)="diaElegido.set(+$any($event.target).value)"
+      />
+    </label>
+  </div>
+
+  <ul class="contadores" aria-live="polite">
+    @for (e of delDia(); track e.id) {
+      <li [class]="'contador ' + e.id">
+        <span class="nombre">{{ e.emoji }} {{ e.nombre }} ({{ e.id }})</span>
+        <strong>{{ numero(e.media) }}</strong>
+        <small
+          >{{ (e.fraccion * 100).toFixed(1) }} % · rango {{ numero(e.p5) }}–{{
+            numero(e.p95)
+          }}</small
+        >
+        <small class="explicacion">{{ e.explicacion }}</small>
+      </li>
+    }
+  </ul>
+
+  <div class="graficas">
+    <svg viewBox="0 0 700 280" role="img" [attr.aria-label]="resumen()">
+      <g class="grid-lines">
+        @for (marca of ejeY(); track marca.y) {
+          <line
+            [attr.x1]="area.izquierda"
+            [attr.x2]="area.derecha"
+            [attr.y1]="marca.y"
+            [attr.y2]="marca.y"
+          />
+        }
+      </g>
+      @for (capa of capas(); track capa.id) {
+        <path [class]="'capa ' + capa.id" [attr.d]="capa.d" />
+      }
+      <line
+        class="marca-dia"
+        [attr.x1]="xDia()"
+        [attr.x2]="xDia()"
+        [attr.y1]="area.arriba"
+        [attr.y2]="area.abajo"
+      />
+      <g class="axis-labels">
+        @for (marca of ejeY(); track marca.y) {
+          <text [attr.x]="area.izquierda - 10" [attr.y]="marca.y + 4" text-anchor="end">
+            {{ marca.texto }}
+          </text>
+        }
+        @for (marca of ejeX(); track marca.x; let primera = $first; let ultima = $last) {
+          <text
+            [attr.x]="marca.x"
+            [attr.y]="area.abajo + 24"
+            [attr.text-anchor]="primera ? 'start' : ultima ? 'end' : 'middle'"
+          >
+            {{ marca.texto }}
+          </text>
+        }
+      </g>
+    </svg>
+
+    @if (zombies(); as z) {
+      <div class="zoom-zombies">
+        <span class="subtitulo">🔴 Zombies activos de cerca (línea: media · banda: p5–p95)</span>
+        <svg viewBox="0 0 700 280" role="img" aria-label="Zombies activos por día con su rango">
+          <g class="grid-lines">
+            @for (marca of ejeY(); track marca.y) {
+              <line
+                [attr.x1]="area.izquierda"
+                [attr.x2]="area.derecha"
+                [attr.y1]="marca.y"
+                [attr.y2]="marca.y"
+              />
+            }
+          </g>
+          <path class="banda-zombies" [attr.d]="z.banda" />
+          <path class="linea-zombies" [attr.d]="z.linea" />
+          <line
+            class="marca-dia"
+            [attr.x1]="xDia()"
+            [attr.x2]="xDia()"
+            [attr.y1]="area.arriba"
+            [attr.y2]="area.abajo"
+          />
+          <g class="axis-labels">
+            <text [attr.x]="area.izquierda - 10" [attr.y]="area.arriba + 4" text-anchor="end">
+              {{ maximoZombies() }}
+            </text>
+            <text [attr.x]="area.izquierda - 10" [attr.y]="area.abajo + 4" text-anchor="end">
+              0
+            </text>
+            @for (marca of ejeX(); track marca.x; let primera = $first; let ultima = $last) {
+              <text
+                [attr.x]="marca.x"
+                [attr.y]="area.abajo + 24"
+                [attr.text-anchor]="primera ? 'start' : ultima ? 'end' : 'middle'"
+              >
+                {{ marca.texto }}
+              </text>
+            }
+          </g>
+        </svg>
+      </div>
+    }
+  </div>
+
+  <p class="resumen">{{ resumen() }} Plan: {{ p.nombre }}.</p>
+} @else {
+  <div class="vacio">
+    Ejecuta una simulación para ver cuántas personas hay en cada estado, día a día.
+  </div>
+}

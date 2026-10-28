@@ -9,6 +9,7 @@ import { comparacion } from '../../../dominio/reglas/planes';
 import { Controles } from '../../componentes/controles/controles';
 import { Grafica } from '../../componentes/grafica/grafica';
 import { Informe } from '../../componentes/informe/informe';
+import { Estados } from '../../componentes/estados/estados';
 import { Mapa } from '../../componentes/mapa/mapa';
 import { Tabla } from '../../componentes/tabla/tabla';
 import { numero } from '../../utilidades/formato';
@@ -24,7 +25,7 @@ interface Indicador {
 
 @Component({
   selector: 'app-panel',
-  imports: [Controles, Grafica, Informe, Mapa, Tabla],
+  imports: [Controles, Grafica, Estados, Informe, Mapa, Tabla],
   templateUrl: './panel.html',
   styleUrl: './panel.css',
 })
