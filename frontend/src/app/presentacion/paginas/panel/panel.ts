@@ -9,6 +9,7 @@ import { comparacion } from '../../../dominio/reglas/planes';
 import { AntesDespues } from '../../componentes/antes-despues/antes-despues';
 import { Controles } from '../../componentes/controles/controles';
 import { Grafica } from '../../componentes/grafica/grafica';
+import { Guia } from '../../componentes/guia/guia';
 import { MapaBarrios } from '../../componentes/mapa-barrios/mapa-barrios';
 import { Informe } from '../../componentes/informe/informe';
 import { Estados } from '../../componentes/estados/estados';
@@ -27,7 +28,7 @@ interface Indicador {
 
 @Component({
   selector: 'app-panel',
-  imports: [AntesDespues, Controles, Grafica, Estados, Informe, Mapa, MapaBarrios, Tabla],
+  imports: [AntesDespues, Controles, Grafica, Estados, Informe, Mapa, MapaBarrios, Tabla, Guia],
   templateUrl: './panel.html',
   styleUrl: './panel.css',
 })
@@ -54,6 +55,9 @@ export class Panel implements OnInit {
   protected alternarSidebar(): void {
     this.sidebarPlegada.update((plegada) => !plegada);
   }
+
+  // Enlace del menú lateral elegido (los enlaces son anclas a secciones de esta misma pantalla).
+  protected readonly seccionActiva = signal('dashboard');
 
   private readonly obtenerParametros = inject(ObtenerParametros);
   private readonly simularBrote = inject(SimularBrote);

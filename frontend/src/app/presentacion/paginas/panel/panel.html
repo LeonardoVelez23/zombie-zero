@@ -6,7 +6,7 @@
   </button>
 
 <aside class="sidebar" id="sidebar-principal">
-    <a class="brand" href="#dashboard" aria-label="Zombie Zero inicio">
+    <a class="brand" href="#dashboard" aria-label="Zombie Zero inicio" (click)="seccionActiva.set('dashboard')">
       <img class="brand-mark" src="logo.svg" alt="" width="43" height="43" />
       <div>
         <strong>ZOMBIE ZERO</strong>
@@ -16,19 +16,33 @@
 
     <div class="nav-label">CENTRO DE CONTROL</div>
     <nav class="nav-menu">
-      <a class="nav-item active" href="#dashboard"><span>◈</span> Dashboard <b>01</b></a>
-      <a class="nav-item" href="#simulacion"><span>⌘</span> Simulación</a>
-      <a class="nav-item" href="#mapa-brote"><span>⬢</span> Mapa del brote</a>
-      <a class="nav-item" href="#resultados"><span>▥</span> Resultados</a>
-      <a class="nav-item" href="#estados"><span>◐</span> Estados SEIR</a>
-      <a class="nav-item" href="#estrategias"><span>⇄</span> Estrategias</a>
-      <a class="nav-item" href="#mapa"><span>⌖</span> Mapa EDP</a>
+      <a class="nav-item" href="#dashboard" [class.active]="seccionActiva() === 'dashboard'"
+        [attr.aria-current]="seccionActiva() === 'dashboard' ? 'location' : null"
+        (click)="seccionActiva.set('dashboard')"><span>◈</span> Dashboard <b>01</b></a>
+      <a class="nav-item" href="#simulacion" [class.active]="seccionActiva() === 'simulacion'"
+        [attr.aria-current]="seccionActiva() === 'simulacion' ? 'location' : null"
+        (click)="seccionActiva.set('simulacion')"><span>⌘</span> Simulación</a>
+      <a class="nav-item" href="#mapa-brote" [class.active]="seccionActiva() === 'mapa-brote'"
+        [attr.aria-current]="seccionActiva() === 'mapa-brote' ? 'location' : null"
+        (click)="seccionActiva.set('mapa-brote')"><span>⬢</span> Mapa del brote</a>
+      <a class="nav-item" href="#resultados" [class.active]="seccionActiva() === 'resultados'"
+        [attr.aria-current]="seccionActiva() === 'resultados' ? 'location' : null"
+        (click)="seccionActiva.set('resultados')"><span>▥</span> Resultados</a>
+      <a class="nav-item" href="#estados" [class.active]="seccionActiva() === 'estados'"
+        [attr.aria-current]="seccionActiva() === 'estados' ? 'location' : null"
+        (click)="seccionActiva.set('estados')"><span>◐</span> Estados SEIR</a>
+      <a class="nav-item" href="#estrategias" [class.active]="seccionActiva() === 'estrategias'"
+        [attr.aria-current]="seccionActiva() === 'estrategias' ? 'location' : null"
+        (click)="seccionActiva.set('estrategias')"><span>⇄</span> Estrategias</a>
+      <a class="nav-item" href="#mapa" [class.active]="seccionActiva() === 'mapa'"
+        [attr.aria-current]="seccionActiva() === 'mapa' ? 'location' : null"
+        (click)="seccionActiva.set('mapa')"><span>⌖</span> Mapa EDP</a>
     </nav>
 
     <div class="sidebar-bottom">
-      <div class="status-card">
+      <div class="status-card" [title]="parametros() ? 'API conectada' : 'API sin conexión'">
         <span class="status-dot" [class.apagado]="!parametros()"></span>
-        <div>
+        <div class="status-texto">
           <strong>{{ parametros() ? 'API conectada' : 'API sin conexión' }}</strong>
           <small>Motor epidemiológico</small>
         </div>
@@ -43,6 +57,7 @@
         PROYECTO <span>/</span> <strong>VIGILANCIA EPIDEMIOLÓGICA</strong>
       </div>
       <div class="topbar-right">
+        <app-guia />
         <span class="production-badge">
           <span class="production-dot"></span>
           PRODUCCIÓN
