@@ -18,6 +18,7 @@
     <nav class="nav-menu">
       <a class="nav-item active" href="#dashboard"><span>◈</span> Dashboard <b>01</b></a>
       <a class="nav-item" href="#simulacion"><span>⌘</span> Simulación</a>
+      <a class="nav-item" href="#mapa-brote"><span>⬢</span> Mapa del brote</a>
       <a class="nav-item" href="#resultados"><span>▥</span> Resultados</a>
       <a class="nav-item" href="#estados"><span>◐</span> Estados SEIR</a>
       <a class="nav-item" href="#estrategias"><span>⇄</span> Estrategias</a>
@@ -92,6 +93,10 @@
           {{ error() ? 'Sin conexión con la API no se pueden cargar los parámetros.' : 'Cargando parámetros…' }}
         </div>
       }
+      <app-mapa-barrios [resultado]="resultado()" />
+    </section>
+
+    <section class="full-grid">
       <app-grafica [resultado]="resultado()" />
     </section>
 

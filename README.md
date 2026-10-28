@@ -42,7 +42,11 @@ Central. El Comité de Contención tiene pocas vacunas, un presupuesto limitado 
    la mediana y el rango p5–p95 de infectados, cuántas personas se salvan y en qué porcentaje de los brotes el
    plan le gana al azar.
 5. **Recomienda un plan en lenguaje simple** y dice qué tan sólida es la recomendación.
-6. **Muestra el avance en un mapa animado de Manta** (modelo de difusión espacial): se reproduce día por día
+6. **Muestra el brote barrio por barrio** en un mapa de Manta junto a los controles: qué porcentaje de cada barrio
+   ya fue mordido, día a día, con el mismo modelo de red que hace la recomendación. Se elige el plan (sin
+   intervenir, al azar o el recomendado) y se reproduce con ▶; cada barrio cambia de color según esté
+   contenido (< 5 %), en alerta (5–20 %) o fuera de control (≥ 20 %).
+7. **Lo contrasta con un mapa de difusión continua** (modelo EDP, abajo en la página): se reproduce día por día
    con ▶ y tres velocidades, o se recorre a mano con el deslizador (en simulaciones de más de 180 días,
    un fotograma cada 2 días o más, por el límite de 6 MB de respuesta de Lambda).
 
@@ -53,7 +57,7 @@ Para la prueba de fuego, los botones **Brote Sorpresa en un clic** aplican los c
 (R0 doble, mitad de vacunas, inicio en el mercado, variante con la mitad de eficacia y un corte de vacunas de
 30 días), se pueden combinar y simulan de inmediato; **Restablecer** vuelve al escenario por defecto.
 
-7. **Recalcula ante imprevistos:** se puede simular un corte en la entrega de vacunas (por ejemplo, un bloqueo
+8. **Recalcula ante imprevistos:** se puede simular un corte en la entrega de vacunas (por ejemplo, un bloqueo
    de la vía desde el día 21 durante 30 días). Al reanudarse la entrega, cada plan vuelve a decidir con el brote
    de ese día, y la recomendación puede cambiar: con ese corte pasa de *anillo + cerrar colegio* a
    *centralidad + cerrar colegio*.

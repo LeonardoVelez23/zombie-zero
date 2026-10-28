@@ -244,3 +244,10 @@ def test_en_paralelo_da_lo_mismo_que_en_serie(monkeypatch):
     paralelo = comparar(ESC, repeticiones=10, procesos=4)
     assert len(iniciados) == 4      # la ruta en paralelo sí se ejecutó
     assert paralelo == serie
+
+
+def test_mordidos_por_barrio_suman_el_total(red, beta):
+    for r in range(5):
+        res = simular(red, ESC, crear("anillo", red), beta, r)
+        assert res.afectados_barrio[-1].sum() == res.infectados_total
+        assert (np.diff(res.afectados_barrio, axis=0) >= 0).all()   # acumulado: nunca baja
