@@ -233,13 +233,9 @@ export class Panel implements OnInit {
       const resultado = await this.simularBrote.ejecutar(configuracion);
       if (!vigente()) return;
       if (!this.referencia()) this.referencia.set(resultado);
-<<<<<<< HEAD
-      this.resultado.set(resultado);
-      this.reloj.nuevoBrote(resultado.escenario.dias);
-=======
->>>>>>> 3b7214a35809940ebc9019e81608a4e1e94093ae
       this.ultimaConfiguracion = configuracion;
       this.resultado.set(resultado);
+      this.reloj.nuevoBrote(resultado.escenario.dias);
       // La EDP anterior era de otro escenario: se descarta (y también la que esté en camino).
       this.peticionDifusion++;
       this.difusion.set(null);
@@ -256,9 +252,10 @@ export class Panel implements OnInit {
   protected elegirModelo(modelo: ModeloMapa): void {
     this.modeloMapa.set(modelo);
     if (modelo !== 'edp') return;
-    // Sin el mapa de red a la vista, los indicadores muestran el brote completo.
+    // Sin el mapa de red a la vista, todas las pantallas saltan al brote completo
+    // (la línea de tiempo sigue disponible para recorrerlo).
     const r = this.resultado();
-    if (r) this.diaVivo.set(r.escenario.dias);
+    if (r) this.reloj.irA(r.escenario.dias);
     if (!this.difusion() && !this.calculandoDifusion()) void this.calcularDifusion();
   }
 

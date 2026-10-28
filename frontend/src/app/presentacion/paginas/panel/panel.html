@@ -120,9 +120,6 @@
           {{ error() ? 'Sin conexión con la API no se pueden cargar los parámetros.' : 'Cargando parámetros…' }}
         </div>
       }
-<<<<<<< HEAD
-      <app-mapa-barrios [resultado]="resultado()" />
-=======
       <div class="columna-mapa">
         <div class="selector-modelo" id="selector-modelo" role="radiogroup" aria-label="Modelo que muestra el mapa">
           @for (m of modelos; track m.id) {
@@ -139,7 +136,7 @@
           }
         </div>
         @if (modeloMapa() === 'red') {
-          <app-mapa-barrios [resultado]="resultado()" [(dia)]="diaVivo" />
+          <app-mapa-barrios [resultado]="resultado()" />
         } @else {
           <app-mapa
             [resultado]="difusion()"
@@ -179,7 +176,6 @@
           </div>
         }
       </div>
->>>>>>> 3b7214a35809940ebc9019e81608a4e1e94093ae
     </section>
 
     <section class="full-grid">
