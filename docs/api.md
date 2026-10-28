@@ -85,6 +85,10 @@ Todo es opcional: lo que no se envía toma el valor por defecto.
       "pico":            { "media": ..., "mediana": ..., "p5": ..., "p95": ... },
       "dia_pico": 21.4,
       "curva_zombies":   { "media": [dias+1 números], "mediana": [...], "p5": [...], "p95": [...] },
+      "estados": {
+        "S": { "media": [dias+1 números], "mediana": [...], "p5": [...], "p95": [...] },
+        "E": { ... }, "I": { ... }, "R": { ... }
+      },
       "mapa": [[zombies promedio por barrio el día 0], [día 1], ...],   // (dias+1) × 6
       "vacunas_perdidas": 12.3,
       "salvados_vs_ninguna": { "media": ..., "mediana": ..., "p5": ..., "p95": ... },
@@ -98,6 +102,11 @@ Todo es opcional: lo que no se envía toma el valor por defecto.
 
 - `infectados`: personas que llegaron a ser mordidas en todo el brote (media, mediana y rango p5–p95 entre repeticiones).
 - `curva_zombies`: zombies activos por día; sirve para la gráfica con banda de rango.
+- `estados`: personas en cada estado del modelo, día a día: 🟢 `S` sanos,
+  🟡 `E` mordidos (incuban, aún no contagian), 🔴 `I` zombies (contagian) y
+  🔵 `R` exorcizados (inmunes). La media de los cuatro suma `n_personas` cada día;
+  `estados.I` es igual a `curva_zombies`. La interfaz los muestra en el panel
+  "02B / Estados día a día".
 - `mapa[d][b] / poblacion_barrio[b]`: fracción de zombies en el barrio `b` el día `d`, para colorear el mapa.
 - `salvados_vs_*`: diferencia pareada (misma semilla) de infectados frente a la línea base.
 
