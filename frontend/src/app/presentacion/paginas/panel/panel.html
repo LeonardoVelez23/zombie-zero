@@ -22,7 +22,7 @@
       <a class="nav-item" href="#simulacion" [class.active]="seccionActiva() === 'simulacion'"
         [attr.aria-current]="seccionActiva() === 'simulacion' ? 'location' : null"
         (click)="seccionActiva.set('simulacion')"><span>⌘</span> Simulación</a>
-      <a class="nav-item" href="#mapa-brote" [class.active]="seccionActiva() === 'mapa-brote'"
+      <a class="nav-item" href="#selector-modelo" [class.active]="seccionActiva() === 'mapa-brote'"
         [attr.aria-current]="seccionActiva() === 'mapa-brote' ? 'location' : null"
         (click)="seccionActiva.set('mapa-brote')"><span>⬢</span> Mapa del brote</a>
       <a class="nav-item" href="#resultados" [class.active]="seccionActiva() === 'resultados'"
@@ -34,9 +34,6 @@
       <a class="nav-item" href="#estrategias" [class.active]="seccionActiva() === 'estrategias'"
         [attr.aria-current]="seccionActiva() === 'estrategias' ? 'location' : null"
         (click)="seccionActiva.set('estrategias')"><span>⇄</span> Estrategias</a>
-      <a class="nav-item" href="#mapa" [class.active]="seccionActiva() === 'mapa'"
-        [attr.aria-current]="seccionActiva() === 'mapa' ? 'location' : null"
-        (click)="seccionActiva.set('mapa')"><span>⌖</span> Mapa EDP</a>
     </nav>
 
     <div class="sidebar-bottom">
@@ -121,7 +118,62 @@
           {{ error() ? 'Sin conexión con la API no se pueden cargar los parámetros.' : 'Cargando parámetros…' }}
         </div>
       }
-      <app-mapa-barrios [resultado]="resultado()" [(dia)]="diaVivo" />
+      <div class="columna-mapa">
+        <div class="selector-modelo" id="selector-modelo" role="radiogroup" aria-label="Modelo que muestra el mapa">
+          @for (m of modelos; track m.id) {
+            <button
+              type="button"
+              role="radio"
+              class="modelo"
+              [class.activo]="modeloMapa() === m.id"
+              [attr.aria-checked]="modeloMapa() === m.id"
+              (click)="elegirModelo(m.id)"
+            >
+              {{ m.nombre }}
+            </button>
+          }
+        </div>
+        @if (modeloMapa() === 'red') {
+          <app-mapa-barrios [resultado]="resultado()" [(dia)]="diaVivo" />
+        } @else {
+          <app-mapa
+            [resultado]="difusion()"
+            [cargando]="calculandoDifusion()"
+            [error]="errorDifusion()"
+            (ejecutar)="calcularDifusion()"
+          />
+        }
+        @if (contraste(); as c) {
+          <div class="panel contraste" aria-label="El mismo escenario en los dos modelos">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Mismo escenario</th>
+                  <th scope="col">Sin intervenir</th>
+                  <th scope="col">Con su intervención</th>
+                  <th scope="col">Salvados</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (f of c.filas; track f.nombre) {
+                  <tr>
+                    <th scope="row">{{ f.nombre }}</th>
+                    <td>{{ f.sin }}</td>
+                    <td>{{ f.con }} <small>{{ f.plan }}</small></td>
+                    <td><strong>{{ f.salvados }}</strong></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+            <p>
+              La EDP mezcla a todos los de una zona y no sabe quién es contacto de quién.
+              @if (c.veces && c.veces > 1) {
+                Con las mismas dosis, la red salva unas <strong>{{ c.veces }} veces</strong> más.
+              }
+            </p>
+          </div>
+        }
+      </div>
     </section>
 
     <section class="full-grid">
@@ -135,15 +187,6 @@
     <section class="bottom-grid">
       <app-tabla [resultado]="resultado()" />
       <app-informe [resultado]="resultado()" />
-    </section>
-
-    <section class="full-grid">
-      <app-mapa
-        [resultado]="difusion()"
-        [cargando]="calculandoDifusion()"
-        [error]="errorDifusion()"
-        (ejecutar)="calcularDifusion()"
-      />
     </section>
 
     <footer class="page-footer">
