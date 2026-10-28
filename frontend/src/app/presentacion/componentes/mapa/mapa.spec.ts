@@ -7,7 +7,15 @@ import { Mapa } from './mapa';
 // animación solo mueve el día elegido.
 const difusion: ResultadoDifusion = {
   parametros: { dSanos: 0.1, dZombies: 0.05, alfa: 0.02, beta: 0.5, sigma: 0.3, gamma: 0.2 },
-  malla: { lonMin: -80.8, lonMax: -80.6, latMin: -1.0, latMax: -0.9, dxKm: 0.5, filas: 1, columnas: 1 },
+  malla: {
+    lonMin: -80.8,
+    lonMax: -80.6,
+    latMin: -1.0,
+    latMax: -0.9,
+    dxKm: 0.5,
+    filas: 1,
+    columnas: 1,
+  },
   aeropuerto: [-80.68, -0.95],
   escenarios: [
     {
