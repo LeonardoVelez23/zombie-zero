@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
 
 import { ModelarDifusion } from '../../../aplicacion/casos-uso/modelar-difusion';
 import { ObtenerParametros } from '../../../aplicacion/casos-uso/obtener-parametros';
@@ -30,6 +30,15 @@ interface Indicador {
   styleUrl: './panel.css',
 })
 export class Panel implements OnInit {
+  // Nombre que el operador o jurado escribió en la bienvenida (solo se muestra).
+  readonly operador = input('');
+
+  protected readonly iniciales = computed(() => {
+    // Se saltan palabras cortas como "de" o "la": "Comité de Contención Manta" -> "CC".
+    const palabras = this.operador().split(/\s+/).filter((p) => p.length > 2);
+    return palabras.length ? palabras.slice(0, 2).map((p) => p[0].toUpperCase()).join('') : 'ZZ';
+  });
+
   protected readonly sidebarPlegada = signal(false);
 
   protected alternarSidebar(): void {
