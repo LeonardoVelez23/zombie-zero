@@ -40,6 +40,8 @@ export class Mapa {
 
   private readonly contenedor = viewChild<ElementRef<HTMLDivElement>>('contenedor');
   private mapa: MapaLibre | null = null;
+  private urlWorker: string | null = null;
+  private destruido = false;
   private marcadorAeropuerto: Marker | null = null;
   private crearMarcador: ((lngLat: [number, number]) => Marker) | null = null;
   private readonly lienzo = document.createElement('canvas');
@@ -66,7 +68,10 @@ export class Mapa {
   constructor() {
     const destruir = inject(DestroyRef);
     afterNextRender(() => void this.crearMapa());
-    destruir.onDestroy(() => this.mapa?.remove());
+    destruir.onDestroy(() => {
+      this.destruido = true;
+      this.liberar();
+    });
 
     effect(() => this.mostrarVista(this.vista()));
     effect(() => this.dibujarZombies());
@@ -83,8 +88,16 @@ export class Mapa {
     const elemento = this.contenedor()?.nativeElement;
     if (!elemento) return;
     try {
+      // Si el componente se destruye durante una de las esperas, no se crea el mapa.
       const maplibre = await import('maplibre-gl');
-      maplibre.setWorkerUrl(await urlDelWorker());
+      if (this.destruido) return;
+      const urlWorker = await urlDelWorker();
+      if (this.destruido) {
+        URL.revokeObjectURL(urlWorker);
+        return;
+      }
+      this.urlWorker = urlWorker;
+      maplibre.setWorkerUrl(urlWorker);
       this.mapa = new maplibre.Map({
         container: elemento,
         style: estiloBase(this.vista()),
@@ -106,12 +119,24 @@ export class Mapa {
           .addTo(this.mapa);
       }
       this.mapa.on('load', () => this.mapaListo.set(true));
-      this.mapa.on('error', (e) => console.warn('Mapa:', e.error?.message ?? e));
+      // Fallos del estilo o de mosaicos del mapa base (sin conexión, servicio caído): se avisa en
+      // el panel para que no quede un mapa en blanco sin explicación.
+      this.mapa.on('error', (e) => {
+        console.warn('Mapa:', e.error?.message ?? e);
+        this.errorMapa.set('No se pudo cargar parte del mapa base. Revisa la conexión a internet.');
+      });
     } catch (e) {
       // Sin WebGL (navegadores muy viejos o pruebas en jsdom) el panel sigue funcionando.
       this.errorMapa.set('Este navegador no puede mostrar el mapa (necesita WebGL).');
       console.warn('No se pudo crear el mapa', e);
     }
+  }
+
+  private liberar(): void {
+    this.mapa?.remove();
+    this.mapa = null;
+    if (this.urlWorker) URL.revokeObjectURL(this.urlWorker);
+    this.urlWorker = null;
   }
 
   private mostrarVista(vista: VistaId): void {
