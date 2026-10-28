@@ -32,6 +32,18 @@ Parameters:
     Type: String
     Default: E3G28K5KO11Y7C
     Description: Id del Origin Access Control de CloudFront de la pila.
+  CorreoAlerta:
+    Type: String
+    Description: Correo que recibe el aviso cuando se corta Bedrock por gasto.
+  RolLambda:
+    Type: String
+    Description: >
+      Nombre del rol de ejecución de la Lambda (recurso ApiFunctionRole de la pila de la
+      aplicación). La acción de presupuesto le niega Bedrock si se pasa el límite.
+  LimiteBedrock:
+    Type: Number
+    Default: 3
+    Description: Gasto mensual máximo en Bedrock, en dólares; al superarlo se corta la IA.
 
 Resources:
   # Una cuenta solo admite un proveedor por URL: si ya existe, quitar este recurso y usar su ARN.
@@ -127,8 +139,9 @@ Resources:
                   - cloudfront:GetCachePolicy
                   - cloudfront:GetOriginRequestPolicy
                 Resource: '*'
-              # IAM: sin crear roles ni adjuntar políticas (evita escalar a administrador).
-              # Solo puede entregar a Lambda el rol de ejecución que ya existe.
+              # IAM: sin crear roles ni escribir políticas (evita escalar a administrador).
+              # Solo puede entregar a Lambda el rol de ejecución que ya existe y adjuntarle
+              # o quitarle una única política: la de invocar Bedrock, definida abajo.
               - Effect: Allow
                 Action: iam:GetRole
                 Resource: !Sub arn:aws:iam::${AWS::AccountId}:role/${Pila}-ApiFunctionRole-*
@@ -138,6 +151,106 @@ Resources:
                 Condition:
                   StringEquals:
                     iam:PassedToService: lambda.amazonaws.com
+              - Effect: Allow
+                Action:
+                  - iam:AttachRolePolicy
+                  - iam:DetachRolePolicy
+                Resource: !Sub arn:aws:iam::${AWS::AccountId}:role/${Pila}-ApiFunctionRole-*
+                Condition:
+                  ArnEquals:
+                    iam:PolicyARN: !Ref PoliticaBedrock
+
+  # Lo único que la Lambda puede hacer en Bedrock: invocar nova-micro para redactar el informe.
+  PoliticaBedrock:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: !Sub ${Pila}-invocar-bedrock
+      Description: Zombie Zero - la Lambda solo puede invocar amazon.nova-micro-v1:0
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action: bedrock:InvokeModel
+            Resource: !Sub arn:aws:bedrock:${AWS::Region}::foundation-model/amazon.nova-micro-v1:0
+
+  # --- Corte de gasto de Bedrock para toda la cuenta ------------------------------------------
+  # La Function URL es pública y el cupo de llamadas a Bedrock es por contenedor. Si el gasto real
+  # en Bedrock del mes supera LimiteBedrock, AWS Budgets adjunta sola esta política al rol de la
+  # Lambda: Bedrock queda negado y el informe se sigue entregando con la plantilla sin IA.
+  PoliticaSinBedrock:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: !Sub ${Pila}-sin-bedrock
+      Description: Zombie Zero - corte de gasto, niega invocar Bedrock
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Deny
+            Action: bedrock:InvokeModel
+            Resource: '*'
+
+  PresupuestoBedrock:
+    Type: AWS::Budgets::Budget
+    Properties:
+      Budget:
+        BudgetName: !Sub ${Pila}-bedrock
+        BudgetType: COST
+        TimeUnit: MONTHLY
+        BudgetLimit:
+          Amount: !Ref LimiteBedrock
+          Unit: USD
+        CostFilters:
+          Service:
+            - Amazon Bedrock
+
+  # Rol con el que AWS Budgets aplica el corte: solo puede adjuntar o quitar la política de corte.
+  RolCorteBedrock:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${Pila}-corte-bedrock
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: budgets.amazonaws.com
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref AWS::AccountId
+      Policies:
+        - PolicyName: aplicar-corte
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - iam:AttachRolePolicy
+                  - iam:DetachRolePolicy
+                Resource: !Sub arn:aws:iam::${AWS::AccountId}:role/${RolLambda}
+                Condition:
+                  ArnEquals:
+                    iam:PolicyARN: !Ref PoliticaSinBedrock
+
+  CorteBedrock:
+    Type: AWS::Budgets::BudgetsAction
+    Properties:
+      BudgetName: !Ref PresupuestoBedrock
+      NotificationType: ACTUAL
+      ActionType: APPLY_IAM_POLICY
+      ActionThreshold:
+        Type: PERCENTAGE
+        Value: 100
+      ApprovalModel: AUTOMATIC
+      ExecutionRoleArn: !GetAtt RolCorteBedrock.Arn
+      Definition:
+        IamActionDefinition:
+          PolicyArn: !Ref PoliticaSinBedrock
+          Roles:
+            - !Ref RolLambda
+      Subscribers:
+        - Type: EMAIL
+          Address: !Ref CorreoAlerta
 
 Outputs:
   RolArn:

@@ -55,14 +55,20 @@ falta confirmarlo con `aws pricing get-products`, como el resto de la tabla).
 | Brote activo, un informe por simulación | 30.000 × ($0,0001 + $0,0001) | ≈ **$5,90 al mes** |
 
 **Tope de gasto.** El endpoint es público y no pide inicio de sesión, por eso el gasto en Bedrock tiene un
-techo por diseño. Cada contenedor de la Lambda llama a Bedrock 4 veces por minuto como máximo
-(`IA_LLAMADAS_POR_MINUTO`). Pasado ese cupo responde la plantilla sin IA, y el mismo resultado pedido otra vez
-sale de la caché. Una cuenta nueva admite 10 ejecuciones simultáneas de Lambda, así que aunque alguien enviara
-peticiones sin parar el peor caso sería 10 × 4 × 60 × 24 = 57.600 llamadas al día ≈ **$5,80 al día**
-(≈ $0,24 por hora). No es un límite absoluto: si se sostuviera, el AWS Budget de 10 USD avisaría por correo
-en menos de dos días, y basta con poner `IA_ACTIVA: 'false'` y volver a desplegar para cortarlo. Un tope
-global exacto necesitaría un contador compartido (por ejemplo, DynamoDB) o AWS WAF con límite de frecuencia
-(≈ $6 al mes): quedan como mejora si el uso público lo justifica.
+techo por diseño, en dos capas:
+
+1. **Por contenedor:** cada contenedor de la Lambda llama a Bedrock una vez por minuto como máximo
+   (`IA_LLAMADAS_POR_MINUTO`). Pasado ese cupo responde la plantilla sin IA, y el mismo resultado pedido otra
+   vez sale de la caché. La cuenta admite 10 ejecuciones simultáneas de Lambda, así que aunque alguien enviara
+   peticiones sin parar a varios contenedores, el peor caso sería 10 × 1 × 60 × 24 = 14.400 llamadas al día
+   ≈ **$1,45 al día**.
+2. **Para toda la cuenta (corte de gasto):** el Budget `zombie-zero-bedrock` mide solo el gasto real en Bedrock.
+   Si en el mes pasa de **3 USD**, una acción de presupuesto adjunta sola la política `zombie-zero-sin-bedrock`
+   al rol de la Lambda: Bedrock queda negado, el informe sigue saliendo con la plantilla sin IA y llega un
+   correo. AWS Budgets actualiza el gasto varias veces al día, así que el corte llega con unas horas de
+   retraso; con la capa 1, ese retraso cuesta como mucho unos centavos por hora. Está en
+   `infra/github-oidc.yaml`, la pila que despliega un administrador; para reactivar la IA se quita la
+   política del rol.
 
 Bedrock no tiene capa gratuita. Los segundos de Lambda sí entran en la capa gratuita junto con los demás.
 Las cifras son un techo: en la práctica el informe se pide mucho menos que la simulación. El gasto real de

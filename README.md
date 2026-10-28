@@ -240,7 +240,11 @@ Archivo fuente editable: [`docs/arquitectura.drawio`](docs/arquitectura.drawio) 
   OpenStreetMap.
 - **Despliegue:** cada merge a `main` corre las pruebas en GitHub Actions y, si pasan, despliega con un rol de
   IAM que se obtiene por OIDC. No hay llaves de AWS guardadas en GitHub y el rol solo puede tocar los recursos
-  de esta aplicación ([`infra/github-oidc.yaml`](infra/github-oidc.yaml)).
+  de esta aplicación ([`infra/github-oidc.yaml`](infra/github-oidc.yaml)). No puede escribir permisos: al rol
+  de la Lambda solo puede adjuntarle una política fija, `zombie-zero-invocar-bedrock`, que permite invocar
+  únicamente el modelo `amazon.nova-micro-v1:0` para redactar el informe. Como la URL de la API es pública,
+  un Budget solo de Bedrock (3 USD al mes) le niega la IA a la Lambda si se supera, y el informe sigue con la
+  plantilla sin IA ([detalle](docs/costos.md)).
 - **Costos:** el AWS Budget `zombie-zero-mensual` (10 USD) avisa por correo al 80 % del gasto real y al 100 %
   del gasto previsto.
 

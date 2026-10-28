@@ -48,12 +48,14 @@ Resources:
           IA_ACTIVA: 'true'
           MODELO_IA: amazon.nova-micro-v1:0
           # Tope de gasto: llamadas a Bedrock por minuto en cada contenedor; pasado eso, plantilla sin IA.
-          IA_LLAMADAS_POR_MINUTO: '4'
+          # Por contenedor (hasta 10 en esta cuenta). El corte de gasto de toda la cuenta está en
+          # infra/github-oidc.yaml: un Budget de Bedrock que niega la IA si se pasa del límite.
+          IA_LLAMADAS_POR_MINUTO: '1'
+      # Mínimo privilegio: solo invocar nova-micro. La política la crea infra/github-oidc.yaml (pila
+      # aparte, desplegada por un administrador) para que el despliegue automático solo pueda adjuntar
+      # esa política y no escribir permisos nuevos en el rol.
       Policies:
-        - Statement:
-            - Effect: Allow             # mínimo privilegio: solo invocar este modelo
-              Action: bedrock:InvokeModel
-              Resource: !Sub arn:aws:bedrock:${AWS::Region}::foundation-model/amazon.nova-micro-v1:0
+        - !Sub arn:aws:iam::${AWS::AccountId}:policy/${AWS::StackName}-invocar-bedrock
       FunctionUrlConfig:          # Function URL: sin el corte de 30 s de API Gateway
         AuthType: NONE
         Cors:
