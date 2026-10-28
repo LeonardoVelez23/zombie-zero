@@ -13,6 +13,7 @@
       Para cambiar el resultado hacen falta más vacunas o empezar a actuar antes: prueba subiendo las
       vacunas o adelantando el día de inicio.
     </p>
+    <app-que-haria-falta [resultado]="r" />
   } @else {
     <h2>{{ recomendado()?.nombre }}</h2>
     <p>{{ recomendado()?.descripcion }}</p>
@@ -27,6 +28,9 @@
       ({{ numero(poblacionManta) }} habitantes), el plan salvaría a unas
       <strong>{{ numero(enManta(v.salvadosVsNinguna, r.escenario.nPersonas)) }}</strong> personas.
     </p>
+    @if (v.nivel === 'debil') {
+      <app-que-haria-falta [resultado]="r" />
+    }
   }
   @if (v.empatesConAzar) {
     <p>

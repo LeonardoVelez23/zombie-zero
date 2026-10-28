@@ -1,0 +1,41 @@
+@if (respuestas(); as lista) {
+  @if (mejor(); as m) {
+    <p class="conclusion">
+      @if (m.nivel === 'solida') {
+        El cambio más simple que da vuelta el resultado:
+        <strong>{{ m.alternativa.titulo.toLowerCase() }}</strong> ({{
+          m.alternativa.detalle.toLowerCase()
+        }}). Con <strong>{{ m.plan }}</strong> se salvan
+        <strong>{{ numero(m.salvados) }}</strong> personas (≈ {{ numero(m.salvadosManta) }} en toda
+        Manta) y gana al azar en {{ porcentaje(m.ganaAAzar) }} de los brotes.
+      } @else {
+        Ni actuando antes ni con el doble de recursos hay un plan que gane con claridad: esta plaga
+        necesita una respuesta mucho más temprana o más fuerte.
+      }
+    </p>
+  }
+  <ul class="alternativas" aria-label="Qué haría falta para ganar">
+    @for (a of lista; track a.alternativa.id) {
+      <li [class.mejor]="a === mejor()">
+        <div class="cabecera">
+          <strong>{{ a.alternativa.titulo }}</strong>
+          <span class="nivel" [class]="'nivel ' + a.nivel">{{
+            a.nivel === 'solida' ? 'Gana' : 'No alcanza'
+          }}</span>
+        </div>
+        <small>{{ a.alternativa.detalle }}</small>
+        <span
+          >{{ a.plan }}: salva {{ numero(a.salvados) }} · gana al azar en
+          {{ porcentaje(a.ganaAAzar) }}</span
+        >
+      </li>
+    }
+  </ul>
+} @else {
+  <button type="button" class="calcular" [disabled]="calculando()" (click)="calcular()">
+    {{ calculando() ? 'Simulando alternativas…' : '¿Qué haría falta para ganar?' }}
+  </button>
+  @if (error(); as mensaje) {
+    <p class="error" role="alert">No se pudieron simular las alternativas: {{ mensaje }}</p>
+  }
+}

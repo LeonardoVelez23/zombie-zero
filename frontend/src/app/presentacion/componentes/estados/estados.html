@@ -7,7 +7,9 @@
 </div>
 <p class="panel-description">
   Cada persona de la red está en uno de cuatro estados y cambia día a día: 🟢 sana → 🟡 mordida → 🔴
-  zombie → 🔵 exorcizada. Cada línea es el promedio de los brotes simulados y su banda, el rango
+  zombie → 🔵 exorcizada. Mordidos y zombies son los que hay <em>ese día</em>: cada persona incuba
+  unos 3 días y contagia unos 5, y luego pasa a exorcizada; la línea discontinua suma a todos los
+  que ya fueron mordidos. Cada línea es el promedio de los brotes simulados y su banda, el rango
   p5–p95; en la vista de áreas, los cuatro estados suman toda la población.
 </p>
 
@@ -92,6 +94,9 @@
           @for (l of lineas(); track l.id) {
             <path [class]="'linea-estado ' + l.id" [attr.d]="l.linea" />
           }
+          @if (acumulado(); as a) {
+            <path class="linea-acumulado" [attr.d]="a" />
+          }
         } @else {
           @for (capa of capas(); track capa.id) {
             <path [class]="'capa ' + capa.id" [attr.d]="capa.d" />
@@ -127,6 +132,7 @@
           @for (e of estados; track e.id) {
             <li><span [class]="'trazo ' + e.id"></span>{{ e.nombre }}</li>
           }
+          <li><span class="trazo acumulado"></span>Total mordidos (acumulado)</li>
         </ul>
       }
     </div>
