@@ -26,7 +26,20 @@ describe('Estados SEIR día a día', () => {
     // Datos de prueba: sin intervención el pico es el día 1 (recomendado: S 9.980 · E 10 · I 10 · R 0).
     expect(panel.textContent).toContain('Día 1 de 3');
     expect(contadores(panel)).toEqual(['9.980', '10', '10', '0']);
+    // Por defecto, una línea por estado con su banda (como el gráfico "Populations" de NetLogo).
+    expect(panel.querySelectorAll('path.linea-estado').length).toBe(4);
+    expect(panel.querySelectorAll('path.banda-estado').length).toBe(4);
+    expect(panel.querySelectorAll('path.capa').length).toBe(0);
+  });
+
+  it('se puede cambiar a las áreas apiladas, con el eje en porcentaje', async () => {
+    const { fixture, panel } = await renderizar();
+    const botones = Array.from(panel.querySelectorAll<HTMLButtonElement>('.opcion'));
+    botones.find((b) => b.textContent?.trim() === 'Áreas')!.click();
+    await fixture.whenStable();
     expect(panel.querySelectorAll('path.capa').length).toBe(4);
+    expect(panel.querySelectorAll('path.linea-estado').length).toBe(0);
+    expect(panel.querySelector('.graficas .axis-labels')?.textContent).toContain('100 %');
   });
 
   it('cambia de día con el deslizador', async () => {
