@@ -1,0 +1,54 @@
+<div class="panel-heading">
+  <div>
+    <span class="section-index">05 / CONTRASTE ESPACIAL</span>
+    <h2>Mapa de zombies (modelo EDP)</h2>
+  </div>
+  <button class="boton" type="button" [disabled]="cargando()" (click)="ejecutar.emit()">
+    {{ cargando() ? 'Calculando…' : resultado() ? 'Recalcular' : 'Calcular modelo EDP' }}
+  </button>
+</div>
+<p class="panel-description">
+  Difusión continua sobre una cuadrícula de Manta con el escenario de la última simulación. Sirve de
+  contraste: la recomendación sale del modelo de red.
+</p>
+
+@if (error(); as mensaje) {
+  <p class="error" role="alert">{{ mensaje }}</p>
+}
+
+@if (resultado(); as r) {
+  <div class="controles-mapa">
+    <label>
+      Escenario
+      <select [value]="escenarioElegido()" (change)="escenarioElegido.set(+$any($event.target).value)">
+        @for (e of r.escenarios; track e.id; let i = $index) {
+          <option [value]="i">{{ e.nombre }}</option>
+        }
+      </select>
+    </label>
+    @let fotogramas = escenario()?.fotogramas ?? [];
+    <label class="deslizador">
+      Día {{ fotograma()?.dia }}
+      <input
+        type="range"
+        min="0"
+        [max]="fotogramas.length - 1"
+        [value]="fotogramaElegido()"
+        (input)="fotogramaElegido.set(+$any($event.target).value)"
+      />
+    </label>
+  </div>
+
+  <canvas #lienzo role="img" [attr.aria-label]="'Zombies por zona el día ' + fotograma()?.dia"></canvas>
+
+  @if (escenario(); as e) {
+    <div class="resumen">
+      <span>Infectados: <strong>{{ numero(e.infectadosTotal) }}</strong></span>
+      <span>Pico: <strong>{{ numero(e.pico) }}</strong> el día {{ e.diaPico }}</span>
+      <span>Vacunas usadas: <strong>{{ numero(e.vacunasUsadas) }}</strong></span>
+      <span><i class="marca-aeropuerto"></i> Aeropuerto</span>
+    </div>
+  }
+} @else if (!error()) {
+  <div class="vacio">Calcula el modelo EDP para ver cómo se extiende el brote por la ciudad.</div>
+}

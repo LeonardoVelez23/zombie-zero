@@ -9,3 +9,7 @@ resultado*.json
 .env
 .aws/
 *.pem
+
+# Despliegue
+infra/.build/
+.aws-sam/

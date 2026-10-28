@@ -1,0 +1,60 @@
+<div class="panel-heading chart-heading">
+  <div>
+    <span class="section-index">02 / PROPAGACIÓN</span>
+    <h2>Zombies activos por día</h2>
+  </div>
+  <span class="chart-tag">MEDIA Y RANGO P5–P95</span>
+</div>
+<p class="panel-description">
+  Línea: promedio entre brotes simulados. Banda: 90 % de los brotes cae dentro.
+</p>
+
+@if (resultado(); as r) {
+  <div class="chart-legend">
+    @for (curva of curvas(); track curva.clase) {
+      <span><i class="legend-dot" [class]="curva.clase"></i> {{ curva.etiqueta }}</span>
+    }
+  </div>
+
+  <div class="chart-wrap">
+    <svg
+      class="epidemic-chart"
+      viewBox="0 0 700 300"
+      role="img"
+      aria-label="Zombies activos por día con y sin intervención"
+    >
+      <g class="grid-lines">
+        @for (marca of ejeY(); track marca.y) {
+          <line [attr.x1]="area.izquierda" [attr.x2]="area.derecha" [attr.y1]="marca.y" [attr.y2]="marca.y" />
+        }
+      </g>
+      <g class="axis-labels">
+        @for (marca of ejeY(); track marca.y) {
+          <text [attr.x]="area.izquierda - 12" [attr.y]="marca.y + 4" text-anchor="end">{{ marca.texto }}</text>
+        }
+        @for (marca of ejeX(); track marca.x; let ultima = $last; let primera = $first) {
+          <text
+            [attr.x]="marca.x"
+            [attr.y]="area.abajo + 28"
+            [attr.text-anchor]="primera ? 'start' : ultima ? 'end' : 'middle'"
+          >
+            {{ marca.texto }}
+          </text>
+        }
+      </g>
+      @for (curva of curvas(); track curva.clase) {
+        <path class="banda" [class]="curva.clase" [attr.d]="curva.banda" />
+      }
+      @for (curva of curvas(); track curva.clase) {
+        <path class="linea" [class]="curva.clase" [attr.d]="curva.linea" />
+      }
+    </svg>
+  </div>
+
+  <div class="chart-foot">
+    <span><i class="tiny-dot"></i> {{ r.repeticiones }} brotes simulados por plan</span>
+    <span>Horizonte: {{ r.escenario.dias }} días</span>
+  </div>
+} @else {
+  <div class="vacio">Ejecuta una simulación para ver cómo avanza el brote con cada plan.</div>
+}

@@ -1,0 +1,174 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Zombie Zero - simulador de la plaga en Manta. Backend Python en Lambda con
+  Function URL, frontend estático en S3 + CloudFront y presupuesto con alerta.
+
+Parameters:
+  CorreoAlerta:
+    Type: String
+    Default: ''
+    Description: Correo que recibe la alerta del presupuesto (vacío = no crear el Budget).
+  PresupuestoMensualUSD:
+    Type: Number
+    Default: 10
+    Description: Límite mensual del AWS Budget, en dólares.
+  ConcurrenciaMaxima:
+    Type: Number
+    Default: 0
+    Description: >
+      Ejecuciones simultáneas máximas de la Lambda (protege el costo).
+      0 = sin reserva; las cuentas nuevas solo permiten 10 en total y no admiten reservas.
+
+Conditions:
+  CrearPresupuesto: !Not [!Equals [!Ref CorreoAlerta, '']]
+  LimitarConcurrencia: !Not [!Equals [!Ref ConcurrenciaMaxima, 0]]
+
+Resources:
+  # --- Backend: motor de simulación y API ---------------------------------
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: API del simulador (POST /api/simular, POST /api/edp)
+      CodeUri: .build/lambda/     # lo arma empaquetar.sh (código + numpy para Linux)
+      Handler: zombie.api.lambda_handler
+      Runtime: python3.13
+      Architectures: [x86_64]
+      MemorySize: 2048            # en Lambda más memoria también da más CPU
+      Timeout: 60                 # 50 repeticiones tardan unos 12 s
+      ReservedConcurrentExecutions: !If [LimitarConcurrencia, !Ref ConcurrenciaMaxima, !Ref AWS::NoValue]
+      LoggingConfig:
+        LogGroup: !Ref ApiLogs
+      FunctionUrlConfig:          # Function URL: sin el corte de 30 s de API Gateway
+        AuthType: NONE
+        Cors:
+          AllowOrigins: ['*']
+          AllowMethods: [GET, POST]
+          AllowHeaders: [content-type]
+          MaxAge: 3600
+
+  # Las Function URL públicas creadas desde octubre de 2025 también necesitan
+  # lambda:InvokeFunction (además del lambda:InvokeFunctionUrl que agrega SAM).
+  ApiInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref ApiFunction
+      Principal: '*'
+      InvokedViaFunctionUrl: true
+
+  ApiLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}-api
+      RetentionInDays: 7
+
+  # --- Frontend: archivos estáticos privados detrás de CloudFront -----------
+  FrontendBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
+  FrontendOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub ${AWS::StackName}-frontend
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  FrontendDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: Zombie Zero - interfaz web
+        DefaultRootObject: index.html
+        HttpVersion: http2
+        PriceClass: PriceClass_100
+        Origins:
+          - Id: frontend
+            DomainName: !GetAtt FrontendBucket.RegionalDomainName
+            OriginAccessControlId: !GetAtt FrontendOAC.Id
+            S3OriginConfig:
+              OriginAccessIdentity: ''
+        DefaultCacheBehavior:
+          TargetOriginId: frontend
+          ViewerProtocolPolicy: redirect-to-https
+          Compress: true
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6   # CachingOptimized (administrada por AWS)
+        CustomErrorResponses:     # rutas de Angular: siempre se sirve index.html
+          - ErrorCode: 403
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+          - ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+
+  FrontendBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref FrontendBucket
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub ${FrontendBucket.Arn}/*
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${FrontendDistribution}
+
+  # --- Control de costos -----------------------------------------------------
+  Presupuesto:
+    Type: AWS::Budgets::Budget
+    Condition: CrearPresupuesto
+    Properties:
+      Budget:
+        BudgetName: !Sub ${AWS::StackName}-mensual
+        BudgetType: COST
+        TimeUnit: MONTHLY
+        BudgetLimit:
+          Amount: !Ref PresupuestoMensualUSD
+          Unit: USD
+      NotificationsWithSubscribers:
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 80
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref CorreoAlerta
+        - Notification:
+            NotificationType: FORECASTED
+            ComparisonOperator: GREATER_THAN
+            Threshold: 100
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref CorreoAlerta
+
+Outputs:
+  ApiUrl:
+    Description: URL pública de la API (va en el environment de Angular)
+    Value: !GetAtt ApiFunctionUrl.FunctionUrl
+  FrontendUrl:
+    Description: URL pública de la interfaz
+    Value: !Sub https://${FrontendDistribution.DomainName}
+  FrontendBucketName:
+    Description: Bucket donde se sube el build de Angular
+    Value: !Ref FrontendBucket
+  FrontendDistributionId:
+    Description: Id de CloudFront, para invalidar la caché al publicar
+    Value: !Ref FrontendDistribution

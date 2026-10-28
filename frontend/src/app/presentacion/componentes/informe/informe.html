@@ -1,0 +1,25 @@
+@if (resultado(); as r) {
+  @let v = r.veredicto;
+  <span class="section-index">04 / RECOMENDACIÓN</span>
+  <div class="nivel" [class]="v.nivel">{{ titulos[v.nivel] }}</div>
+  <h2>{{ recomendado()?.nombre }}</h2>
+  <p>{{ recomendado()?.descripcion }}</p>
+  <p>
+    Gana al reparto de vacunas al azar en <strong>{{ porcentaje(v.ganaAAzar) }}</strong> de los
+    brotes simulados. Frente a no intervenir salva en promedio
+    <strong>{{ numero(v.salvadosVsNinguna) }}</strong> personas, y
+    <strong>{{ numero(v.salvadosVsAzar) }}</strong> frente al azar.
+  </p>
+  <div class="insight-footer">
+    <span class="status-dot"></span> {{ r.repeticiones }} BROTES · SEMILLA {{ r.escenario.semilla }}
+  </div>
+} @else {
+  <span class="section-index">04 / OBJETIVO DEL PROYECTO</span>
+  <div class="insight-icon" aria-hidden="true">✳</div>
+  <h2>Decidir antes de que el brote avance.</h2>
+  <p>
+    Zombie Zero simula el brote en una red de contactos de Manta y compara, con los mismos recursos,
+    qué plan de vacunación y cierres salva más personas.
+  </p>
+  <div class="insight-footer"><span class="status-dot"></span> ESPERANDO SIMULACIÓN</div>
+}

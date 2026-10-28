@@ -1,0 +1,50 @@
+<div class="panel-heading">
+  <div>
+    <span class="section-index">03 / RESPUESTA</span>
+    <h2>Comparativa de planes</h2>
+  </div>
+  <span class="chart-tag">MISMO PRESUPUESTO</span>
+</div>
+
+@if (resultado(); as r) {
+  <div class="tabla-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">Plan</th>
+          <th scope="col">Costo</th>
+          <th scope="col">Infectados <small>media (p5–p95)</small></th>
+          <th scope="col">Salvados <small>vs. no intervenir</small></th>
+          <th scope="col">Gana al azar</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (plan of r.planes; track plan.id) {
+          <tr [class.recomendado]="plan.id === r.recomendado" [class.base]="plan.tipo === 'linea_base'">
+            <th scope="row">
+              <strong>{{ plan.nombre }}</strong>
+              @if (plan.id === r.recomendado) {
+                <span class="insignia">RECOMENDADO</span>
+              } @else if (plan.tipo === 'linea_base') {
+                <span class="insignia base">LÍNEA BASE</span>
+              }
+              <small>{{ plan.descripcion }}</small>
+            </th>
+            <td>${{ numero(plan.costo) }}</td>
+            <td>
+              {{ numero(plan.infectados.media) }}
+              <small>{{ numero(plan.infectados.p5) }}–{{ numero(plan.infectados.p95) }}</small>
+            </td>
+            <td>{{ plan.salvadosVsNinguna ? numero(plan.salvadosVsNinguna.media) : '—' }}</td>
+            <td>{{ plan.ganaAAzar !== undefined && plan.id !== 'azar' ? porcentaje(plan.ganaAAzar) : '—' }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+} @else {
+  <div class="vacio">
+    Ejecuta una simulación para comparar todos los planes: sin intervención, vacunas al azar,
+    centralidad y anillo, con y sin cierres de mercado y colegio.
+  </div>
+}

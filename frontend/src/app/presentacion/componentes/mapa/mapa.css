@@ -1,0 +1,86 @@
+:host {
+  display: block;
+}
+
+.boton {
+  padding: 9px 12px;
+  border: 1px solid #6b399e;
+  border-radius: 4px;
+  background: rgba(168, 85, 247, .12);
+  color: #e9d5ff;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.boton:disabled {
+  cursor: not-allowed;
+  opacity: .65;
+}
+
+.controles-mapa {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+label {
+  display: grid;
+  gap: 6px;
+  color: #d8daeb;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.deslizador {
+  flex: 1;
+  min-width: 180px;
+}
+
+select {
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid #282b4d;
+  border-radius: 4px;
+  background: #070a1d;
+  color: #e6e7f5;
+  font-size: 11px;
+}
+
+input[type='range'] {
+  width: 100%;
+  accent-color: var(--violet);
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  image-rendering: pixelated;
+}
+
+.resumen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin-top: 11px;
+  color: #8f94b3;
+  font-size: 9px;
+}
+
+.resumen strong {
+  color: #e9eaf5;
+}
+
+.marca-aeropuerto {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 4px;
+  border: 2px solid var(--orange);
+  vertical-align: -1px;
+}
