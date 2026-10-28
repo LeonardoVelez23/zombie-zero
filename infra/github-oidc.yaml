@@ -233,7 +233,8 @@ Resources:
     Type: AWS::IAM::ManagedPolicy
     Properties:
       ManagedPolicyName: !Sub ${Pila}-guardar-resultados
-      Description: Zombie Zero - la Lambda solo puede escribir y leer en simulaciones/ del bucket de resultados
+      # No cambiar la descripción: hace que CloudFormation reemplace la política y falla por el nombre repetido.
+      Description: Zombie Zero - la Lambda solo puede escribir en simulaciones/ del bucket de resultados
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
