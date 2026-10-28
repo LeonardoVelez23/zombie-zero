@@ -1,0 +1,93 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Zombie Zero - acceso de GitHub Actions a AWS por OIDC (sin llaves guardadas).
+  Solo la rama main del repositorio puede asumir el rol. Se despliega una vez:
+  aws cloudformation deploy --template-file infra/github-oidc.yaml
+    --stack-name zombie-zero-github-oidc --capabilities CAPABILITY_NAMED_IAM
+
+Parameters:
+  Repositorio:
+    Type: String
+    Default: LeonardoVelez23/zombie-zero
+    Description: Repositorio de GitHub (usuario/repo) que puede desplegar.
+  Rama:
+    Type: String
+    Default: main
+    Description: Única rama autorizada a desplegar.
+  Pila:
+    Type: String
+    Default: zombie-zero
+    Description: Nombre de la pila de la aplicación (limita los roles IAM que se pueden tocar).
+
+Resources:
+  # Una cuenta solo admite un proveedor por URL: si ya existe, quitar este recurso y usar su ARN.
+  ProveedorGitHub:
+    Type: AWS::IAM::OIDCProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList: [sts.amazonaws.com]
+
+  RolDespliegue:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: zombie-zero-github-despliegue
+      Description: Rol que asume GitHub Actions al desplegar desde main
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !Ref ProveedorGitHub
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+                token.actions.githubusercontent.com:sub: !Sub repo:${Repositorio}:ref:refs/heads/${Rama}
+      Policies:
+        - PolicyName: desplegar-zombie-zero
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              # sam deploy: la pila de la app y la de SAM (bucket de artefactos)
+              - Effect: Allow
+                Action: cloudformation:*
+                Resource:
+                  - !Sub arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${Pila}/*
+                  - !Sub arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/aws-sam-cli-managed-default/*
+                  - !Sub arn:aws:cloudformation:${AWS::Region}:aws:transform/Serverless-2016-10-31
+              - Effect: Allow
+                Action:
+                  - cloudformation:ValidateTemplate
+                  - cloudformation:GetTemplateSummary
+                  - cloudformation:ListStacks
+                Resource: '*'
+              # Recursos que crea template.yaml
+              - Effect: Allow
+                Action:
+                  - lambda:*
+                  - s3:*
+                  - cloudfront:*
+                  - logs:*
+                  - budgets:*
+                Resource: '*'
+              # Solo el rol de ejecución de la Lambda que genera SAM (zombie-zero-ApiFunctionRole-...)
+              - Effect: Allow
+                Action:
+                  - iam:CreateRole
+                  - iam:DeleteRole
+                  - iam:GetRole
+                  - iam:PassRole
+                  - iam:TagRole
+                  - iam:UntagRole
+                  - iam:AttachRolePolicy
+                  - iam:DetachRolePolicy
+                  - iam:PutRolePolicy
+                  - iam:DeleteRolePolicy
+                  - iam:GetRolePolicy
+                Resource: !Sub arn:aws:iam::${AWS::AccountId}:role/${Pila}-*
+
+Outputs:
+  RolArn:
+    Description: Va en la variable AWS_ROLE_ARN del repositorio en GitHub
+    Value: !GetAtt RolDespliegue.Arn
