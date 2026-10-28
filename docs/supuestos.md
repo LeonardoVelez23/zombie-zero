@@ -12,7 +12,7 @@ Leyenda: **Fuente** = número tomado de literatura o datos abiertos ·
 | Días infeccioso (zombie → exorcizado) | 5 | Fuente | La mayor parte del contagio ocurre en la primera semana (He et al., 2020). |
 | Transmisión | Por contacto en la red | Supuesto | Enfermedad respiratoria, de persona a persona. No usamos el dengue porque necesita un vector (el mosquito). |
 | Mortalidad | No se modela | Supuesto | El objetivo es minimizar los contagiados. Los exorcizados quedan inmunes. |
-| Zombies detectados | 70 % | Supuesto | Parte de los casos no se detecta (por ejemplo, los asintomáticos). Un zombie no detectado no activa la vacunación en anillo. Ajustable en la interfaz. |
+| Zombies detectados | 40 % | Supuesto con fuente | Al comienzo de la COVID-19 en China, el 86 % de las infecciones no se documentó (Li et al., *Science* 2020), y cerca del 35 % de los infectados nunca tiene síntomas (Sah et al., *PNAS* 2021). Tomamos un 40 %, entre esos dos extremos. Un zombie no detectado no activa la vacunación en anillo. Ajustable en la interfaz. |
 | Inicio "aeropuerto" (historia del brote) | Equipo de rescate de hasta 8 personas, mordidos | Supuesto | Un avión llega lleno de zombies y muerden a los bomberos y médicos que lo abren. El equipo es un grupo de trabajo de la red; empieza como mordidos (E), sin detectar, y contagia a sus familias al volverse zombies. Los pasajeros quedan aislados en el aeropuerto. |
 
 **Calibración:** el usuario elige R0 y el sistema busca la tasa de contagio
@@ -46,15 +46,33 @@ del hogar son más largos y cercanos, como muestran los estudios de contactos
 |---|---|---|---|
 | Presupuesto total | $20.000 | Supuesto | Se reparte entre vacunas y cierres. Lo que no se gasta en cierres se gasta en vacunas. |
 | Costo por vacuna aplicada | $10 | Supuesto | Dosis más aplicación. |
-| Vacunas disponibles | 1.000 (10 % de la población) | Supuesto | Stock máximo, aunque sobre dinero. Recurso escaso por diseño del reto. |
-| Vacunas por día | 100 | Supuesto | Capacidad de una brigada de vacunación. |
-| Día en que se empieza a actuar | 3 | Supuesto | Tiempo para detectar el brote y movilizar recursos. |
+| Vacunas disponibles | 500 (10 % de la población) | Supuesto | Stock máximo, aunque sobre dinero. Recurso escaso por diseño del reto: con 1.000 dosis (20 %) hasta repartirlas al azar frenaba la mitad del brote y el escenario era demasiado fácil. |
+| Vacunas por día | 50 | Supuesto | Capacidad de una brigada pequeña para toda la ciudad: con 500 dosis, la vacunación dura al menos 10 días. |
+| Día en que se empieza a actuar | 21 | Supuesto | Tres semanas desde que llega el avión: los primeros zombies aparecen hacia el día 3, se confunden con otras enfermedades, hay que confirmar el brote y movilizar las brigadas. Con 3 días el escenario era poco creíble: se actuaba cuando apenas había casos. |
 | Eficacia | 90 % | Fuente | Rango de las vacunas de ARNm en sus ensayos (Polack et al., *NEJM* 2020: 95 %). La vacuna reduce la probabilidad de ser mordido; no actúa sobre quien ya lo fue. |
 | Cierre del mercado | $600 por día | Supuesto | Compensación a comerciantes. |
 | Cierre de colegios | $800 por día | Supuesto | Costo de clases a distancia y cuidado infantil. |
 | Duración de un cierre | 14 días | Supuesto | Dos periodos de latencia más infeccioso. |
 | Cumplimiento del cierre | 80 % | Supuesto | Fracción de contactos de ese lugar que realmente se evitan. |
 | Visibilidad | Solo se ven los zombies detectados | Supuesto | Por eso una vacuna puede "perderse" en alguien ya mordido o no detectado. El sistema lo reporta. |
+
+### Dificultad del escenario por defecto
+
+Los organizadores pidieron calibrar un escenario de dificultad creíble. Con nuestros primeros valores
+(70 % de detección, actuar desde el día 3 y 1.000 vacunas) la estrategia recomendada bajaba los
+infectados un 99 %: un resultado que parece armado a propósito. Con los valores actuales el problema es
+difícil de verdad: repartir las vacunas al azar casi no sirve y la estrategia tiene que elegir bien.
+
+Medido con el inicio en el aeropuerto, 5.000 personas y 100 repeticiones (infectados en promedio):
+
+| Escenario | Sin intervenir | Vacunas al azar | Estrategia recomendada | Gana al azar |
+|---|---|---|---|---|
+| Inicial (70 %, día 3, 1.000 vacunas), semilla 42 | 2.204 | 1.080 | 23 (−99 %) | 95 % |
+| Actual (40 %, día 21, 500 vacunas), semilla 42 | 2.204 | 1.795 | 546 (−75 %), p5–p95: 7–1.767 | 86 % |
+| Actual, semilla 7 | 2.204 | 1.818 | 552 (−75 %), p5–p95: 8–1.705 | 88 % |
+
+El rango p5–p95 muestra que en algunos brotes la plaga se escapa aun con la mejor estrategia; por eso
+se reportan rangos y no una sola simulación.
 
 ## Modelo de contraste (EDP espacial)
 

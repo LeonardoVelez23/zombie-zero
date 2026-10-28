@@ -11,16 +11,16 @@ class Plaga:
     r0: float = 2.5               # contagios por zombie en población sana (COVID ancestral)
     dias_latencia: float = 3.0    # mordido -> zombie
     dias_infeccioso: float = 5.0  # zombie -> exorcizado
-    deteccion: float = 0.7        # probabilidad de que un zombie nuevo sea detectado
+    deteccion: float = 0.4        # probabilidad de que un zombie nuevo sea detectado
 
 
 @dataclass(frozen=True)
 class Recursos:
     presupuesto: float = 20_000       # USD para vacunas y cierres
     costo_vacuna: float = 10.0        # USD por dosis aplicada
-    vacunas_disponibles: int = 1000   # stock máximo, aunque sobre dinero
-    vacunas_por_dia: int = 100        # capacidad diaria de vacunación
-    dia_inicio: int = 3               # días hasta que se detecta el brote y se puede actuar
+    vacunas_disponibles: int = 500    # stock máximo, aunque sobre dinero (10 % de la población)
+    vacunas_por_dia: int = 50         # capacidad diaria de vacunación
+    dia_inicio: int = 21              # días hasta que se detecta el brote y se puede actuar
     eficacia: float = 0.9             # reducción de la probabilidad de ser mordido
     dias_cierre: int = 14             # duración de un cierre
     cumplimiento_cierre: float = 0.8  # fracción de contactos del lugar que se evitan al cerrar
