@@ -1,6 +1,8 @@
 import { SimulacionGuardada } from '../../dominio/modelos/resultado';
 import { capitalizar, numero, porcentaje } from './formato';
 
+const LINEA = '='.repeat(72);
+
 const NIVELES: Record<string, string> = {
   solida: 'sólida',
   debil: 'débil',
@@ -22,7 +24,11 @@ export function informeTexto(s: SimulacionGuardada): string {
       `costo $${numero(plan.costo)}, ${numero(plan.vacunas)} vacunas`,
   );
   return [
-    'ZOMBIE ZERO - INFORME DE SIMULACIÓN (Manta, Ecuador)',
+    LINEA,
+    '                         Z O M B I E   Z E R O',
+    '              Informe de simulación · Manta, Ecuador',
+    LINEA,
+    '',
     `Fecha: ${new Date(s.momento).toLocaleString('es-EC')}`,
     `Id: ${s.id}`,
     '',

@@ -84,6 +84,7 @@ describe('Resultados anteriores', () => {
 describe('Informe descargable', () => {
   it('trae la configuración, la recomendación y todos los planes', () => {
     const texto = informeTexto(guardada);
+    expect(texto.split('\n')[1]).toContain('Z O M B I E   Z E R O');
     expect(texto).toContain('Origen del brote: Mercado');
     expect(texto).toContain('semilla 7');
     expect(texto).toContain('R0 5');
