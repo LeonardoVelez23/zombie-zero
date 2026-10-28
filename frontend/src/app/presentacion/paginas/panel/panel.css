@@ -97,6 +97,22 @@
   font-size: 17px;
 }
 
+/* Velo detrás de la barra abierta: solo existe en pantallas estrechas (ver @media 760px). */
+.sidebar-velo {
+  display: none;
+}
+
+/* La sección elegida no se marca solo con color: también con negrita y la barra lateral naranja. */
+.nav-item.active {
+  font-weight: 700;
+}
+
+/* El foco del teclado se dibuja por dentro: la barra plegada recorta lo que sobresale. */
+.nav-item:focus-visible,
+.brand:focus-visible {
+  outline-offset: -2px;
+}
+
 .app-shell.sidebar-plegada .sidebar-toggle {
   left: 16px;
   top: 16px;
@@ -136,7 +152,7 @@
 .brand strong {
   display: block;
   font-family: var(--font-pixel);
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1.4;
   letter-spacing: 0.5px;
   color: #fff;
@@ -156,7 +172,7 @@
   padding: 0 10px 12px;
   color: #a78bda;
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 1.5px;
   font-weight: 800;
 }
@@ -229,13 +245,13 @@
 
 .status-card strong {
   display: block;
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .status-card small {
   display: block;
   margin-top: 5px;
-  font-size: 9px;
+  font-size: 10px;
   color: var(--muted);
 }
 
@@ -273,7 +289,7 @@
   gap: 10px;
   color: var(--muted);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 0.8px;
 }
 
@@ -324,7 +340,7 @@
   font-family: var(--font-mono);
   color: #d8b4fe;
   border-radius: 4px;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 800;
 }
 
@@ -342,7 +358,7 @@
   gap: 9px;
   font-family: var(--font-mono);
   color: var(--orange);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 1.7px;
   font-weight: 800;
 }
@@ -390,7 +406,7 @@
   border: 1px solid rgba(255, 153, 0, 0.35);
   background: rgba(255, 153, 0, 0.06);
   color: #ffc15c;
-  font-size: 8px;
+  font-size: 11px;
   letter-spacing: 1px;
   font-weight: 800;
 }
@@ -401,6 +417,53 @@
 
 .error {
   margin: 0 0 15px;
+}
+
+/* Si las tarjetas muestran cifras parciales (día intermedio) o el resultado final, y la muestra simulada. */
+.metrics-estado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-bottom: 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.etiqueta-estado {
+  padding: 4px 8px;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+}
+
+.etiqueta-estado.parcial {
+  color: #ffc15c;
+}
+
+.etiqueta-estado.final {
+  color: #4ade80;
+}
+
+.ver-final {
+  padding: 4px 9px;
+  border: 1px solid var(--borde-violeta);
+  border-radius: 4px;
+  background: rgba(168, 85, 247, 0.12);
+  color: #e9d5ff;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ver-final:hover {
+  background: rgba(168, 85, 247, 0.22);
+}
+
+.contexto-poblacion {
+  min-width: 0;
+  color: #a19dc2;
 }
 
 .metrics-grid {
@@ -468,7 +531,7 @@
   gap: 5px;
   color: #b3abd3;
   font-family: var(--font-mono);
-  font-size: 8px;
+  font-size: 11px;
   letter-spacing: 0.7px;
   font-weight: 700;
 }
@@ -519,7 +582,7 @@
   padding-top: 11px;
   border-top: 1px solid rgba(168, 85, 247, 0.16);
   color: #a19dc2;
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .mini-square {
@@ -579,7 +642,7 @@
   border-top: 1px solid var(--borde-violeta);
   font-family: var(--font-mono);
   color: #686d8f;
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: 0.6px;
 }
 
@@ -665,7 +728,7 @@
 
 .contraste thead th {
   color: #8f93b8;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -674,7 +737,7 @@
 .contraste small {
   display: block;
   color: #8f93b8;
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .contraste p {
@@ -718,32 +781,43 @@
 }
 
 @media (max-width: 760px) {
-  .app-shell {
-    display: block;
+  /* Pantallas estrechas: la barra lateral es siempre vertical y fija a la izquierda.
+     Plegada (estado inicial) es un carril de 64 px con iconos que deja el resto al contenido;
+     abierta, se superpone al contenido con sus textos y un velo detrás, sin empujarlo. */
+  .app-shell,
+  .app-shell.sidebar-plegada {
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr);
   }
   .sidebar {
-    position: static;
+    position: fixed;
+    z-index: 900;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 230px;
     height: auto;
-    padding: 15px;
-    border-right: 0;
-    border-bottom: 1px solid var(--border);
+    padding: 60px 14px 16px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    box-shadow: 8px 0 30px rgba(0, 0, 0, 0.45);
   }
-  .brand {
-    padding-bottom: 16px;
+  .app-shell.sidebar-plegada .sidebar {
+    overflow-y: auto;
+    box-shadow: 1px 0 24px rgba(107, 38, 217, 0.12);
   }
-  .nav-label,
-  .sidebar-bottom {
+  .main-content {
+    grid-column: 2;
+  }
+  .sidebar-velo {
+    display: block;
+    position: fixed;
+    z-index: 850;
+    inset: 0;
+    background: rgba(3, 6, 23, 0.6);
+  }
+  .app-shell.sidebar-plegada .sidebar-velo {
     display: none;
-  }
-  .nav-menu {
-    display: flex;
-    overflow-x: auto;
-    gap: 5px;
-  }
-  .nav-item {
-    flex: 0 0 auto;
-    padding: 9px;
-    font-size: 10px;
   }
   .main-content {
     padding: 0 14px 16px;
@@ -787,40 +861,26 @@
     padding: 13px 11px;
   }
   .metric-top {
-    font-size: 7px;
+    font-size: 10px;
   }
   .metric-value {
     margin-top: 12px;
     font-size: 24px;
   }
   .metric-foot {
-    font-size: 8px;
+    font-size: 10px;
     line-height: 1.4;
   }
   .page-footer {
     flex-direction: column;
-    font-size: 8px;
+    font-size: 10px;
   }
 
+  /* El botón ✕ / ☰ vive dentro de la barra: arriba a la derecha si está abierta y centrado en
+     el carril si está plegada (regla general .sidebar-plegada .sidebar-toggle). */
   .sidebar-toggle {
     top: 14px;
-    left: auto;
-    right: 14px;
-  }
-
-  .app-shell.sidebar-plegada {
-    display: grid;
-    grid-template-columns: 64px minmax(0, 1fr);
-  }
-
-  .app-shell.sidebar-plegada .sidebar {
-    display: flex;
-    width: 64px;
-    min-width: 64px;
-    height: 100vh;
-    padding: 16px 8px;
-    overflow: hidden;
-    border-right: 1px solid var(--border);
+    left: 186px;
   }
 }
 

@@ -16,6 +16,7 @@ describe('Explicar al alcalde', () => {
       parametros: () => Promise.resolve(parametrosDePrueba),
       simular: () => Promise.reject(new Error('no se usa')),
       difusion: () => Promise.reject(new Error('no se usa')),
+      historial: () => Promise.resolve([]),
       informe: (resultado) => {
         pedidos.push(resultado);
         return responder();

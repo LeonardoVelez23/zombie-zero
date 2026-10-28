@@ -1,0 +1,57 @@
+<div class="panel-heading">
+  <div>
+    <span class="section-index">07 / RESULTADOS ANTERIORES</span>
+    <h2>Simulaciones guardadas</h2>
+  </div>
+  <span class="chart-tag">S3 · ÚLTIMAS {{ filas().length }}</span>
+</div>
+
+@if (filas().length) {
+  <div class="tabla-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">Cuándo</th>
+          <th scope="col">Configuración <small>inicio · R0 · vacunas · presupuesto · semilla</small></th>
+          <th scope="col">Plan recomendado</th>
+          <th scope="col">Salvados <small>vs. no intervenir</small></th>
+          <th scope="col"><span class="oculto">Acciones</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (f of filas(); track f.id) {
+          <tr>
+            <td>{{ f.cuando }}</td>
+            <td [title]="f.detalle">
+              {{ f.inicio }} · R0 {{ f.r0 }} · {{ f.vacunas }} vacunas · ${{ f.presupuesto }}
+              <small>semilla {{ f.semilla }} · {{ f.detalle }}</small>
+            </td>
+            <td>
+              <strong>{{ f.plan }}</strong>
+            </td>
+            <td>{{ f.salvados }}</td>
+            <td>
+              <button
+                type="button"
+                class="repetir"
+                [disabled]="cargando()"
+                (click)="repetir.emit(f.configuracion)"
+              >
+                Volver a simular
+              </button>
+              <button type="button" class="repetir" (click)="descargar(f.simulacion)">
+                Descargar informe
+              </button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  <p class="nota">
+    Compartido entre todos los que usan la aplicación; no guarda nombres. Con la misma semilla, volver a
+    simular da el mismo resultado.
+  </p>
+} @else {
+  <div class="vacio">Todavía no hay simulaciones guardadas hoy. Ejecuta una y aparecerá aquí.</div>
+}

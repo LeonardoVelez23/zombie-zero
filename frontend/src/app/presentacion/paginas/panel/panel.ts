@@ -1,10 +1,16 @@
 import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
 
+import { ObtenerHistorial } from '../../../aplicacion/casos-uso/obtener-historial';
 import { ModelarDifusion } from '../../../aplicacion/casos-uso/modelar-difusion';
 import { ObtenerParametros } from '../../../aplicacion/casos-uso/obtener-parametros';
 import { SimularBrote } from '../../../aplicacion/casos-uso/simular-brote';
 import { ConfiguracionSimulacion, Parametros } from '../../../dominio/modelos/escenario';
-import { ResultadoDifusion, ResultadoSimulacion } from '../../../dominio/modelos/resultado';
+import {
+  ResultadoDifusion,
+  ResultadoSimulacion,
+  SimulacionGuardada,
+  Veredicto,
+} from '../../../dominio/modelos/resultado';
 import { mordidosHasta, salvadosHasta } from '../../../dominio/reglas/dias';
 import { POBLACION_MANTA, enManta, factorManta } from '../../../dominio/reglas/escala';
 import { comparacion } from '../../../dominio/reglas/planes';
@@ -13,6 +19,7 @@ import { Calibracion } from '../../componentes/calibracion/calibracion';
 import { Controles } from '../../componentes/controles/controles';
 import { Grafica } from '../../componentes/grafica/grafica';
 import { Guia } from '../../componentes/guia/guia';
+import { Historial } from '../../componentes/historial/historial';
 import { MapaBarrios } from '../../componentes/mapa-barrios/mapa-barrios';
 import { Informe } from '../../componentes/informe/informe';
 import { LineaTiempo } from '../../componentes/linea-tiempo/linea-tiempo';
@@ -20,7 +27,14 @@ import { Estados } from '../../componentes/estados/estados';
 import { Mapa } from '../../componentes/mapa/mapa';
 import { Tabla } from '../../componentes/tabla/tabla';
 import { RelojBrote } from '../../servicios/reloj-brote';
-import { numero } from '../../utilidades/formato';
+import { numero, porcentaje } from '../../utilidades/formato';
+
+// Mismo texto que la tarjeta de recomendación (componentes/informe).
+const NIVELES: Record<Veredicto['nivel'], string> = {
+  solida: 'Recomendación sólida',
+  debil: 'Recomendación débil',
+  insuficiente: 'Recursos insuficientes',
+};
 
 interface Indicador {
   etiqueta: string;
@@ -60,6 +74,7 @@ const MODELOS: { id: ModeloMapa; nombre: string }[] = [
     MapaBarrios,
     Tabla,
     Guia,
+    Historial,
   ],
   templateUrl: './panel.html',
   styleUrl: './panel.css',
@@ -84,7 +99,9 @@ export class Panel implements OnInit {
     );
   });
 
-  protected readonly sidebarPlegada = signal(false);
+  // En pantallas estrechas la barra empieza plegada (carril de iconos); abierta, se superpone al
+  // contenido. En escritorio empieza abierta, como siempre.
+  protected readonly sidebarPlegada = signal(pantallaEstrecha());
 
   protected alternarSidebar(): void {
     this.sidebarPlegada.update((plegada) => !plegada);
@@ -93,9 +110,17 @@ export class Panel implements OnInit {
   // Enlace del menú lateral elegido (los enlaces son anclas a secciones de esta misma pantalla).
   protected readonly seccionActiva = signal('dashboard');
 
+  // Ir a una sección desde el menú. En pantallas estrechas la barra abierta tapa el contenido,
+  // así que se vuelve a plegar (queda el carril de iconos para seguir navegando).
+  protected irA(seccion: string): void {
+    this.seccionActiva.set(seccion);
+    if (pantallaEstrecha()) this.sidebarPlegada.set(true);
+  }
+
   private readonly obtenerParametros = inject(ObtenerParametros);
   private readonly simularBrote = inject(SimularBrote);
   private readonly modelarDifusion = inject(ModelarDifusion);
+  private readonly obtenerHistorial = inject(ObtenerHistorial);
 
   protected readonly parametros = signal<Parametros | null>(null);
   protected readonly resultado = signal<ResultadoSimulacion | null>(null);
@@ -108,6 +133,8 @@ export class Panel implements OnInit {
   // Día que muestran todas las pantallas: los indicadores cuentan lo ocurrido hasta ese día.
   protected readonly reloj = inject(RelojBrote);
   protected readonly errorDifusion = signal<string | null>(null);
+  // Últimas simulaciones guardadas en S3 (de todos); vacío si la API no las tiene.
+  protected readonly historial = signal<SimulacionGuardada[]>([]);
 
   // Modelo que muestra el mapa principal: el de red (el que decide) o la EDP de contraste.
   protected readonly modelos = MODELOS;
@@ -157,24 +184,39 @@ export class Panel implements OnInit {
   private peticionSimulacion = 0;
   private peticionDifusion = 0;
 
+  // Tamaño de la muestra simulada: contexto de todas las cifras (antes ocupaba una tarjeta entera).
+  protected readonly contextoPoblacion = computed(() => {
+    const poblacion =
+      this.resultado()?.escenario.nPersonas ?? this.parametros()?.porDefecto.nPersonas;
+    if (!poblacion) return null;
+    return (
+      `Muestra de ${numero(poblacion)} personas · representa a ${numero(POBLACION_MANTA)} ` +
+      `habitantes de Manta (1 : ${Math.round(factorManta(poblacion))})`
+    );
+  });
+
+  // Si las cifras de las tarjetas son parciales (la línea de tiempo va por un día intermedio)
+  // o el resultado final del brote completo.
+  protected readonly estadoCifras = computed(() => {
+    const r = this.resultado();
+    if (!r) return null;
+    const dias = r.escenario.dias;
+    const dia = Math.min(this.reloj.dia(), dias);
+    return { parcial: dia < dias, dia, dias, repeticiones: r.repeticiones };
+  });
+
   protected readonly indicadores = computed<Indicador[]>(() => {
     const r = this.resultado();
-    const poblacion = r?.escenario.nPersonas ?? this.parametros()?.porDefecto.nPersonas;
-    const tarjetaPoblacion: Indicador = {
-      etiqueta: 'POBLACIÓN SIMULADA',
-      valor: poblacion ? numero(poblacion) : '—',
-      unidad: 'hab.',
-      manta: poblacion
-        ? `Representa a ${numero(POBLACION_MANTA)} hab. (1 : ${Math.round(factorManta(poblacion))})`
-        : undefined,
-      nota: 'Red de contactos sintética de Manta',
-      color: 'violet',
-      icono: '⌂',
-    };
     if (!r) {
       const pendiente = 'Ejecuta una simulación';
       return [
-        tarjetaPoblacion,
+        {
+          etiqueta: 'SALVADOS FRENTE AL AZAR',
+          valor: '—',
+          nota: pendiente,
+          color: 'violet',
+          icono: '⇄',
+        },
         {
           etiqueta: 'INFECTADOS SIN INTERVENIR',
           valor: '—',
@@ -192,7 +234,7 @@ export class Panel implements OnInit {
         { etiqueta: 'PERSONAS SALVADAS', valor: '—', nota: pendiente, color: 'orange', icono: '✚' },
       ];
     }
-    const { sinIntervencion, recomendado } = comparacion(r);
+    const { sinIntervencion, recomendado, azar } = comparacion(r);
     // Mientras se reproduce el brote se muestran los mordidos acumulados hasta ese día;
     // en el último día, los totales de la simulación (son los mismos valores).
     const dia = this.reloj.dia();
@@ -203,11 +245,23 @@ export class Panel implements OnInit {
     const salvados = enCurso
       ? salvadosHasta(recomendado, sinIntervencion, dia, dias)
       : r.veredicto.salvadosVsNinguna;
+    // Las mismas cifras que ya trae la API: salvados frente al azar y el veredicto del motor.
+    const v = r.veredicto;
+    const salvadosAzar = enCurso ? salvadosHasta(recomendado, azar, dia, dias) : v.salvadosVsAzar;
     const manta = (valor: number) =>
       `≈ ${numero(enManta(valor, r.escenario.nPersonas))} en toda Manta`;
     const pico = `pico hacia el día ${Math.round(sinIntervencion.diaPico)}`;
     return [
-      tarjetaPoblacion,
+      {
+        etiqueta: 'SALVADOS FRENTE AL AZAR',
+        valor: numero(salvadosAzar),
+        manta: manta(salvadosAzar),
+        nota: enCurso
+          ? `Hasta el día ${dia}, frente a repartir las vacunas al azar`
+          : `${NIVELES[v.nivel]} · gana al azar en ${porcentaje(v.ganaAAzar)} de los brotes con diferencia`,
+        color: 'violet',
+        icono: '⇄',
+      },
       {
         etiqueta: 'INFECTADOS SIN INTERVENIR',
         valor: numero(sin),
@@ -245,6 +299,16 @@ export class Panel implements OnInit {
     } catch (e) {
       this.error.set(mensaje(e));
     }
+    void this.cargarHistorial();
+  }
+
+  // Sin historial la aplicación sigue igual: un fallo aquí no se muestra como error.
+  protected async cargarHistorial(): Promise<void> {
+    try {
+      this.historial.set(await this.obtenerHistorial.ejecutar());
+    } catch {
+      this.historial.set([]);
+    }
   }
 
   protected async simular(configuracion: ConfiguracionSimulacion): Promise<void> {
@@ -265,6 +329,8 @@ export class Panel implements OnInit {
       this.errorDifusion.set(null);
       this.calculandoDifusion.set(false);
       if (this.modeloMapa() === 'edp') void this.calcularDifusion();
+      // La simulación recién guardada aparece en «Resultados anteriores».
+      void this.cargarHistorial();
     } catch (e) {
       if (vigente()) this.error.set(mensaje(e));
     } finally {
@@ -298,6 +364,11 @@ export class Panel implements OnInit {
       if (vigente()) this.calculandoDifusion.set(false);
     }
   }
+}
+
+// Mismo corte que el CSS del panel (panel.css, @media max-width: 760px).
+function pantallaEstrecha(): boolean {
+  return typeof matchMedia === 'function' && matchMedia('(max-width: 760px)').matches;
 }
 
 const mensaje = (error: unknown): string =>

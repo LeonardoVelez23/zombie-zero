@@ -24,7 +24,7 @@
   margin-top: 18px;
   padding: 5px 8px;
   border: 1px solid currentColor;
-  font-size: 8px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -60,7 +60,7 @@ p strong {
   padding-top: 13px;
   border-top: 1px solid var(--border);
   color: #a4a8c4;
-  font-size: 8px;
+  font-size: 11px;
   letter-spacing: 1px;
 }
 
@@ -86,13 +86,43 @@ h2 {
 }
 
 p {
+  max-width: 78ch; /* la tarjeta ocupa todo el ancho: líneas de lectura cómoda */
   color: #b3abd3;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .insight-footer {
   border-top-color: rgba(168, 85, 247, .2);
   font-family: var(--font-mono);
+}
+
+/* La tarjeta ocupa todo el ancho del panel: dos columnas cuando hay sitio (decisión | detalles),
+   medido sobre la propia tarjeta y no sobre la ventana, así funciona con la barra lateral abierta
+   o plegada. En tarjetas estrechas el contenido se apila como antes. */
+:host {
+  container-type: inline-size;
+}
+
+h2 {
+  max-width: 40ch;
+}
+
+.informe-cuerpo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  column-gap: 36px;
+}
+
+@container (min-width: 760px) {
+  .informe-cuerpo {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    align-items: start;
+  }
+  .informe-detalle {
+    margin-top: 15px;
+    padding-left: 24px;
+    border-left: 1px solid rgba(168, 85, 247, 0.2);
+  }
 }
 
 .en-curso {
