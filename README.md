@@ -49,6 +49,9 @@ Central. El Comité de Contención tiene pocas vacunas, un presupuesto limitado 
 Todo se calcula en vivo con cada cambio de parámetros, sin resultados guardados de antemano. En la interfaz se
 cambian el punto de origen del brote, el R0, la detección, el presupuesto, las vacunas, su eficacia, el día
 en que se empieza a actuar, las vacunas por día, la población, la duración y la semilla.
+Para la prueba de fuego, los botones **Brote Sorpresa en un clic** aplican los cambios típicos del jurado
+(R0 doble, mitad de vacunas, inicio en el mercado, variante con la mitad de eficacia y un corte de vacunas de
+30 días), se pueden combinar y simulan de inmediato; **Restablecer** vuelve al escenario por defecto.
 
 7. **Recalcula ante imprevistos:** se puede simular un corte en la entrega de vacunas (por ejemplo, un bloqueo
    de la vía desde el día 21 durante 30 días). Al reanudarse la entrega, cada plan vuelve a decidir con el brote

@@ -13,6 +13,44 @@ fieldset {
   border: 0;
 }
 
+.sorpresas {
+  margin: 0 0 4px;
+}
+
+.sorpresas-botones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.sorpresa {
+  padding: 7px 10px;
+  border: 1px solid #3a2f5c;
+  border-radius: 4px;
+  background: rgba(255, 186, 82, .06);
+  color: #ffd79a;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.sorpresa.activa {
+  border-color: var(--orange);
+  background: rgba(255, 186, 82, .18);
+  color: #fff;
+}
+
+.sorpresa.restablecer {
+  background: transparent;
+  color: #b7b9d4;
+}
+
+.sorpresa:disabled {
+  cursor: not-allowed;
+  opacity: .6;
+}
+
 legend {
   padding: 0;
   color: var(--orange);

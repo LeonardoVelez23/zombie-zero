@@ -1,7 +1,12 @@
 import { Component, OnInit, input, output } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
-import { ConfiguracionSimulacion, Parametros, Rango } from '../../../dominio/modelos/escenario';
+import {
+  ConfiguracionSimulacion,
+  Escenario,
+  Parametros,
+  Rango,
+} from '../../../dominio/modelos/escenario';
 import { capitalizar } from '../../utilidades/formato';
 
 type Grupo = 'escenario' | 'plaga' | 'recursos';
@@ -93,6 +98,42 @@ const SECCIONES: { titulo: string; campos: Campo[] }[] = [
 
 const CAMPOS = SECCIONES.flatMap((s) => s.campos);
 
+interface Sorpresa {
+  nombre: string;
+  detalle: string;
+  // Valores del formulario que cambia, calculados a partir del escenario por defecto.
+  valores: (porDefecto: Escenario) => Record<string, number | string>;
+}
+
+// Los Brotes Sorpresa típicos del jurado, a un clic. Se acumulan: "R0 doble" + "Mercado" aplica ambos.
+const SORPRESAS: Sorpresa[] = [
+  {
+    nombre: 'R0 doble',
+    detalle: 'El doble de contagiosa',
+    valores: (d) => ({ r0: d.plaga.r0 * 2 }),
+  },
+  {
+    nombre: 'Mitad de vacunas',
+    detalle: 'Llega solo la mitad del stock',
+    valores: (d) => ({ vacunasDisponibles: Math.round(d.recursos.vacunasDisponibles / 2) }),
+  },
+  {
+    nombre: 'Mercado',
+    detalle: 'El brote empieza en el mercado',
+    valores: () => ({ inicio: 'mercado' }),
+  },
+  {
+    nombre: 'Variante',
+    detalle: 'La vacuna cubre a medias',
+    valores: (d) => ({ eficacia: d.recursos.eficacia / 2 }),
+  },
+  {
+    nombre: 'Corte de vacunas',
+    detalle: '30 días sin entregas desde que se empieza a actuar',
+    valores: (d) => ({ corteDesde: d.recursos.diaInicio, corteDias: 30 }),
+  },
+];
+
 @Component({
   selector: 'app-controles',
   imports: [ReactiveFormsModule],
@@ -106,33 +147,62 @@ export class Controles implements OnInit {
   readonly ejecutar = output<ConfiguracionSimulacion>();
 
   protected readonly secciones = SECCIONES;
+  protected readonly sorpresas = SORPRESAS;
   protected readonly etiquetaInicio = (inicio: string): string =>
     ETIQUETAS_INICIO[inicio] ?? capitalizar(inicio);
   protected formulario = new FormGroup<Record<string, FormControl>>({});
 
   ngOnInit(): void {
-    const { porDefecto, limites, repeticiones } = this.parametros();
-    const valores: Record<Grupo, object> = {
+    const { limites, repeticiones } = this.parametros();
+    const controles: Record<string, FormControl> = {};
+    for (const [nombre, valor] of Object.entries(this.valoresPorDefecto())) {
+      const campo = CAMPOS.find((c) => c.nombre === nombre);
+      const limite = campo
+        ? limites[campo.grupo][nombre]
+        : nombre === 'repeticiones'
+          ? repeticiones.limites
+          : null;
+      controles[nombre] = new FormControl(valor, {
+        nonNullable: true,
+        validators: limite ? rango(limite) : [],
+      });
+    }
+    this.formulario = new FormGroup(controles);
+  }
+
+  protected aplicarSorpresa(sorpresa: Sorpresa): void {
+    this.formulario.patchValue(sorpresa.valores(this.parametros().porDefecto));
+    this.enviar();
+  }
+
+  protected restablecer(): void {
+    this.formulario.setValue(this.valoresPorDefecto());
+    this.enviar();
+  }
+
+  // Una sorpresa está activa mientras el formulario tenga todos sus valores.
+  protected activa(sorpresa: Sorpresa): boolean {
+    const actuales = this.formulario.getRawValue();
+    return Object.entries(sorpresa.valores(this.parametros().porDefecto)).every(
+      ([nombre, valor]) => actuales[nombre] === valor,
+    );
+  }
+
+  private valoresPorDefecto(): Record<string, number | string> {
+    const { porDefecto, repeticiones } = this.parametros();
+    const grupos: Record<Grupo, object> = {
       escenario: porDefecto,
       plaga: porDefecto.plaga,
       recursos: porDefecto.recursos,
     };
-
-    const controles: Record<string, FormControl> = {
-      inicio: new FormControl(porDefecto.inicio, { nonNullable: true }),
-      repeticiones: new FormControl(repeticiones.porDefecto, {
-        nonNullable: true,
-        validators: rango(repeticiones.limites),
-      }),
+    const valores: Record<string, number | string> = {
+      inicio: porDefecto.inicio,
+      repeticiones: repeticiones.porDefecto,
     };
     for (const campo of CAMPOS) {
-      const valor = (valores[campo.grupo] as Record<string, number>)[campo.nombre];
-      controles[campo.nombre] = new FormControl(valor, {
-        nonNullable: true,
-        validators: rango(limites[campo.grupo][campo.nombre]),
-      });
+      valores[campo.nombre] = (grupos[campo.grupo] as Record<string, number>)[campo.nombre];
     }
-    this.formulario = new FormGroup(controles);
+    return valores;
   }
 
   protected limites(campo: Campo): Rango {
