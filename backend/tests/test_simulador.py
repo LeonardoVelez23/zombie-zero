@@ -162,3 +162,20 @@ def test_misma_semilla_mismo_monte_carlo():
     a = comparar(ESC, repeticiones=8)
     b = comparar(ESC, repeticiones=8)
     assert a == b
+
+
+def test_reporta_los_cuatro_estados_dia_a_dia():
+    """La API muestra S, E, I, R cada día: la media de los cuatro suma la población."""
+    res = comparar(ESC, repeticiones=6)
+    for d in res["planes"]:
+        estados = d["estados"]
+        assert set(estados) == {"S", "E", "I", "R"}
+        for serie in estados.values():
+            assert len(serie["media"]) == ESC.dias + 1
+            assert all(a <= b <= c for a, b, c in zip(serie["p5"], serie["media"], serie["p95"]))
+        suma = np.sum([estados[k]["media"] for k in "SEIR"], axis=0)
+        assert np.allclose(suma, ESC.n_personas, atol=0.5)
+        assert estados["I"]["media"] == d["curva_zombies"]["media"]
+        # Día 0: el brote empieza con los casos iniciales y nadie exorcizado.
+        assert estados["R"]["media"][0] == 0
+        assert estados["E"]["media"][0] + estados["I"]["media"][0] == ESC.casos_iniciales

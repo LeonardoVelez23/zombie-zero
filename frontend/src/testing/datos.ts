@@ -57,9 +57,19 @@ const plan = (id: string, tipo: Plan['tipo'], infectados: number): Plan => ({
     p5: [5, 6, 2, 0],
     p95: [5, 14, 8, 3],
   },
+  estados: {
+    S: serie([9995, 9980, 9970, 9968]),
+    E: serie([0, 10, 6, 1]),
+    I: serie([5, 10, 4, 1]),
+    R: serie([0, 0, 20, 30]),
+  },
   mapa: [],
   vacunasPerdidas: 0,
 });
+
+function serie(media: number[]) {
+  return { media, mediana: media, p5: media.map((v) => v * 0.8), p95: media.map((v) => v * 1.2) };
+}
 
 export const resultadoDePrueba: ResultadoSimulacion = {
   escenario: parametrosDePrueba.porDefecto,

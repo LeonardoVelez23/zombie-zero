@@ -1,0 +1,216 @@
+:host {
+  display: block;
+  --estado-s: var(--green);
+  --estado-e: #facc15;
+  --estado-i: var(--red);
+  --estado-r: #38bdf8;
+}
+
+.controles-estados {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.opciones {
+  display: inline-flex;
+  flex-wrap: wrap;
+  border: 1px solid #282b4d;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.opcion {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 0;
+  border-right: 1px solid #282b4d;
+  background: #070a1d;
+  color: #b7bad3;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.opcion:last-child {
+  border-right: 0;
+}
+
+.opcion.activa {
+  background: rgba(168, 85, 247, 0.22);
+  color: #f3e8ff;
+}
+
+.opcion:focus-visible {
+  outline: 2px solid var(--violet);
+  outline-offset: -2px;
+}
+
+.deslizador {
+  display: grid;
+  flex: 1;
+  gap: 6px;
+  min-width: 200px;
+  color: #d8daeb;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.deslizador input {
+  width: 100%;
+  accent-color: var(--violet);
+}
+
+.contadores {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+}
+
+.contador {
+  display: grid;
+  gap: 3px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-left: 4px solid;
+  border-radius: 4px;
+  background: #070a1d;
+}
+
+.contador.S {
+  border-left-color: var(--estado-s);
+}
+.contador.E {
+  border-left-color: var(--estado-e);
+}
+.contador.I {
+  border-left-color: var(--estado-i);
+}
+.contador.R {
+  border-left-color: var(--estado-r);
+}
+
+.contador .nombre {
+  color: #c9cbe0;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.contador strong {
+  color: #f1f2fb;
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+.contador small {
+  color: #8589a9;
+  font-size: 9px;
+}
+
+.graficas {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 16px;
+}
+
+svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.capa {
+  stroke: none;
+}
+.capa.S {
+  fill: var(--estado-s);
+  opacity: 0.55;
+}
+.capa.E {
+  fill: var(--estado-e);
+  opacity: 0.85;
+}
+.capa.I {
+  fill: var(--estado-i);
+  opacity: 0.9;
+}
+.capa.R {
+  fill: var(--estado-r);
+  opacity: 0.6;
+}
+
+.grid-lines line {
+  stroke: #252844;
+  stroke-width: 1;
+  stroke-dasharray: 3 5;
+}
+
+.axis-labels text {
+  fill: #8589a9;
+  font-family: inherit;
+  font-size: 10px;
+}
+
+.marca-dia {
+  stroke: #f3e8ff;
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+}
+
+.subtitulo {
+  display: block;
+  margin-bottom: 6px;
+  color: #b3b6cf;
+  font-size: 9px;
+}
+
+.banda-zombies {
+  fill: var(--estado-i);
+  opacity: 0.18;
+}
+.linea-zombies {
+  fill: none;
+  stroke: var(--estado-i);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+}
+
+.resumen {
+  margin: 12px 0 0;
+  padding-top: 11px;
+  border-top: 1px solid var(--border);
+  color: #b3b6cf;
+  font-size: 10px;
+}
+
+@media (max-width: 1100px) {
+  .graficas {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 760px) {
+  .contadores {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .contador strong {
+    font-size: 17px;
+  }
+}
+
+/* La gráfica de zombies ocupa menos ancho: letras más grandes en su viewBox para que se lean igual. */
+.zoom-zombies .axis-labels text {
+  font-size: 16px;
+}
+
+@media (max-width: 1100px) {
+  .zoom-zombies .axis-labels text {
+    font-size: 10px;
+  }
+}
