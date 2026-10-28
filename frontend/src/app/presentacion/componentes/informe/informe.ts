@@ -4,6 +4,7 @@ import { ResultadoSimulacion, Veredicto } from '../../../dominio/modelos/resulta
 import { POBLACION_MANTA, enManta } from '../../../dominio/reglas/escala';
 import { comparacion } from '../../../dominio/reglas/planes';
 import { numero, porcentaje } from '../../utilidades/formato';
+import { QueHariaFalta } from '../que-haria-falta/que-haria-falta';
 
 const TITULOS: Record<Veredicto['nivel'], string> = {
   solida: 'Recomendación sólida',
@@ -13,6 +14,7 @@ const TITULOS: Record<Veredicto['nivel'], string> = {
 
 @Component({
   selector: 'app-informe',
+  imports: [QueHariaFalta],
   templateUrl: './informe.html',
   styleUrl: './informe.css',
   host: { class: 'panel' },

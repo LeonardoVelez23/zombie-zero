@@ -1,0 +1,89 @@
+:host {
+  display: block;
+  margin: 12px 0;
+}
+
+.calcular {
+  padding: 9px 14px;
+  border: 1px solid #6b399e;
+  border-radius: 4px;
+  background: rgba(168, 85, 247, 0.16);
+  color: #f3e8ff;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.calcular:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+.conclusion {
+  margin: 0 0 10px;
+  color: #9a9fbd;
+  font-size: 10px;
+  line-height: 1.8;
+}
+
+.conclusion strong {
+  color: #e9eaf5;
+}
+
+.alternativas {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.alternativas li {
+  display: grid;
+  gap: 3px;
+  padding: 9px 11px;
+  border: 1px solid #282b4d;
+  border-radius: 4px;
+  background: #070a1d;
+  font-size: 11px;
+}
+
+.alternativas li.mejor {
+  border-color: #4ade80;
+  background: rgba(74, 222, 128, 0.08);
+}
+
+.cabecera {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.alternativas small {
+  color: #8f94b3;
+}
+
+.nivel {
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.nivel.solida {
+  background: rgba(74, 222, 128, 0.18);
+  color: #86efac;
+}
+
+.nivel.debil,
+.nivel.insuficiente {
+  background: rgba(244, 63, 94, 0.16);
+  color: #fda4af;
+}
+
+.error {
+  color: #fda4af;
+  font-size: 11px;
+}

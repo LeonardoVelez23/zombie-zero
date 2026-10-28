@@ -1,11 +1,21 @@
 import { TestBed } from '@angular/core/testing';
 
 import { Veredicto } from '../../../dominio/modelos/resultado';
-import { resultadoDePrueba } from '../../../../testing/datos';
+import { parametrosDePrueba, resultadoDePrueba } from '../../../../testing/datos';
+import { casosDeUso } from '../../../app.config';
+import { SimuladorRepositorio } from '../../../dominio/puertos/simulador.repositorio';
 import { Informe } from './informe';
 
 describe('Informe para el alcalde', () => {
   async function renderizar(veredicto: Partial<Veredicto>) {
+    const simulador: SimuladorRepositorio = {
+      parametros: () => Promise.resolve(parametrosDePrueba),
+      simular: () => Promise.reject(new Error('no se usa')),
+      difusion: () => Promise.reject(new Error('no se usa')),
+    };
+    TestBed.configureTestingModule({
+      providers: [{ provide: SimuladorRepositorio, useValue: simulador }, ...casosDeUso],
+    });
     const fixture = TestBed.createComponent(Informe);
     fixture.componentRef.setInput('resultado', {
       ...resultadoDePrueba,
@@ -50,5 +60,10 @@ describe('Informe para el alcalde', () => {
     expect(texto).toContain('Con estos recursos ningún plan cambia el resultado');
     expect(texto).toContain('adelantando el día de inicio');
     expect(texto).not.toContain('-31');
+  });
+
+  it('si ningún plan gana ofrece calcular qué haría falta', async () => {
+    const texto = await renderizar({ nivel: 'insuficiente' });
+    expect(texto).toContain('¿Qué haría falta para ganar?');
   });
 });
