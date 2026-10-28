@@ -84,6 +84,14 @@ o se mantiene, y sus infectados, personas salvadas y porcentaje de brotes en que
     no vuelve a simular ni cambia la recomendación. Si Bedrock no responde, el informe sale igual con una
     plantilla fija, marcada «Texto automático (sin IA)». Detalle en [docs/api.md](docs/api.md#post-apiinforme).
 
+11. **Guarda cada simulación y muestra las anteriores:** cada corrida guarda un resumen en S3. La sección
+    **Resultados anteriores** lista las últimas 10 con la configuración usada (origen, R0, vacunas,
+    presupuesto, semilla) y lo que salió (plan recomendado y salvados). **Volver a simular** carga esa
+    configuración en el formulario y la repite con la misma semilla, así que da el mismo resultado;
+    **Descargar PDF** arma un informe con el encabezado ZOMBIE ZERO, la recomendación, la configuración, todos
+    los planes y las gráficas («Guardar como PDF» en el diálogo de impresión). Los mismos resúmenes se
+    consultan con SQL en Athena ([docs/resultados.md](docs/resultados.md)).
+
 ## Cómo probarlo
 
 El repositorio tiene dos partes independientes que se comunican por HTTP:
@@ -252,6 +260,12 @@ compilarla:
 infra/publicar-frontend.sh frontend/dist/zombie-zero-ui/browser
 ```
 
+Si un cambio de `infra/template.yaml` necesita permisos nuevos (un tipo de recurso más, o que la Lambda haga
+algo más), primero se amplía `infra/github-oidc.yaml` y un administrador lo vuelve a desplegar con el mismo
+comando; después el merge a `main` despliega la aplicación. Así se agregaron el monitoreo y los resultados en
+S3. Ojo: no cambiar la `Description` de una política administrada que ya existe; CloudFormation la reemplaza y
+falla porque el nombre ya está tomado (los permisos sí se cambian en el lugar).
+
 Para borrar todo: `aws cloudformation delete-stack --stack-name zombie-zero`
 (antes hay que vaciar el bucket del frontend).
 
@@ -278,7 +292,11 @@ Archivo fuente editable: [`docs/arquitectura.drawio`](docs/arquitectura.drawio) 
   plantilla sin IA ([detalle](docs/costos.md)).
 - **Monitoreo:** CloudWatch guarda los logs 7 días; tres alarmas avisan por correo (SNS) si la API da errores,
   si una simulación pasa de 50 s o si la Lambda rechaza peticiones, y el dashboard `zombie-zero` muestra
-  simulaciones, duración, errores y llamadas a Bedrock.
+  simulaciones, duración, errores y llamadas a Bedrock. Comprobado el 28/10/2026: las tres alarmas en estado OK
+  y la suscripción por correo confirmada.
+- **Resultados:** cada simulación guarda un resumen en un bucket S3 privado; la Lambda solo puede escribir,
+  leer y listar `simulaciones/`. «Resultados anteriores» los lee vía `GET /api/historial` y Athena los consulta
+  con SQL a través de una tabla de Glue ([docs/resultados.md](docs/resultados.md)).
 - **Costos:** el AWS Budget `zombie-zero-mensual` (10 USD) avisa por correo al 80 % del gasto real y al 100 %
   del gasto previsto.
 
@@ -324,6 +342,11 @@ la plaga (parámetros de COVID-19 de la literatura), la población de Manta (Cen
 las intervenciones, la calibración de la dificultad y la reproducibilidad.
 
 ## Limitaciones conocidas
+
+- **Historial compartido y corto:** «Resultados anteriores» muestra las simulaciones de todos los que usan la
+  aplicación (sin nombres ni IP) y solo las de hoy y ayer (UTC). Las más viejas siguen en S3 hasta los 90 días
+  y se consultan con Athena. El PDF depende del diálogo de impresión del navegador: el resultado puede verse
+  un poco distinto entre Chrome, Firefox y Safari.
 
 - **Escala:** se simulan 5.000 personas (cerca de 1 de cada 54 habitantes de Manta), no la ciudad completa.
   La interfaz permite hasta 20.000, a costa de más tiempo de cálculo (35 s en local; 271.145 personas
