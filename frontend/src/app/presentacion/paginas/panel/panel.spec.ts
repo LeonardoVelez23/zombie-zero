@@ -23,7 +23,7 @@ interface PanelExpuesto {
 
 interface Indicadores {
   resultado: { set: (r: ResultadoSimulacion) => void };
-  diaVivo: { set: (dia: number) => void };
+  reloj: { dia: { set: (dia: number) => void } };
   indicadores: () => { etiqueta: string; valor: string }[];
 }
 
@@ -118,14 +118,14 @@ describe('Panel: indicadores en vivo', () => {
   function valores(dia: number): string[] {
     const p = TestBed.createComponent(Panel).componentInstance as unknown as Indicadores;
     p.resultado.set(conSeries);
-    p.diaVivo.set(dia);
+    p.reloj.dia.set(dia);
     return p
       .indicadores()
       .slice(1)
       .map((i) => i.valor);
   }
 
-  it('cuentan lo ocurrido hasta el día que muestra el mapa', () => {
+  it('cuentan lo ocurrido hasta el día de la línea de tiempo', () => {
     expect(valores(1)).toEqual(['300', '50', '250']);
   });
 

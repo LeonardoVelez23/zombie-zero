@@ -8,7 +8,8 @@
 <p class="panel-description">
   Cada persona de la red está en uno de cuatro estados y cambia día a día: 🟢 sana → 🟡 mordida → 🔴
   zombie → 🔵 exorcizada. Cada línea es el promedio de los brotes simulados y su banda, el rango
-  p5–p95; en la vista de áreas, los cuatro estados suman toda la población.
+  p5–p95; en la vista de áreas, los cuatro estados suman toda la población. Los contadores muestran
+  el día de la línea de tiempo; haz clic en la gráfica para cambiarlo.
 </p>
 
 @if (plan() && !estadosPlan()) {
@@ -45,16 +46,17 @@
         </button>
       }
     </div>
-    <label class="deslizador">
-      Día {{ dia() }} de {{ dias() }}
-      <input
-        type="range"
-        min="0"
-        [max]="dias()"
-        [value]="dia()"
-        (input)="diaElegido.set(+$any($event.target).value)"
-      />
-    </label>
+    <div class="dia-actual">
+      <span>Día {{ dia() }} de {{ dias() }}</span>
+      <button
+        type="button"
+        class="ir-pico"
+        [class.activa]="dia() === diaPico()"
+        (click)="irAlPico()"
+      >
+        Ir al pico (día {{ diaPico() }})
+      </button>
+    </div>
   </div>
 
   <ul class="contadores" aria-live="polite">
@@ -74,7 +76,13 @@
 
   <div class="graficas">
     <div class="principal">
-      <svg viewBox="0 0 700 280" role="img" [attr.aria-label]="resumen()">
+      <svg
+        viewBox="0 0 700 280"
+        role="img"
+        [attr.aria-label]="resumen()"
+        (pointerdown)="elegirDia($event)"
+        (pointermove)="elegirDia($event)"
+      >
         <g class="grid-lines">
           @for (marca of ejeY(); track marca.y) {
             <line
@@ -134,7 +142,13 @@
     @if (zombies(); as z) {
       <div class="zoom-zombies">
         <span class="subtitulo">🔴 Zombies activos de cerca (línea: media · banda: p5–p95)</span>
-        <svg viewBox="0 0 700 280" role="img" aria-label="Zombies activos por día con su rango">
+        <svg
+          viewBox="0 0 700 280"
+          role="img"
+          aria-label="Zombies activos por día con su rango"
+          (pointerdown)="elegirDia($event)"
+          (pointermove)="elegirDia($event)"
+        >
           <g class="grid-lines">
             @for (marca of ejeY(); track marca.y) {
               <line

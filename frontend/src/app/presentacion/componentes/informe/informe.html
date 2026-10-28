@@ -2,6 +2,13 @@
   @let v = r.veredicto;
   <span class="section-index">04 / RECOMENDACIÓN</span>
   <div class="nivel" [class]="v.nivel">{{ titulos[v.nivel] }}</div>
+  @if (enCurso(); as hoy) {
+    <p class="en-curso" aria-live="polite">
+      <strong>Día {{ hoy.dia }} de {{ hoy.dias }}:</strong> hasta ahora el plan recomendado lleva
+      <strong>{{ numero(hoy.salvados) }}</strong> personas salvadas frente a no intervenir. La
+      recomendación se calcula con el brote completo.
+    </p>
+  }
   @if (v.nivel === 'insuficiente') {
     <h2>Con estos recursos ningún plan cambia el resultado.</h2>
     <p>

@@ -82,6 +82,8 @@
       <p class="error" role="alert">{{ mensaje }}</p>
     }
 
+    <app-linea-tiempo [resultado]="resultado()" />
+
     <section class="metrics-grid" aria-label="Indicadores del brote">
       @for (indicador of indicadores(); track indicador.etiqueta) {
         <article class="metric-card" [class]="indicador.color">
@@ -121,7 +123,7 @@
           {{ error() ? 'Sin conexión con la API no se pueden cargar los parámetros.' : 'Cargando parámetros…' }}
         </div>
       }
-      <app-mapa-barrios [resultado]="resultado()" [(dia)]="diaVivo" />
+      <app-mapa-barrios [resultado]="resultado()" />
     </section>
 
     <section class="full-grid">

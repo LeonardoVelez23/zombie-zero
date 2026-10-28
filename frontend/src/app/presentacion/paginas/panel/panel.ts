@@ -4,7 +4,8 @@ import { ModelarDifusion } from '../../../aplicacion/casos-uso/modelar-difusion'
 import { ObtenerParametros } from '../../../aplicacion/casos-uso/obtener-parametros';
 import { SimularBrote } from '../../../aplicacion/casos-uso/simular-brote';
 import { ConfiguracionSimulacion, Parametros } from '../../../dominio/modelos/escenario';
-import { Plan, ResultadoDifusion, ResultadoSimulacion } from '../../../dominio/modelos/resultado';
+import { ResultadoDifusion, ResultadoSimulacion } from '../../../dominio/modelos/resultado';
+import { mordidosHasta, salvadosHasta } from '../../../dominio/reglas/dias';
 import { POBLACION_MANTA, enManta, factorManta } from '../../../dominio/reglas/escala';
 import { comparacion } from '../../../dominio/reglas/planes';
 import { AntesDespues } from '../../componentes/antes-despues/antes-despues';
@@ -13,9 +14,11 @@ import { Grafica } from '../../componentes/grafica/grafica';
 import { Guia } from '../../componentes/guia/guia';
 import { MapaBarrios } from '../../componentes/mapa-barrios/mapa-barrios';
 import { Informe } from '../../componentes/informe/informe';
+import { LineaTiempo } from '../../componentes/linea-tiempo/linea-tiempo';
 import { Estados } from '../../componentes/estados/estados';
 import { Mapa } from '../../componentes/mapa/mapa';
 import { Tabla } from '../../componentes/tabla/tabla';
+import { RelojBrote } from '../../servicios/reloj-brote';
 import { numero } from '../../utilidades/formato';
 
 interface Indicador {
@@ -31,9 +34,22 @@ interface Indicador {
 
 @Component({
   selector: 'app-panel',
-  imports: [AntesDespues, Controles, Grafica, Estados, Informe, Mapa, MapaBarrios, Tabla, Guia],
+  imports: [
+    AntesDespues,
+    Controles,
+    Grafica,
+    Estados,
+    Informe,
+    LineaTiempo,
+    Mapa,
+    MapaBarrios,
+    Tabla,
+    Guia,
+  ],
   templateUrl: './panel.html',
   styleUrl: './panel.css',
+  // Un reloj por panel: todas sus pantallas de resultados muestran el mismo día.
+  providers: [RelojBrote],
 })
 export class Panel implements OnInit {
   // Nombre que el operador o jurado escribió en la bienvenida (solo se muestra).
@@ -74,8 +90,8 @@ export class Panel implements OnInit {
   protected readonly simulando = signal(false);
   protected readonly calculandoDifusion = signal(false);
   protected readonly error = signal<string | null>(null);
-  // Día que muestra el mapa del brote: los indicadores cuentan lo ocurrido hasta ese día.
-  protected readonly diaVivo = signal(0);
+  // Día que muestran todas las pantallas: los indicadores cuentan lo ocurrido hasta ese día.
+  protected readonly reloj = inject(RelojBrote);
   protected readonly errorDifusion = signal<string | null>(null);
 
   // El mapa EDP usa el escenario de la última simulación (o el por defecto si aún no hay).
@@ -122,17 +138,16 @@ export class Panel implements OnInit {
       ];
     }
     const { sinIntervencion, recomendado } = comparacion(r);
-    // Mientras el mapa reproduce el brote se muestran los mordidos acumulados hasta ese día;
+    // Mientras se reproduce el brote se muestran los mordidos acumulados hasta ese día;
     // en el último día, los totales de la simulación (son los mismos valores).
-    const dia = this.diaVivo();
-    const enCurso = dia < r.escenario.dias;
-    const hastaHoy = (plan: Plan) => {
-      const fila = plan.mapaAfectados?.[dia];
-      return enCurso && fila ? fila.reduce((a, b) => a + b, 0) : plan.infectados.media;
-    };
-    const sin = hastaHoy(sinIntervencion);
-    const con = hastaHoy(recomendado);
-    const salvados = enCurso ? Math.max(0, sin - con) : r.veredicto.salvadosVsNinguna;
+    const dia = this.reloj.dia();
+    const dias = r.escenario.dias;
+    const enCurso = dia < dias;
+    const sin = mordidosHasta(sinIntervencion, dia, dias);
+    const con = mordidosHasta(recomendado, dia, dias);
+    const salvados = enCurso
+      ? salvadosHasta(recomendado, sinIntervencion, dia, dias)
+      : r.veredicto.salvadosVsNinguna;
     const manta = (valor: number) => `≈ ${numero(enManta(valor, r.escenario.nPersonas))} en toda Manta`;
     const pico = `pico hacia el día ${Math.round(sinIntervencion.diaPico)}`;
     return [
@@ -186,6 +201,7 @@ export class Panel implements OnInit {
       if (!vigente()) return;
       if (!this.referencia()) this.referencia.set(resultado);
       this.resultado.set(resultado);
+      this.reloj.nuevoBrote(resultado.escenario.dias);
       this.ultimaConfiguracion = configuracion;
     } catch (e) {
       if (vigente()) this.error.set(mensaje(e));

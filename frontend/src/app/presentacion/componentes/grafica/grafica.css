@@ -74,6 +74,58 @@
 .linea.azar { stroke: var(--orange); stroke-dasharray: 5 5; }
 .linea.recomendado { stroke: var(--green); }
 
+/* Curva completa de fondo; encima se dibuja el tramo recorrido hasta el día elegido. */
+.linea.completa { opacity: .22; }
+
+.epidemic-chart {
+  cursor: crosshair;
+  touch-action: pan-y;
+}
+
+.cursor line {
+  stroke: #e9d5ff;
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+  opacity: .7;
+}
+
+.cursor text {
+  fill: #e9d5ff;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.cursor circle {
+  stroke: #0b0820;
+  stroke-width: 2;
+}
+
+.cursor circle.ninguna { fill: var(--red); }
+.cursor circle.azar { fill: var(--orange); }
+.cursor circle.recomendado { fill: var(--green); }
+
+.valores-dia {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin: 6px 0 10px;
+  padding: 0;
+  list-style: none;
+  color: #b3b6cf;
+  font-size: 10px;
+}
+
+.valores-dia li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.valores-dia strong {
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+
 .chart-foot {
   display: flex;
   justify-content: space-between;

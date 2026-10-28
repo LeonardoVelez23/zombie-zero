@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { Veredicto } from '../../../dominio/modelos/resultado';
 import { resultadoDePrueba } from '../../../../testing/datos';
+import { RelojBrote } from '../../servicios/reloj-brote';
 import { Informe } from './informe';
 
 describe('Informe para el alcalde', () => {
@@ -50,5 +51,19 @@ describe('Informe para el alcalde', () => {
     expect(texto).toContain('Con estos recursos ningún plan cambia el resultado');
     expect(texto).toContain('adelantando el día de inicio');
     expect(texto).not.toContain('-31');
+  });
+
+  it('mientras avanza el brote dice cuánto lleva salvado el plan; al final, solo el total', async () => {
+    const reloj = TestBed.inject(RelojBrote);
+    reloj.total.set(3);
+    reloj.irA(1);
+    const fixture = TestBed.createComponent(Informe);
+    fixture.componentRef.setInput('resultado', resultadoDePrueba);
+    await fixture.whenStable();
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.querySelector('.en-curso')?.textContent).toContain('Día 1 de 3');
+    reloj.irA(3);
+    await fixture.whenStable();
+    expect(raiz.querySelector('.en-curso')).toBeNull();
   });
 });
