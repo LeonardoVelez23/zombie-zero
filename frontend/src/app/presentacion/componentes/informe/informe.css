@@ -94,11 +94,3 @@ p {
   border-top-color: rgba(168, 85, 247, .2);
   font-family: var(--font-mono);
 }
-
-.en-curso {
-  padding: 8px 10px;
-  border-left: 3px solid var(--violet);
-  border-radius: 4px;
-  background: rgba(168, 85, 247, 0.08);
-  font-variant-numeric: tabular-nums;
-}

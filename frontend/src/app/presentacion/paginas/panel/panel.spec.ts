@@ -23,7 +23,7 @@ interface PanelExpuesto {
 
 interface Indicadores {
   resultado: { set: (r: ResultadoSimulacion) => void };
-  reloj: { dia: { set: (dia: number) => void } };
+  diaVivo: { set: (dia: number) => void };
   indicadores: () => { etiqueta: string; valor: string }[];
 }
 
@@ -39,7 +39,6 @@ describe('Panel: simulaciones que se cruzan', () => {
         pendientes.push(d);
         return d.promesa;
       },
-      informe: () => Promise.reject(new Error('no se usa')),
       difusion: () => Promise.reject(new Error('sin EDP en esta prueba')),
     };
     await TestBed.configureTestingModule({
@@ -99,7 +98,6 @@ describe('Panel: indicadores en vivo', () => {
     const simulador: SimuladorRepositorio = {
       parametros: () => Promise.resolve(parametrosDePrueba),
       simular: () => Promise.resolve(resultadoDePrueba),
-      informe: () => Promise.reject(new Error('no se usa')),
       difusion: () => Promise.reject(new Error('sin EDP en esta prueba')),
     };
     await TestBed.configureTestingModule({
@@ -120,14 +118,14 @@ describe('Panel: indicadores en vivo', () => {
   function valores(dia: number): string[] {
     const p = TestBed.createComponent(Panel).componentInstance as unknown as Indicadores;
     p.resultado.set(conSeries);
-    p.reloj.dia.set(dia);
+    p.diaVivo.set(dia);
     return p
       .indicadores()
       .slice(1)
       .map((i) => i.valor);
   }
 
-  it('cuentan lo ocurrido hasta el día de la línea de tiempo', () => {
+  it('cuentan lo ocurrido hasta el día que muestra el mapa', () => {
     expect(valores(1)).toEqual(['300', '50', '250']);
   });
 
@@ -141,7 +139,6 @@ describe('Panel: menú lateral', () => {
     const simulador: SimuladorRepositorio = {
       parametros: () => Promise.resolve(parametrosDePrueba),
       simular: () => Promise.reject(new Error('no se usa')),
-      informe: () => Promise.reject(new Error('no se usa')),
       difusion: () => Promise.reject(new Error('no se usa')),
     };
     TestBed.configureTestingModule({
@@ -207,7 +204,6 @@ describe('Panel: selector de modelo del mapa', () => {
     const simulador: SimuladorRepositorio = {
       parametros: () => Promise.resolve(parametrosDePrueba),
       simular: () => Promise.resolve(resultadoDePrueba),
-      informe: () => Promise.reject(new Error('no se usa')),
       difusion: () => {
         difusiones++;
         return Promise.resolve(difusion);

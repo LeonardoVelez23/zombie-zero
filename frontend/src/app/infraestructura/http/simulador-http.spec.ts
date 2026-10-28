@@ -2,7 +2,6 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { resultadoDePrueba } from '../../../testing/datos';
 import { SimuladorHttp } from './simulador-http';
 
 describe('SimuladorHttp', () => {
@@ -50,19 +49,5 @@ describe('SimuladorHttp', () => {
     http.expectOne((r) => r.url.endsWith('/api/edp')).error(new ProgressEvent('error'), { status: 0 });
 
     await expect(respuesta).rejects.toThrow('No se pudo conectar con la API');
-  });
-
-  it('para el informe manda solo un resumen compacto, sin mapas ni curvas', async () => {
-    const respuesta = simulador.informe(resultadoDePrueba);
-    const peticion = http.expectOne((r) => r.url.endsWith('/api/informe'));
-    expect(peticion.request.method).toBe('POST');
-    const cuerpo = peticion.request.body;
-    expect(cuerpo.escenario).toEqual({ n_personas: resultadoDePrueba.escenario.nPersonas });
-    expect(cuerpo.veredicto.gana_a_azar).toBe(resultadoDePrueba.veredicto.ganaAAzar);
-    expect(cuerpo.planes[0].infectados).toBe(resultadoDePrueba.planes[0].infectados.media);
-    expect(JSON.stringify(cuerpo)).not.toMatch(/mapa|curva|estados/);
-    peticion.flush({ fuente: 'local', modelo: null, texto: 'Plantilla.' });
-
-    expect(await respuesta).toEqual({ fuente: 'local', modelo: null, texto: 'Plantilla.' });
   });
 });
