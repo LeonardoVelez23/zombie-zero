@@ -45,6 +45,26 @@
       </select>
     </label>
     @let fotogramas = escenario()?.fotogramas ?? [];
+    <div class="reproduccion">
+      <button
+        type="button"
+        class="boton"
+        [attr.aria-pressed]="reproduciendo()"
+        [disabled]="fotogramas.length < 2"
+        (click)="alternarReproduccion()"
+      >
+        {{ reproduciendo() ? '❚❚ Pausa' : '▶ Reproducir' }}
+      </button>
+      <select
+        aria-label="Velocidad de la animación"
+        [value]="velocidad()"
+        (change)="cambiarVelocidad(+$any($event.target).value)"
+      >
+        @for (v of velocidades; track v.ms) {
+          <option [value]="v.ms">{{ v.nombre }}</option>
+        }
+      </select>
+    </div>
     <label class="deslizador">
       Día {{ fotograma()?.dia }}
       <input

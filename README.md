@@ -42,7 +42,8 @@ Central. El Comité de Contención tiene pocas vacunas, un presupuesto limitado 
    la mediana y el rango p5–p95 de infectados, cuántas personas se salvan y en qué porcentaje de los brotes el
    plan le gana al azar.
 5. **Recomienda un plan en lenguaje simple** y dice qué tan sólida es la recomendación.
-6. **Muestra el avance en un mapa de Manta** (modelo de difusión espacial) que se recorre día por día.
+6. **Muestra el avance en un mapa animado de Manta** (modelo de difusión espacial): se reproduce día por día
+   con ▶ y tres velocidades, o se recorre a mano con el deslizador.
 
 Todo se calcula en vivo con cada cambio de parámetros, sin resultados guardados de antemano. En la interfaz se
 cambian el punto de origen del brote, el R0, la detección, el presupuesto, las vacunas, su eficacia, el día
