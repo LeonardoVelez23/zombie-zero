@@ -127,8 +127,9 @@ Resources:
                   - cloudfront:GetCachePolicy
                   - cloudfront:GetOriginRequestPolicy
                 Resource: '*'
-              # IAM: sin crear roles ni adjuntar políticas (evita escalar a administrador).
-              # Solo puede entregar a Lambda el rol de ejecución que ya existe.
+              # IAM: sin crear roles ni escribir políticas (evita escalar a administrador).
+              # Solo puede entregar a Lambda el rol de ejecución que ya existe y adjuntarle
+              # o quitarle una única política: la de invocar Bedrock, definida abajo.
               - Effect: Allow
                 Action: iam:GetRole
                 Resource: !Sub arn:aws:iam::${AWS::AccountId}:role/${Pila}-ApiFunctionRole-*
@@ -138,6 +139,27 @@ Resources:
                 Condition:
                   StringEquals:
                     iam:PassedToService: lambda.amazonaws.com
+              - Effect: Allow
+                Action:
+                  - iam:AttachRolePolicy
+                  - iam:DetachRolePolicy
+                Resource: !Sub arn:aws:iam::${AWS::AccountId}:role/${Pila}-ApiFunctionRole-*
+                Condition:
+                  ArnEquals:
+                    iam:PolicyARN: !Ref PoliticaBedrock
+
+  # Lo único que la Lambda puede hacer en Bedrock: invocar nova-micro para redactar el informe.
+  PoliticaBedrock:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: !Sub ${Pila}-invocar-bedrock
+      Description: Zombie Zero - la Lambda solo puede invocar amazon.nova-micro-v1:0
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action: bedrock:InvokeModel
+            Resource: !Sub arn:aws:bedrock:${AWS::Region}::foundation-model/amazon.nova-micro-v1:0
 
 Outputs:
   RolArn:
