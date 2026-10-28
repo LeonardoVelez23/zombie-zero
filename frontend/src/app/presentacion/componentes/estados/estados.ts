@@ -107,6 +107,18 @@ export class Estados {
     }));
   });
 
+  // Total de mordidos hasta cada día (población − sanos): lo que sube como el brote completo.
+  // Mordidos y zombies, en cambio, son los que hay ese día.
+  private readonly acumuladoSerie = computed(() => {
+    const sanos = this.estadosPlan()?.S.media;
+    return sanos ? sanos.map((s) => this.poblacion() - s) : null;
+  });
+
+  protected readonly acumulado = computed(() => {
+    const serie = this.acumuladoSerie();
+    return serie ? trazo(serie, escala(this.dias(), this.poblacion(), AREA)) : null;
+  });
+
   // Contorno de los zombies con su rango p5–p95, para que se vean aunque sean pocos.
   protected readonly zombies = computed(() => {
     const zombies = this.estadosPlan()?.I;
@@ -140,7 +152,8 @@ export class Estados {
 
   protected readonly resumen = computed(() => {
     const [s, e, i, r] = this.delDia().map((x) => numero(x.media));
-    return `El día ${this.dia()}, en promedio hay ${s} sanos, ${e} mordidos, ${i} zombies y ${r} exorcizados.`;
+    const total = numero(this.acumuladoSerie()?.[this.dia()] ?? 0);
+    return `El día ${this.dia()}, en promedio hay ${s} sanos, ${e} mordidos, ${i} zombies y ${r} exorcizados; en total ya fueron mordidas ${total} personas.`;
   });
 
   protected readonly ejeY = computed(() =>

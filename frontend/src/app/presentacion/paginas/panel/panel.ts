@@ -32,6 +32,13 @@ interface Indicador {
   icono: string;
 }
 
+type ModeloMapa = 'red' | 'edp';
+
+const MODELOS: { id: ModeloMapa; nombre: string }[] = [
+  { id: 'red', nombre: 'Modelo de red' },
+  { id: 'edp', nombre: 'Modelo EDP (contraste)' },
+];
+
 @Component({
   selector: 'app-panel',
   imports: [
@@ -93,6 +100,32 @@ export class Panel implements OnInit {
   // Día que muestran todas las pantallas: los indicadores cuentan lo ocurrido hasta ese día.
   protected readonly reloj = inject(RelojBrote);
   protected readonly errorDifusion = signal<string | null>(null);
+
+  // Modelo que muestra el mapa principal: el de red (el que decide) o la EDP de contraste.
+  protected readonly modelos = MODELOS;
+  protected readonly modeloMapa = signal<ModeloMapa>('red');
+
+  // El mismo escenario en los dos modelos: infectados sin intervenir y con la intervención de cada uno.
+  protected readonly contraste = computed(() => {
+    const r = this.resultado();
+    const d = this.difusion();
+    if (!r || !d) return null;
+    const { sinIntervencion, recomendado } = comparacion(r);
+    const edp = (id: string) => d.escenarios.find((e) => e.id === id)?.infectadosTotal ?? 0;
+    const fila = (nombre: string, plan: string, sin: number, con: number) => ({
+      nombre,
+      plan,
+      sin: numero(sin),
+      con: numero(con),
+      salvados: Math.max(0, sin - con),
+    });
+    const red = fila('Red (decide)', recomendado.nombre, sinIntervencion.infectados.media, recomendado.infectados.media);
+    const zonas = fila('EDP (contraste)', 'Vacunar por zonas', edp('ninguna'), edp('vacunacion_zonal'));
+    return {
+      filas: [red, zonas].map((f) => ({ ...f, salvados: numero(f.salvados) })),
+      veces: zonas.salvados > 0 ? Math.round(red.salvados / zonas.salvados) : null,
+    };
+  });
 
   // El mapa EDP usa el escenario de la última simulación (o el por defecto si aún no hay).
   private ultimaConfiguracion: ConfiguracionSimulacion = {};
@@ -200,14 +233,33 @@ export class Panel implements OnInit {
       const resultado = await this.simularBrote.ejecutar(configuracion);
       if (!vigente()) return;
       if (!this.referencia()) this.referencia.set(resultado);
+<<<<<<< HEAD
       this.resultado.set(resultado);
       this.reloj.nuevoBrote(resultado.escenario.dias);
+=======
+>>>>>>> 3b7214a35809940ebc9019e81608a4e1e94093ae
       this.ultimaConfiguracion = configuracion;
+      this.resultado.set(resultado);
+      // La EDP anterior era de otro escenario: se descarta (y también la que esté en camino).
+      this.peticionDifusion++;
+      this.difusion.set(null);
+      this.errorDifusion.set(null);
+      this.calculandoDifusion.set(false);
+      if (this.modeloMapa() === 'edp') void this.calcularDifusion();
     } catch (e) {
       if (vigente()) this.error.set(mensaje(e));
     } finally {
       if (vigente()) this.simulando.set(false);
     }
+  }
+
+  protected elegirModelo(modelo: ModeloMapa): void {
+    this.modeloMapa.set(modelo);
+    if (modelo !== 'edp') return;
+    // Sin el mapa de red a la vista, los indicadores muestran el brote completo.
+    const r = this.resultado();
+    if (r) this.diaVivo.set(r.escenario.dias);
+    if (!this.difusion() && !this.calculandoDifusion()) void this.calcularDifusion();
   }
 
   protected async calcularDifusion(): Promise<void> {

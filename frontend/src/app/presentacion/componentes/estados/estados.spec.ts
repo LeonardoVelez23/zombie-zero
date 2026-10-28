@@ -35,6 +35,15 @@ describe('Estados SEIR día a día', () => {
     expect(panel.querySelectorAll('path.linea-estado').length).toBe(4);
     expect(panel.querySelectorAll('path.banda-estado').length).toBe(4);
     expect(panel.querySelectorAll('path.capa').length).toBe(0);
+    expect(panel.querySelector('path.linea-acumulado')).not.toBeNull();
+  });
+
+  it('el resumen suma a todos los que ya fueron mordidos (población − sanos)', async () => {
+    const { panel } = await renderizar();
+    // Día 1 del plan recomendado: 10.000 personas y 9.980 sanos.
+    expect(panel.querySelector('.resumen')?.textContent).toContain(
+      'en total ya fueron mordidas 20 personas',
+    );
   });
 
   it('se puede cambiar a las áreas apiladas, con el eje en porcentaje', async () => {

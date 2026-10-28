@@ -1,12 +1,26 @@
 import { TestBed } from '@angular/core/testing';
 
 import { Veredicto } from '../../../dominio/modelos/resultado';
+<<<<<<< HEAD
 import { resultadoDePrueba } from '../../../../testing/datos';
 import { RelojBrote } from '../../servicios/reloj-brote';
+=======
+import { parametrosDePrueba, resultadoDePrueba } from '../../../../testing/datos';
+import { casosDeUso } from '../../../app.config';
+import { SimuladorRepositorio } from '../../../dominio/puertos/simulador.repositorio';
+>>>>>>> 3b7214a35809940ebc9019e81608a4e1e94093ae
 import { Informe } from './informe';
 
 describe('Informe para el alcalde', () => {
   async function renderizar(veredicto: Partial<Veredicto>) {
+    const simulador: SimuladorRepositorio = {
+      parametros: () => Promise.resolve(parametrosDePrueba),
+      simular: () => Promise.reject(new Error('no se usa')),
+      difusion: () => Promise.reject(new Error('no se usa')),
+    };
+    TestBed.configureTestingModule({
+      providers: [{ provide: SimuladorRepositorio, useValue: simulador }, ...casosDeUso],
+    });
     const fixture = TestBed.createComponent(Informe);
     fixture.componentRef.setInput('resultado', {
       ...resultadoDePrueba,
@@ -53,6 +67,7 @@ describe('Informe para el alcalde', () => {
     expect(texto).not.toContain('-31');
   });
 
+<<<<<<< HEAD
   it('mientras avanza el brote dice cuánto lleva salvado el plan; al final, solo el total', async () => {
     const reloj = TestBed.inject(RelojBrote);
     reloj.total.set(3);
@@ -65,5 +80,10 @@ describe('Informe para el alcalde', () => {
     reloj.irA(3);
     await fixture.whenStable();
     expect(raiz.querySelector('.en-curso')).toBeNull();
+=======
+  it('si ningún plan gana ofrece calcular qué haría falta', async () => {
+    const texto = await renderizar({ nivel: 'insuficiente' });
+    expect(texto).toContain('¿Qué haría falta para ganar?');
+>>>>>>> 3b7214a35809940ebc9019e81608a4e1e94093ae
   });
 });

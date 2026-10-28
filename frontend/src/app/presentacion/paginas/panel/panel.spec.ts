@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { parametrosDePrueba, resultadoDePrueba } from '../../../../testing/datos';
 import { casosDeUso } from '../../../app.config';
-import { ResultadoSimulacion } from '../../../dominio/modelos/resultado';
+import { ResultadoDifusion, ResultadoSimulacion } from '../../../dominio/modelos/resultado';
 import { SimuladorRepositorio } from '../../../dominio/puertos/simulador.repositorio';
 import { Panel } from './panel';
 
@@ -177,5 +177,67 @@ describe('Panel: menú lateral', () => {
     expect(punto.classList).not.toContain('apagado');
     expect(raiz.querySelector('.status-card')!.getAttribute('title')).toBe('API conectada');
     expect(raiz.querySelector('.status-texto strong')!.textContent).toBe('API conectada');
+  });
+});
+
+describe('Panel: selector de modelo del mapa', () => {
+  let difusiones: number;
+
+  // Solo lo que usa la comparación: los infectados de cada escenario de la EDP.
+  const difusion = {
+    escenarios: [
+      { id: 'ninguna', infectadosTotal: 8000 },
+      { id: 'vacunacion_zonal', infectadosTotal: 7500 },
+    ],
+  } as unknown as ResultadoDifusion;
+
+  interface Selector {
+    simular: (configuracion: object) => Promise<void>;
+    elegirModelo: (modelo: 'red' | 'edp') => void;
+    calcularDifusion: () => Promise<void>;
+    difusion: () => ResultadoDifusion | null;
+    contraste: () => { filas: { salvados: string }[]; veces: number | null } | null;
+  }
+
+  beforeEach(async () => {
+    difusiones = 0;
+    const simulador: SimuladorRepositorio = {
+      parametros: () => Promise.resolve(parametrosDePrueba),
+      simular: () => Promise.resolve(resultadoDePrueba),
+      difusion: () => {
+        difusiones++;
+        return Promise.resolve(difusion);
+      },
+    };
+    await TestBed.configureTestingModule({
+      imports: [Panel],
+      providers: [{ provide: SimuladorRepositorio, useValue: simulador }, ...casosDeUso],
+    }).compileComponents();
+  });
+
+  const panelSelector = () =>
+    TestBed.createComponent(Panel).componentInstance as unknown as Selector;
+
+  it('al elegir la EDP la calcula una sola vez y compara los dos modelos', async () => {
+    const p = panelSelector();
+    await p.simular({});
+    p.elegirModelo('edp');
+    await p.calcularDifusion();
+    p.elegirModelo('red');
+    p.elegirModelo('edp');
+    expect(difusiones).toBe(2); // la llamada al elegir y la de la prueba; volver a elegirla no recalcula
+    const c = p.contraste()!;
+    expect(c.filas[1].salvados).toBe('500');
+    expect(c.veces).toBeGreaterThan(1);
+  });
+
+  it('una simulación nueva descarta la EDP del escenario anterior', async () => {
+    const p = panelSelector();
+    await p.simular({});
+    await p.calcularDifusion();
+    expect(p.difusion()).not.toBeNull();
+    await p.simular({});
+    expect(p.difusion()).toBeNull();
+    expect(p.contraste()).toBeNull();
   });
 });

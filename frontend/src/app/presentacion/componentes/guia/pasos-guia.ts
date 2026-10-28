@@ -70,10 +70,10 @@ export const PASOS_GUIA: PasoGuia[] = [
     objetivos: ['app-informe'],
   },
   {
-    titulo: 'Mapa EDP de contraste',
+    titulo: 'Modelo de red o EDP',
     texto:
-      'Pulsa «Calcular modelo EDP» para ver la difusión sobre el mapa real con el escenario de la última simulación. Es un contraste: la recomendación sale del modelo de red.',
-    objetivos: ['#mapa'],
+      'Arriba del mapa puedes cambiar al modelo EDP: la difusión continua sobre el mapa real con el mismo escenario. Debajo aparece la comparación de los dos modelos; la recomendación sale del modelo de red.',
+    objetivos: ['#selector-modelo'],
   },
   {
     titulo: '¡Listo para contener el brote!',
