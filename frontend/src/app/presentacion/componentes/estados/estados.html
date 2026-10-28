@@ -10,7 +10,11 @@
   zombie → 🔵 exorcizada. Las áreas suman toda la población (promedio de los brotes simulados).
 </p>
 
-@if (plan(); as p) {
+@if (plan() && !estadosPlan()) {
+  <div class="vacio" role="status">
+    La API no envió los estados día a día. Actualiza el backend para ver este panel.
+  </div>
+} @else if (plan(); as p) {
   <div class="controles-estados">
     <div class="opciones" role="radiogroup" aria-label="Plan a mostrar">
       @for (o of opciones; track o.id) {

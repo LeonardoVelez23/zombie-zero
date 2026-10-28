@@ -53,29 +53,32 @@ export class Estados {
     return { recomendado, azar, ninguna: sinIntervencion }[this.opcion()];
   });
 
+  // Puede faltar si la API es anterior a este panel (respuesta sin `estados`).
+  protected readonly estadosPlan = computed(() => this.plan()?.estados ?? null);
+
   protected readonly dias = computed(() => this.resultado()?.escenario.dias ?? 0);
 
   protected readonly dia = computed(() => {
     const r = this.resultado();
     const elegido = this.diaElegido();
     if (elegido !== null || !r) return Math.min(elegido ?? 0, this.dias());
-    const zombies = comparacion(r).sinIntervencion.estados.I.media;
+    const zombies = comparacion(r).sinIntervencion.estados?.I.media ?? [0];
     return zombies.indexOf(Math.max(...zombies));
   });
 
   private readonly poblacion = computed(() => {
-    const plan = this.plan();
-    return plan ? ESTADOS.reduce((total, e) => total + plan.estados[e.id].media[0], 0) : 1;
+    const estados = this.estadosPlan();
+    return estados ? ESTADOS.reduce((total, e) => total + estados[e.id].media[0], 0) : 1;
   });
 
   // Áreas apiladas con la media de cada estado: siempre suman la población.
   protected readonly capas = computed(() => {
-    const plan = this.plan();
-    if (!plan) return [];
+    const estados = this.estadosPlan();
+    if (!estados) return [];
     const e = escala(this.dias(), this.poblacion(), AREA);
-    let base = plan.estados.S.media.map(() => 0);
+    let base = estados.S.media.map(() => 0);
     return APILADO.map((id) => {
-      const techo = base.map((v, d) => v + plan.estados[id].media[d]);
+      const techo = base.map((v, d) => v + estados[id].media[d]);
       const capa = { id, d: banda(base, techo, e) };
       base = techo;
       return capa;
@@ -84,13 +87,13 @@ export class Estados {
 
   // Contorno de los zombies con su rango p5–p95, para que se vean aunque sean pocos.
   protected readonly zombies = computed(() => {
-    const plan = this.plan();
-    if (!plan) return null;
-    const maximo = Math.max(1, ...plan.estados.I.p95);
+    const zombies = this.estadosPlan()?.I;
+    if (!zombies) return null;
+    const maximo = Math.max(1, ...zombies.p95);
     const e = escala(this.dias(), maximo, AREA);
     return {
-      linea: trazo(plan.estados.I.media, e),
-      banda: banda(plan.estados.I.p5, plan.estados.I.p95, e),
+      linea: trazo(zombies.media, e),
+      banda: banda(zombies.p5, zombies.p95, e),
       maximo,
     };
   });
@@ -98,11 +101,11 @@ export class Estados {
   protected readonly xDia = computed(() => escala(this.dias(), 1, AREA).x(this.dia()));
 
   protected readonly delDia = computed(() => {
-    const plan = this.plan();
+    const estados = this.estadosPlan();
     const d = this.dia();
-    if (!plan) return [];
+    if (!estados) return [];
     return ESTADOS.map((info) => {
-      const serie = plan.estados[info.id];
+      const serie = estados[info.id];
       return {
         ...info,
         media: serie.media[d],

@@ -39,6 +39,19 @@ describe('Estados SEIR día a día', () => {
     expect(panel.querySelector('.resumen')?.textContent).toContain('El día 3');
   });
 
+  it('si la API no trae estados avisa en lugar de fallar', async () => {
+    const sinEstados = {
+      ...resultadoDePrueba,
+      planes: resultadoDePrueba.planes.map(({ estados: _omitido, ...plan }) => plan),
+    };
+    const fixture = TestBed.createComponent(Estados);
+    fixture.componentRef.setInput('resultado', sinEstados);
+    await fixture.whenStable();
+    const panel = fixture.nativeElement as HTMLElement;
+    expect(panel.textContent).toContain('La API no envió los estados');
+    expect(panel.querySelectorAll('.contador').length).toBe(0);
+  });
+
   it('sin resultado invita a simular', async () => {
     const fixture = TestBed.createComponent(Estados);
     await fixture.whenStable();
