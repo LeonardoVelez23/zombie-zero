@@ -67,7 +67,8 @@ Todo es opcional: lo que no se envía toma el valor por defecto.
   "recomendado": "anillo+mercado",
   "veredicto": {
     "nivel": "solida",              // "solida" | "debil" | "insuficiente"
-    "gana_a_azar": 0.98,            // fracción de brotes en que el recomendado gana al azar
+    "gana_a_azar": 0.98,            // de los brotes en que hubo diferencia, fracción en que gana al azar
+    "empates_con_azar": 0.14,       // fracción de brotes que terminan igual (la plaga se apagó sola)
     "salvados_vs_ninguna": 4812.0,
     "salvados_vs_azar": 3896.0
   },
@@ -93,8 +94,10 @@ Todo es opcional: lo que no se envía toma el valor por defecto.
       "vacunas_perdidas": 12.3,
       "salvados_vs_ninguna": { "media": ..., "mediana": ..., "p5": ..., "p95": ... },
       "salvados_vs_azar":    { "media": ..., "mediana": ..., "p5": ..., "p95": ... },
-      "gana_a_ninguna": 0.98,
-      "gana_a_azar": 0.98
+      "gana_a_ninguna": 0.98,       // solo entre los brotes en que hubo diferencia
+      "gana_a_azar": 0.98,
+      "empate_con_ninguna": 0.14,   // fracción de brotes con el mismo resultado
+      "empate_con_azar": 0.14
     }
   ]
 }

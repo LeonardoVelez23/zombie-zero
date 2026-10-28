@@ -6,7 +6,7 @@ import pytest
 from zombie.config import Escenario
 from zombie.estrategias import Estrategia, crear
 from zombie.modelo import E, I, calibrar_beta, casos_iniciales, estimar_r0, simular
-from zombie.montecarlo import comparar
+from zombie.montecarlo import _veredicto, comparar
 from zombie.poblacion import TRABAJO, construir_red
 
 ESC = Escenario(n_personas=3000, dias=120)
@@ -76,6 +76,22 @@ def test_estrategia_supera_lineas_base():
     inf = {d["id"]: d["infectados"]["media"] for d in res["planes"]}
     assert inf[res["recomendado"]] < inf["azar"] < inf["ninguna"]
     assert res["veredicto"]["nivel"] == "solida"
+
+
+def test_los_empates_no_cuentan_como_derrotas():
+    # Sin vacunas ni dinero para cierres, todos los planes son "no hacer nada": empatan siempre.
+    sin_recursos = replace(ESC, recursos=replace(ESC.recursos, vacunas_disponibles=0, presupuesto=0))
+    res = comparar(sin_recursos, repeticiones=5)
+    v = res["veredicto"]
+    assert v["empates_con_azar"] == 1.0
+    assert v["gana_a_azar"] == 0.0
+    assert v["nivel"] == "insuficiente"
+
+
+def test_no_es_solida_si_en_promedio_no_supera_al_azar():
+    mejor = {"gana_a_azar": 0.9, "empate_con_azar": 0.0,
+             "salvados_vs_ninguna": {"media": 300.0}, "salvados_vs_azar": {"media": -20.0}}
+    assert _veredicto(mejor)["nivel"] == "insuficiente"
 
 
 def test_ningun_plan_se_pasa_del_presupuesto():
