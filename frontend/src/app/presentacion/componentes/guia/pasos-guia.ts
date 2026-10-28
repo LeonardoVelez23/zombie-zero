@@ -24,8 +24,14 @@ export const PASOS_GUIA: PasoGuia[] = [
   {
     titulo: 'Indicadores del brote',
     texto:
-      'Población simulada, infectados sin intervenir, infectados con el plan recomendado y personas salvadas. Se llenan al ejecutar una simulación.',
+      'Personas salvadas frente al reparto al azar (con el veredicto), infectados sin intervenir, infectados con el plan recomendado y personas salvadas frente a no intervenir. Arriba se indica si las cifras son parciales (un día intermedio) o el resultado final.',
     objetivos: ['.metrics-grid'],
+  },
+  {
+    titulo: 'Recomendación',
+    texto:
+      'El informe en lenguaje simple: qué plan aplicar, cuántas personas salva y qué tan sólido es frente al azar.',
+    objetivos: ['app-informe'],
   },
   {
     titulo: 'Parámetros del brote',
@@ -50,12 +56,6 @@ export const PASOS_GUIA: PasoGuia[] = [
     texto:
       'Todos los planes con su costo, infectados, personas salvadas, vacunas y cuántas veces ganan al reparto al azar. El recomendado lleva su insignia.',
     objetivos: ['#estrategias'],
-  },
-  {
-    titulo: 'Recomendación',
-    texto:
-      'El informe en lenguaje simple: qué plan aplicar, cuántas personas salva y qué tan sólido es frente al azar.',
-    objetivos: ['app-informe'],
   },
   {
     titulo: 'Curva y estados SEIR',

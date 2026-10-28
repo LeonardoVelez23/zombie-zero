@@ -1,6 +1,7 @@
 import { ApplicationConfig, Provider, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideHttpClient } from '@angular/common/http';
 
+import { ObtenerHistorial } from './aplicacion/casos-uso/obtener-historial';
 import { ModelarDifusion } from './aplicacion/casos-uso/modelar-difusion';
 import { ObtenerParametros } from './aplicacion/casos-uso/obtener-parametros';
 import { RedactarInforme } from './aplicacion/casos-uso/redactar-informe';
@@ -20,6 +21,7 @@ export const casosDeUso: Provider[] = [
   casoDeUso(SimularBrote),
   casoDeUso(ModelarDifusion),
   casoDeUso(RedactarInforme),
+  casoDeUso(ObtenerHistorial),
 ];
 
 // Punto de composición: el único lugar que une el puerto con su adaptador.

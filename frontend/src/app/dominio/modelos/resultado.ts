@@ -112,3 +112,34 @@ export interface ResultadoDifusion {
   aeropuerto: [number, number];
   escenarios: EscenarioDifusion[];
 }
+
+// Resumen de una simulación guardada en S3 (GET /api/historial): la configuración usada y las cifras.
+export interface PlanGuardado {
+  id: string;
+  nombre: string;
+  tipo: 'linea_base' | 'candidato';
+  costo: number;
+  vacunas: number;
+  infectados: number;
+  infectadosP5: number;
+  infectadosP95: number;
+  salvados: number | null;
+}
+
+export interface SimulacionGuardada {
+  id: string;
+  momento: string;
+  semilla: number;
+  repeticiones: number;
+  inicio: string;
+  nPersonas: number;
+  dias: number;
+  casosIniciales: number;
+  plaga: Escenario['plaga'];
+  recursos: Escenario['recursos'];
+  recomendado: string | null;
+  nivel: string | null;
+  ganaAAzar: number | null;
+  salvadosVsNinguna: number | null;
+  planes: PlanGuardado[];
+}

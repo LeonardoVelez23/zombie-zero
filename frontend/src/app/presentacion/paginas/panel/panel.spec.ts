@@ -39,6 +39,7 @@ describe('Panel: simulaciones que se cruzan', () => {
         pendientes.push(d);
         return d.promesa;
       },
+      historial: () => Promise.resolve([]),
       informe: () => Promise.reject(new Error('no se usa')),
       difusion: () => Promise.reject(new Error('sin EDP en esta prueba')),
     };
@@ -99,6 +100,7 @@ describe('Panel: indicadores en vivo', () => {
     const simulador: SimuladorRepositorio = {
       parametros: () => Promise.resolve(parametrosDePrueba),
       simular: () => Promise.resolve(resultadoDePrueba),
+      historial: () => Promise.resolve([]),
       informe: () => Promise.reject(new Error('no se usa')),
       difusion: () => Promise.reject(new Error('sin EDP en esta prueba')),
     };
@@ -141,6 +143,7 @@ describe('Panel: menú lateral', () => {
     const simulador: SimuladorRepositorio = {
       parametros: () => Promise.resolve(parametrosDePrueba),
       simular: () => Promise.reject(new Error('no se usa')),
+      historial: () => Promise.resolve([]),
       informe: () => Promise.reject(new Error('no se usa')),
       difusion: () => Promise.reject(new Error('no se usa')),
     };
@@ -175,6 +178,57 @@ describe('Panel: menú lateral', () => {
     raiz.querySelector<HTMLAnchorElement>('.brand')!.click();
     await fixture.whenStable();
     expect(activos(raiz)).toEqual(['#dashboard']);
+  });
+
+  it('una sola entrada lleva a la simulación y el mapa (sin destinos casi iguales)', async () => {
+    const { raiz } = await renderizar();
+    const destinos = [...raiz.querySelectorAll('.nav-item')].map((a) => a.getAttribute('href'));
+    expect(destinos.filter((d) => d === '#simulacion')).toHaveLength(1);
+    expect(destinos).not.toContain('#selector-modelo');
+    // Los destinos que usa la guía siguen existiendo en la página.
+    expect(raiz.querySelector('#simulacion')).not.toBeNull();
+    expect(raiz.querySelector('#selector-modelo')).not.toBeNull();
+  });
+
+  it('en escritorio navegar no pliega la barra', async () => {
+    const { fixture, raiz } = await renderizar();
+    raiz.querySelector<HTMLAnchorElement>('.nav-item[href="#estrategias"]')!.click();
+    await fixture.whenStable();
+    expect(raiz.querySelector('.app-shell')!.classList).not.toContain('sidebar-plegada');
+  });
+
+  describe('en pantallas estrechas', () => {
+    beforeEach(() => vi.stubGlobal('matchMedia', () => ({ matches: true })));
+    afterEach(() => vi.unstubAllGlobals());
+
+    it('empieza plegada, se abre con ☰ y se vuelve a plegar al elegir una sección', async () => {
+      const { fixture, raiz } = await renderizar();
+      const shell = raiz.querySelector('.app-shell')!;
+      const boton = raiz.querySelector<HTMLButtonElement>('.sidebar-toggle')!;
+      expect(shell.classList).toContain('sidebar-plegada');
+      expect(boton.getAttribute('aria-expanded')).toBe('false');
+
+      boton.click();
+      await fixture.whenStable();
+      expect(shell.classList).not.toContain('sidebar-plegada');
+      expect(boton.getAttribute('aria-expanded')).toBe('true');
+
+      raiz.querySelector<HTMLAnchorElement>('.nav-item[href="#estrategias"]')!.click();
+      await fixture.whenStable();
+      expect(shell.classList).toContain('sidebar-plegada');
+      expect(activos(raiz)).toEqual(['#estrategias']);
+      // Plegada, las opciones siguen en el carril para volver a navegar.
+      expect(raiz.querySelectorAll('.nav-item').length).toBeGreaterThan(5);
+    });
+
+    it('tocar el velo detrás de la barra abierta la pliega', async () => {
+      const { fixture, raiz } = await renderizar();
+      raiz.querySelector<HTMLButtonElement>('.sidebar-toggle')!.click();
+      await fixture.whenStable();
+      raiz.querySelector<HTMLElement>('.sidebar-velo')!.click();
+      await fixture.whenStable();
+      expect(raiz.querySelector('.app-shell')!.classList).toContain('sidebar-plegada');
+    });
   });
 
   it('al plegar la barra conserva el punto y el estado real de la API', async () => {
@@ -213,6 +267,7 @@ describe('Panel: selector de modelo del mapa', () => {
     const simulador: SimuladorRepositorio = {
       parametros: () => Promise.resolve(parametrosDePrueba),
       simular: () => Promise.resolve(resultadoDePrueba),
+      historial: () => Promise.resolve([]),
       informe: () => Promise.reject(new Error('no se usa')),
       difusion: () => {
         difusiones++;

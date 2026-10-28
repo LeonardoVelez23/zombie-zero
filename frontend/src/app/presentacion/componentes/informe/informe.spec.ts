@@ -12,6 +12,7 @@ describe('Informe para el alcalde', () => {
     const simulador: SimuladorRepositorio = {
       parametros: () => Promise.resolve(parametrosDePrueba),
       simular: () => Promise.reject(new Error('no se usa')),
+      historial: () => Promise.resolve([]),
       informe: () => Promise.reject(new Error('no se usa')),
       difusion: () => Promise.reject(new Error('no se usa')),
     };

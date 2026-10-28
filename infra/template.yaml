@@ -2,7 +2,8 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
   Zombie Zero - simulador de la plaga en Manta. Backend Python en Lambda con
-  Function URL, frontend estático en S3 + CloudFront y presupuesto con alerta.
+  Function URL, frontend estático en S3 + CloudFront, alarmas y dashboard en CloudWatch
+  y presupuesto con alerta.
 
 Parameters:
   CorreoAlerta:
@@ -51,11 +52,15 @@ Resources:
           # Por contenedor (hasta 10 en esta cuenta). El corte de gasto de toda la cuenta está en
           # infra/github-oidc.yaml: un Budget de Bedrock que niega la IA si se pasa del límite.
           IA_LLAMADAS_POR_MINUTO: '1'
+          # Resumen de cada simulación para consultarlo con Athena (docs/resultados.md).
+          RESULTADOS_BUCKET: !Ref ResultadosBucket
       # Mínimo privilegio: solo invocar nova-micro. La política la crea infra/github-oidc.yaml (pila
       # aparte, desplegada por un administrador) para que el despliegue automático solo pueda adjuntar
       # esa política y no escribir permisos nuevos en el rol.
       Policies:
         - !Sub arn:aws:iam::${AWS::AccountId}:policy/${AWS::StackName}-invocar-bedrock
+        # Solo escribir en simulaciones/ del bucket de resultados (también la crea github-oidc.yaml).
+        - !Sub arn:aws:iam::${AWS::AccountId}:policy/${AWS::StackName}-guardar-resultados
       FunctionUrlConfig:          # Function URL: sin el corte de 30 s de API Gateway
         AuthType: NONE
         Cors:
@@ -79,6 +84,185 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/lambda/${AWS::StackName}-api
       RetentionInDays: 7
+
+  # --- Monitoreo: alarmas por correo y un dashboard en CloudWatch ------------
+  # Usa el mismo correo que el Budget; sin correo, las alarmas existen pero no avisan a nadie.
+  Avisos:
+    Type: AWS::SNS::Topic
+    Condition: CrearPresupuesto
+    Properties:
+      TopicName: !Sub ${AWS::StackName}-avisos
+      Subscription:
+        - Protocol: email
+          Endpoint: !Ref CorreoAlerta
+
+  # Cualquier error de la API en 5 minutos (una simulación que falla en plena demo).
+  AlarmaErrores:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${AWS::StackName}-errores-api
+      AlarmDescription: La API devolvió errores (excepciones o tiempo agotado)
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref ApiFunction
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: !If [CrearPresupuesto, [!Ref Avisos], !Ref AWS::NoValue]
+
+  # Una simulación que pasa de 50 s está cerca del tiempo máximo de la Lambda (60 s).
+  AlarmaLentitud:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${AWS::StackName}-lentitud-api
+      AlarmDescription: Una simulación tardó más de 50 s (el límite es 60 s)
+      Namespace: AWS/Lambda
+      MetricName: Duration
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref ApiFunction
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 50000
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: !If [CrearPresupuesto, [!Ref Avisos], !Ref AWS::NoValue]
+
+  # Peticiones rechazadas porque se llegó al límite de ejecuciones simultáneas de la cuenta.
+  AlarmaLimitadas:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${AWS::StackName}-limitadas-api
+      AlarmDescription: La Lambda rechazó peticiones por límite de concurrencia
+      Namespace: AWS/Lambda
+      MetricName: Throttles
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref ApiFunction
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: !If [CrearPresupuesto, [!Ref Avisos], !Ref AWS::NoValue]
+
+  Tablero:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Ref AWS::StackName
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {"type": "metric", "x": 0, "y": 0, "width": 8, "height": 6, "properties": {
+              "title": "Simulaciones (invocaciones) y errores", "region": "${AWS::Region}", "stat": "Sum", "period": 300,
+              "metrics": [["AWS/Lambda", "Invocations", "FunctionName", "${ApiFunction}"],
+                          [".", "Errors", ".", "."], [".", "Throttles", ".", "."]]}},
+            {"type": "metric", "x": 8, "y": 0, "width": 8, "height": 6, "properties": {
+              "title": "Duración (ms)", "region": "${AWS::Region}", "period": 300,
+              "metrics": [["AWS/Lambda", "Duration", "FunctionName", "${ApiFunction}", {"stat": "Average"}],
+                          ["...", {"stat": "p95"}], ["...", {"stat": "Maximum"}]]}},
+            {"type": "metric", "x": 16, "y": 0, "width": 8, "height": 6, "properties": {
+              "title": "Informe con IA (llamadas a Bedrock)", "region": "${AWS::Region}", "stat": "Sum", "period": 300,
+              "metrics": [["AWS/Bedrock", "Invocations", "ModelId", "amazon.nova-micro-v1:0"]]}},
+            {"type": "alarm", "x": 0, "y": 6, "width": 24, "height": 3, "properties": {
+              "title": "Alarmas",
+              "alarms": ["${AlarmaErrores.Arn}", "${AlarmaLentitud.Arn}", "${AlarmaLimitadas.Arn}"]}}
+          ]
+        }
+
+  # --- Resultados: un resumen por simulación en S3, consultable con Athena ---
+  # Nombre fijo: la política de la Lambda (infra/github-oidc.yaml) lo necesita antes de que exista.
+  ResultadosBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${AWS::StackName}-resultados-${AWS::AccountId}
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      LifecycleConfiguration:
+        Rules:
+          - Id: borrar-viejos     # protege el costo: nada se acumula para siempre
+            Status: Enabled
+            ExpirationInDays: 90
+          - Id: borrar-consultas  # resultados de Athena: solo sirven al momento de consultar
+            Status: Enabled
+            Prefix: athena/
+            ExpirationInDays: 7
+
+  ResultadosBase:
+    Type: AWS::Glue::Database
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseInput:
+        Name: zombie_zero
+        Description: Resúmenes de las simulaciones de Zombie Zero
+
+  # Una fila por simulación. Las fechas se proyectan solas: no hace falta registrar particiones.
+  ResultadosTabla:
+    Type: AWS::Glue::Table
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseName: !Ref ResultadosBase
+      TableInput:
+        Name: simulaciones
+        TableType: EXTERNAL_TABLE
+        Parameters:
+          classification: json
+          projection.enabled: 'true'
+          projection.fecha.type: date
+          projection.fecha.format: yyyy-MM-dd
+          projection.fecha.range: 2026-10-01,NOW
+          storage.location.template: !Sub s3://${ResultadosBucket}/simulaciones/fecha=${!fecha}/
+        PartitionKeys:
+          - { Name: fecha, Type: string }
+        StorageDescriptor:
+          Location: !Sub s3://${ResultadosBucket}/simulaciones/
+          InputFormat: org.apache.hadoop.mapred.TextInputFormat
+          OutputFormat: org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat
+          SerdeInfo:
+            SerializationLibrary: org.openx.data.jsonserde.JsonSerDe
+          Columns:
+            - { Name: id, Type: string }
+            - { Name: momento, Type: string }
+            - { Name: semilla, Type: bigint }
+            - { Name: repeticiones, Type: int }
+            - { Name: inicio, Type: string }
+            - { Name: n_personas, Type: int }
+            - { Name: dias, Type: int }
+            - { Name: casos_iniciales, Type: int }
+            - { Name: plaga, Type: 'struct<r0:double,dias_latencia:double,dias_infeccioso:double,deteccion:double>' }
+            - { Name: recursos, Type: 'struct<presupuesto:double,costo_vacuna:double,vacunas_disponibles:int,vacunas_por_dia:int,dia_inicio:int,corte_desde:int,corte_dias:int,eficacia:double,dias_cierre:int,cumplimiento_cierre:double,costo_cierre_mercado:double,costo_cierre_colegio:double>' }
+            - { Name: recomendado, Type: string }
+            - { Name: nivel, Type: string }
+            - { Name: gana_a_azar, Type: double }
+            - { Name: salvados_vs_ninguna, Type: double }
+            - { Name: planes, Type: 'array<struct<id:string,nombre:string,tipo:string,costo:double,vacunas:double,infectados:double,infectados_p5:double,infectados_p95:double,salvados:double>>' }
+
+  # Grupo de trabajo de Athena con tope de gasto: una consulta que lea más de 100 MB se cancela.
+  ResultadosConsultas:
+    Type: AWS::Athena::WorkGroup
+    Properties:
+      Name: !Ref AWS::StackName
+      Description: Consultas sobre las simulaciones guardadas
+      RecursiveDeleteOption: true
+      WorkGroupConfiguration:
+        EnforceWorkGroupConfiguration: true
+        BytesScannedCutoffPerQuery: 104857600
+        ResultConfiguration:
+          OutputLocation: !Sub s3://${ResultadosBucket}/athena/
 
   # --- Frontend: archivos estáticos privados detrás de CloudFront -----------
   FrontendBucket:
@@ -202,6 +386,9 @@ Outputs:
   FrontendBucketName:
     Description: Bucket donde se sube el build de Angular
     Value: !Ref FrontendBucket
+  TableroUrl:
+    Description: Dashboard de CloudWatch con simulaciones, duración, errores y llamadas a Bedrock
+    Value: !Sub https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards/dashboard/${AWS::StackName}
   FrontendDistributionId:
     Description: Id de CloudFront, para invalidar la caché al publicar
     Value: !Ref FrontendDistribution

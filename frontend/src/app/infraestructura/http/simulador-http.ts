@@ -8,7 +8,12 @@ import {
   ConfiguracionSimulacion,
   Parametros,
 } from '../../dominio/modelos/escenario';
-import { InformeIa, ResultadoDifusion, ResultadoSimulacion } from '../../dominio/modelos/resultado';
+import {
+  InformeIa,
+  ResultadoDifusion,
+  ResultadoSimulacion,
+  SimulacionGuardada,
+} from '../../dominio/modelos/resultado';
 import { SimuladorRepositorio } from '../../dominio/puertos/simulador.repositorio';
 import { aCamel, aSnake, renombrarClaves } from './mapeo';
 
@@ -32,6 +37,13 @@ export class SimuladorHttp implements SimuladorRepositorio {
 
   informe(resultado: ResultadoSimulacion): Promise<InformeIa> {
     return this.pedir(this.http.post(`${this.base}/informe`, renombrarClaves(resumenParaInforme(resultado), aSnake)));
+  }
+
+  async historial(): Promise<SimulacionGuardada[]> {
+    const { simulaciones } = await this.pedir<{ simulaciones: SimulacionGuardada[] }>(
+      this.http.get(`${this.base}/historial`),
+    );
+    return simulaciones;
   }
 
   private async pedir<T>(peticion: Observable<unknown>): Promise<T> {

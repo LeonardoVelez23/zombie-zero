@@ -33,6 +33,20 @@ Valores por defecto y límites de cada parámetro, para armar los controles de l
 }
 ```
 
+## `GET /api/historial`
+
+Las últimas 10 simulaciones guardadas en S3 (de hoy y de ayer, en UTC), de la más nueva a la
+más vieja. Es compartido entre todos los que usan la aplicación y no tiene datos personales.
+Cada elemento es el resumen descrito en [resultados.md](resultados.md): la configuración usada
+(semilla, inicio, plaga, recursos) y las cifras de cada plan. Sin bucket configurado, o si S3
+falla, devuelve una lista vacía.
+
+```json
+{ "simulaciones": [ { "id": "3f9c...", "momento": "2026-10-28T21:40:00+00:00", "semilla": 42,
+                      "inicio": "aeropuerto", "plaga": { "r0": 2.5, ... }, "recursos": { ... },
+                      "recomendado": "anillo+mercado", "salvados_vs_ninguna": 4812.0, "planes": [ ... ] } ] }
+```
+
 ## `POST /api/simular`
 
 ### Petición
@@ -80,6 +94,7 @@ Todo es opcional: lo que no se envía toma el valor por defecto.
     "salvados_vs_ninguna": 4812.0,
     "salvados_vs_azar": 3896.0
   },
+  "guardado": "3f9c...e1",          // id del resumen guardado en S3 (docs/resultados.md); null si no se guardó
   "planes": [
     {
       "id": "anillo+mercado",

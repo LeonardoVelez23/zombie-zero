@@ -32,6 +32,7 @@ describe('Qué haría falta para ganar', () => {
         pedidas.push(c);
         return Promise.resolve(respuesta(c));
       },
+      historial: () => Promise.resolve([]),
       informe: () => Promise.reject(new Error('no se usa')),
       difusion: () => Promise.reject(new Error('no se usa')),
     };
