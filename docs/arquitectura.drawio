@@ -1,0 +1,110 @@
+<mxfile host="drawio">
+  <diagram id="arquitectura" name="Arquitectura">
+    <mxGraphModel dx="1600" dy="1000" grid="1" gridSize="10" page="1" pageWidth="1760" pageHeight="1060" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="titulo" value="&lt;b&gt;Zombie Zero · arquitectura en AWS&lt;/b&gt;" style="text;html=1;fontSize=24;fontColor=#232F3E;align=left;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="30" y="25" width="700" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="z_internet" value="&lt;b&gt;Internet (público)&lt;/b&gt;" style="rounded=1;arcSize=2;html=1;whiteSpace=wrap;dashed=1;dashPattern=8 5;strokeWidth=2;fillColor=#F7F7F7;strokeColor=#8A8A8A;fontColor=#8A8A8A;fontSize=15;align=left;verticalAlign=top;spacingLeft=10;spacingTop=4;" vertex="1" parent="1">
+          <mxGeometry x="30" y="80" width="300" height="620" as="geometry" />
+        </mxCell>
+        <mxCell id="z_aws" value="&lt;b&gt;AWS · región us-east-1 · cuenta del equipo&lt;/b&gt;" style="rounded=1;arcSize=2;html=1;whiteSpace=wrap;dashed=1;dashPattern=8 5;strokeWidth=2;fillColor=#FFFFFF;strokeColor=#232F3E;fontColor=#232F3E;fontSize=15;align=left;verticalAlign=top;spacingLeft=10;spacingTop=4;" vertex="1" parent="1">
+          <mxGeometry x="370" y="80" width="1100" height="620" as="geometry" />
+        </mxCell>
+        <mxCell id="z_github" value="&lt;b&gt;GitHub · repositorio público&lt;/b&gt;" style="rounded=1;arcSize=2;html=1;whiteSpace=wrap;dashed=1;dashPattern=8 5;strokeWidth=2;fillColor=#F6F8FA;strokeColor=#24292F;fontColor=#24292F;fontSize=15;align=left;verticalAlign=top;spacingLeft=10;spacingTop=4;" vertex="1" parent="1">
+          <mxGeometry x="30" y="740" width="1060" height="290" as="geometry" />
+        </mxCell>
+        <mxCell id="usuario" value="&lt;b&gt;Navegador del usuario&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:12px&quot; color=&quot;#3B4250&quot;&gt;alcalde, comité o jurado&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:12px&quot; color=&quot;#3B4250&quot;&gt;Angular 22 + MapLibre GL&lt;/font&gt;" style="rounded=1;arcSize=6;html=1;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#545B64;strokeWidth=2.5;fontSize=14;fontColor=#16191F;" vertex="1" parent="1">
+          <mxGeometry x="60" y="170" width="240" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="mosaicos" value="&lt;b&gt;Mosaicos del mapa&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:12px&quot; color=&quot;#3B4250&quot;&gt;Esri · OpenStreetMap · CARTO&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:12px&quot; color=&quot;#3B4250&quot;&gt;servicios externos gratuitos&lt;/font&gt;" style="rounded=1;arcSize=6;html=1;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#545B64;strokeWidth=2.5;fontSize=14;fontColor=#16191F;" vertex="1" parent="1">
+          <mxGeometry x="60" y="520" width="240" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="cloudfront" value="&lt;b&gt;Amazon CloudFront&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:12px&quot; color=&quot;#3B4250&quot;&gt;HTTPS · caché en el borde&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:12px&quot; color=&quot;#3B4250&quot;&gt;/ → S3   ·   /api/* → Lambda&lt;/font&gt;" style="rounded=1;arcSize=6;html=1;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#8C4FFF;strokeWidth=2.5;fontSize=14;fontColor=#16191F;" vertex="1" parent="1">
+          <mxGeometry x="410" y="170" width="230" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="cloudfront_insignia" value="&lt;b&gt;público&lt;/b&gt;" style="rounded=1;arcSize=50;html=1;fillColor=#C62828;strokeColor=none;fontColor=#FFFFFF;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="573" y="159" width="61" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="s3" value="&lt;b&gt;Amazon S3 (bucket privado)&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:12px&quot; color=&quot;#3B4250&quot;&gt;frontend compilado (Angular)&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:12px&quot; color=&quot;#3B4250&quot;&gt;solo CloudFront lo lee (OAC)&lt;/font&gt;" style="rounded=1;arcSize=6;html=1;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#7AA116;strokeWidth=2.5;fontSize=14;fontColor=#16191F;" vertex="1" parent="1">
+          <mxGeometry x="880" y="110" width="280" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="s3_insignia" value="&lt;b&gt;privado&lt;/b&gt;" style="rounded=1;arcSize=50;html=1;fillColor=#2E7D32;strokeColor=none;fontColor=#FFFFFF;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1093" y="99" width="61" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="lambda" value="&lt;b&gt;AWS Lambda · Python 3.13&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:12px&quot; color=&quot;#3B4250&quot;&gt;3.008 MB (2 vCPU) · hasta 60 s&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:12px&quot; color=&quot;#3B4250&quot;&gt;Function URL · red de Manta + SEIR&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:12px&quot; color=&quot;#3B4250&quot;&gt;Monte Carlo pareado en paralelo&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:12px&quot; color=&quot;#3B4250&quot;&gt;modelo EDP para el mapa&lt;/font&gt;" style="rounded=1;arcSize=6;html=1;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#ED7100;strokeWidth=2.5;fontSize=14;fontColor=#16191F;" vertex="1" parent="1">
+          <mxGeometry x="880" y="270" width="280" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="lambda_insignia" value="&lt;b&gt;URL pública&lt;/b&gt;" style="rounded=1;arcSize=50;html=1;fillColor=#C62828;strokeColor=none;fontColor=#FFFFFF;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1065" y="259" width="89" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="logs" value="&lt;b&gt;Amazon CloudWatch Logs&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:12px&quot; color=&quot;#3B4250&quot;&gt;/aws/lambda/zombie-zero-api&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:12px&quot; color=&quot;#3B4250&quot;&gt;retención de 7 días&lt;/font&gt;" style="rounded=1;arcSize=6;html=1;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#E7157B;strokeWidth=2.5;fontSize=14;fontColor=#16191F;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="300" width="240" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="budget" value="&lt;b&gt;AWS Budgets&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:12px&quot; color=&quot;#3B4250&quot;&gt;zombie-zero-mensual: 10 USD&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:12px&quot; color=&quot;#3B4250&quot;&gt;aviso 80 % real · 100 % previsto&lt;/font&gt;" style="rounded=1;arcSize=6;html=1;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#7AA116;strokeWidth=2.5;fontSize=14;fontColor=#16191F;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="120" width="240" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="correo" value="&lt;b&gt;Correo del equipo&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:12px&quot; color=&quot;#3B4250&quot;&gt;alertas de costo&lt;/font&gt;" style="rounded=1;arcSize=6;html=1;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#545B64;strokeWidth=2.5;fontSize=14;fontColor=#16191F;" vertex="1" parent="1">
+          <mxGeometry x="1520" y="120" width="210" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="iam" value="&lt;b&gt;IAM · rol de despliegue&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:12px&quot; color=&quot;#3B4250&quot;&gt;solo GitHub OIDC, rama main&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:12px&quot; color=&quot;#3B4250&quot;&gt;mínimo privilegio&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:12px&quot; color=&quot;#3B4250&quot;&gt;sin llaves guardadas&lt;/font&gt;" style="rounded=1;arcSize=6;html=1;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#DD344C;strokeWidth=2.5;fontSize=14;fontColor=#16191F;" vertex="1" parent="1">
+          <mxGeometry x="410" y="530" width="230" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="cfn" value="&lt;b&gt;AWS CloudFormation (SAM)&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:12px&quot; color=&quot;#3B4250&quot;&gt;pila zombie-zero&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:12px&quot; color=&quot;#3B4250&quot;&gt;infra/template.yaml&lt;/font&gt;" style="rounded=1;arcSize=6;html=1;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#E7157B;strokeWidth=2.5;fontSize=14;fontColor=#16191F;" vertex="1" parent="1">
+          <mxGeometry x="880" y="530" width="280" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="repo" value="&lt;b&gt;Repositorio&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:12px&quot; color=&quot;#3B4250&quot;&gt;develop: trabajo del equipo&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:12px&quot; color=&quot;#3B4250&quot;&gt;main: producción (PR revisado)&lt;/font&gt;" style="rounded=1;arcSize=6;html=1;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#24292F;strokeWidth=2.5;fontSize=14;fontColor=#16191F;" vertex="1" parent="1">
+          <mxGeometry x="60" y="820" width="260" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="actions" value="&lt;b&gt;GitHub Actions · desplegar.yml&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:12px&quot; color=&quot;#3B4250&quot;&gt;1. pytest + ng test&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:12px&quot; color=&quot;#3B4250&quot;&gt;2. empaqueta y compila&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:12px&quot; color=&quot;#3B4250&quot;&gt;3. despliega (solo main)&lt;/font&gt;" style="rounded=1;arcSize=6;html=1;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#2088FF;strokeWidth=2.5;fontSize=14;fontColor=#16191F;" vertex="1" parent="1">
+          <mxGeometry x="410" y="820" width="300" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="f0" value="1 · HTTPS" style="edgeStyle=none;html=1;rounded=0;endArrow=block;endFill=1;strokeWidth=2.2;strokeColor=#1A73E8;fontColor=#1A73E8;fontStyle=1;fontSize=11;labelBackgroundColor=#FFFFFF;exitX=1.000;exitY=0.500;exitDx=0;exitDy=0;entryX=0.000;entryY=0.500;entryDx=0;entryDy=0;" edge="1" parent="1" source="usuario" target="cloudfront">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f1" value="2 · estáticos (OAC)" style="edgeStyle=none;html=1;rounded=0;endArrow=block;endFill=1;strokeWidth=2.2;strokeColor=#1A73E8;fontColor=#1A73E8;fontStyle=1;fontSize=11;labelBackgroundColor=#FFFFFF;exitX=1.000;exitY=0.227;exitDx=0;exitDy=0;entryX=0.000;entryY=0.500;entryDx=0;entryDy=0;" edge="1" parent="1" source="cloudfront" target="s3">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="740" y="195" />
+              <mxPoint x="740" y="160" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f2" value="3 · /api/* sin caché" style="edgeStyle=none;html=1;rounded=0;endArrow=block;endFill=1;strokeWidth=2.2;strokeColor=#1A73E8;fontColor=#1A73E8;fontStyle=1;fontSize=11;labelBackgroundColor=#FFFFFF;exitX=1.000;exitY=0.773;exitDx=0;exitDy=0;entryX=0.000;entryY=0.500;entryDx=0;entryDy=0;" edge="1" parent="1" source="cloudfront" target="lambda">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="740" y="255" />
+              <mxPoint x="740" y="345" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f3" value="4 · registros" style="edgeStyle=none;html=1;rounded=0;endArrow=block;endFill=1;strokeWidth=2.2;strokeColor=#1A73E8;fontColor=#1A73E8;fontStyle=1;fontSize=11;labelBackgroundColor=#FFFFFF;exitX=1.000;exitY=0.500;exitDx=0;exitDy=0;entryX=0.000;entryY=0.500;entryDx=0;entryDy=0;" edge="1" parent="1" source="lambda" target="logs">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f4" value="5 · mosaicos (directo)" style="edgeStyle=none;html=1;rounded=0;endArrow=block;endFill=1;strokeWidth=2.2;strokeColor=#1A73E8;fontColor=#1A73E8;fontStyle=1;fontSize=11;labelBackgroundColor=#FFFFFF;exitX=0.500;exitY=1.000;exitDx=0;exitDy=0;entryX=0.500;entryY=0.000;entryDx=0;entryDy=0;" edge="1" parent="1" source="usuario" target="mosaicos">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f5" value="alerta" style="edgeStyle=none;html=1;rounded=0;endArrow=block;endFill=1;strokeWidth=2.2;strokeColor=#E8710A;fontColor=#E8710A;fontStyle=1;fontSize=11;labelBackgroundColor=#FFFFFF;exitX=1.000;exitY=0.500;exitDx=0;exitDy=0;entryX=0.000;entryY=0.500;entryDx=0;entryDy=0;" edge="1" parent="1" source="budget" target="correo">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f6" value="merge a main" style="edgeStyle=none;html=1;rounded=0;endArrow=block;endFill=1;strokeWidth=2.2;strokeColor=#5F6B7A;fontColor=#5F6B7A;fontStyle=1;fontSize=11;labelBackgroundColor=#FFFFFF;exitX=1.000;exitY=0.500;exitDx=0;exitDy=0;entryX=0.000;entryY=0.500;entryDx=0;entryDy=0;dashed=1;dashPattern=7 5;" edge="1" parent="1" source="repo" target="actions">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f7" value="token OIDC temporal" style="edgeStyle=none;html=1;rounded=0;endArrow=block;endFill=1;strokeWidth=2.2;strokeColor=#5F6B7A;fontColor=#5F6B7A;fontStyle=1;fontSize=11;labelBackgroundColor=#FFFFFF;exitX=0.383;exitY=0.000;exitDx=0;exitDy=0;entryX=0.500;entryY=1.000;entryDx=0;entryDy=0;dashed=1;dashPattern=7 5;" edge="1" parent="1" source="actions" target="iam">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f8" value="sam deploy · s3 sync" style="edgeStyle=none;html=1;rounded=0;endArrow=block;endFill=1;strokeWidth=2.2;strokeColor=#5F6B7A;fontColor=#5F6B7A;fontStyle=1;fontSize=11;labelBackgroundColor=#FFFFFF;exitX=1.000;exitY=0.500;exitDx=0;exitDy=0;entryX=0.000;entryY=0.500;entryDx=0;entryDy=0;dashed=1;dashPattern=7 5;" edge="1" parent="1" source="iam" target="cfn">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f9" value="crea y actualiza los recursos" style="edgeStyle=none;html=1;rounded=0;endArrow=block;endFill=1;strokeWidth=2.2;strokeColor=#5F6B7A;fontColor=#5F6B7A;fontStyle=1;fontSize=11;labelBackgroundColor=#FFFFFF;exitX=0.500;exitY=0.000;exitDx=0;exitDy=0;entryX=0.500;entryY=1.000;entryDx=0;entryDy=0;dashed=1;dashPattern=7 5;" edge="1" parent="1" source="cfn" target="lambda">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="leyenda" value="&lt;b style=&quot;font-size:15px&quot;&gt;Leyenda&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;font color=&quot;#1A73E8&quot;&gt;&lt;b&gt;───▶&lt;/b&gt;&lt;/font&gt;  Uso de la app (1 a 5: recorrido de una visita)&lt;br&gt;&lt;font color=&quot;#5F6B7A&quot;&gt;&lt;b&gt;- - -▶&lt;/b&gt;&lt;/font&gt;  Despliegue automático al hacer merge a main&lt;br&gt;&lt;font color=&quot;#E8710A&quot;&gt;&lt;b&gt;───▶&lt;/b&gt;&lt;/font&gt;  Alerta de costo&lt;br&gt;&lt;font color=&quot;#C62828&quot;&gt;&lt;b&gt;público&lt;/b&gt;&lt;/font&gt;  Se puede llamar desde internet&lt;br&gt;&lt;font color=&quot;#2E7D32&quot;&gt;&lt;b&gt;privado&lt;/b&gt;&lt;/font&gt;  Sin acceso directo desde internet&lt;br&gt;&lt;br&gt;Sin base de datos: cada simulación se calcula al vuelo y&lt;br&gt;se repite igual con la misma semilla.&lt;br&gt;La Function URL es pública (AuthType NONE); la app la usa&lt;br&gt;por CloudFront en /api/*, en el mismo dominio.&lt;br&gt;GitHub no guarda llaves de AWS: pide credenciales&lt;br&gt;temporales por OIDC y solo desde la rama main." style="rounded=1;arcSize=4;html=1;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#232F3E;fontSize=12;fontColor=#16191F;align=left;verticalAlign=top;spacingLeft=14;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="1130" y="740" width="600" height="290" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

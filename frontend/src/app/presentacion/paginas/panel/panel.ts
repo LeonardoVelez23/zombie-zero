@@ -9,6 +9,7 @@ import { comparacion } from '../../../dominio/reglas/planes';
 import { Controles } from '../../componentes/controles/controles';
 import { Grafica } from '../../componentes/grafica/grafica';
 import { Informe } from '../../componentes/informe/informe';
+import { Estados } from '../../componentes/estados/estados';
 import { Mapa } from '../../componentes/mapa/mapa';
 import { Tabla } from '../../componentes/tabla/tabla';
 import { numero } from '../../utilidades/formato';
@@ -24,11 +25,17 @@ interface Indicador {
 
 @Component({
   selector: 'app-panel',
-  imports: [Controles, Grafica, Informe, Mapa, Tabla],
+  imports: [Controles, Grafica, Estados, Informe, Mapa, Tabla],
   templateUrl: './panel.html',
   styleUrl: './panel.css',
 })
 export class Panel implements OnInit {
+  protected readonly sidebarPlegada = signal(false);
+
+  protected alternarSidebar(): void {
+    this.sidebarPlegada.update((plegada) => !plegada);
+  }
+
   private readonly obtenerParametros = inject(ObtenerParametros);
   private readonly simularBrote = inject(SimularBrote);
   private readonly modelarDifusion = inject(ModelarDifusion);
@@ -43,6 +50,11 @@ export class Panel implements OnInit {
 
   // El mapa EDP usa el escenario de la última simulación (o el por defecto si aún no hay).
   private ultimaConfiguracion: ConfiguracionSimulacion = {};
+
+  // Número de la última petición enviada: si una respuesta vieja llega tarde, se descarta
+  // para que no reemplace el resultado de una configuración más reciente.
+  private peticionSimulacion = 0;
+  private peticionDifusion = 0;
 
   protected readonly indicadores = computed<Indicador[]>(() => {
     const r = this.resultado();
@@ -59,8 +71,20 @@ export class Panel implements OnInit {
       const pendiente = 'Ejecuta una simulación';
       return [
         tarjetaPoblacion,
-        { etiqueta: 'INFECTADOS SIN INTERVENIR', valor: '—', nota: pendiente, color: 'red', icono: '⌁' },
-        { etiqueta: 'INFECTADOS CON EL PLAN', valor: '—', nota: pendiente, color: 'green', icono: '✓' },
+        {
+          etiqueta: 'INFECTADOS SIN INTERVENIR',
+          valor: '—',
+          nota: pendiente,
+          color: 'red',
+          icono: '⌁',
+        },
+        {
+          etiqueta: 'INFECTADOS CON EL PLAN',
+          valor: '—',
+          nota: pendiente,
+          color: 'green',
+          icono: '✓',
+        },
         { etiqueta: 'PERSONAS SALVADAS', valor: '—', nota: pendiente, color: 'orange', icono: '✚' },
       ];
     }
@@ -100,29 +124,36 @@ export class Panel implements OnInit {
   }
 
   protected async simular(configuracion: ConfiguracionSimulacion): Promise<void> {
+    const peticion = ++this.peticionSimulacion;
+    const vigente = () => peticion === this.peticionSimulacion;
     this.simulando.set(true);
     this.error.set(null);
     try {
-      this.resultado.set(await this.simularBrote.ejecutar(configuracion));
+      const resultado = await this.simularBrote.ejecutar(configuracion);
+      if (!vigente()) return;
+      this.resultado.set(resultado);
       this.ultimaConfiguracion = configuracion;
     } catch (e) {
-      this.error.set(mensaje(e));
+      if (vigente()) this.error.set(mensaje(e));
     } finally {
-      this.simulando.set(false);
+      if (vigente()) this.simulando.set(false);
     }
   }
 
   protected async calcularDifusion(): Promise<void> {
+    const peticion = ++this.peticionDifusion;
+    const vigente = () => peticion === this.peticionDifusion;
     this.calculandoDifusion.set(true);
     this.errorDifusion.set(null);
     try {
-      this.difusion.set(
-        await this.modelarDifusion.ejecutar({ escenario: this.ultimaConfiguracion.escenario }),
-      );
+      const difusion = await this.modelarDifusion.ejecutar({
+        escenario: this.ultimaConfiguracion.escenario,
+      });
+      if (vigente()) this.difusion.set(difusion);
     } catch (e) {
-      this.errorDifusion.set(mensaje(e));
+      if (vigente()) this.errorDifusion.set(mensaje(e));
     } finally {
-      this.calculandoDifusion.set(false);
+      if (vigente()) this.calculandoDifusion.set(false);
     }
   }
 }

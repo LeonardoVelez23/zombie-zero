@@ -1,7 +1,13 @@
-<div class="app-shell">
-  <aside class="sidebar">
+<div class="app-shell" [class.sidebar-plegada]="sidebarPlegada()">
+  <button class="sidebar-toggle" type="button" (click)="alternarSidebar()" [attr.aria-expanded]="!sidebarPlegada()"
+    aria-controls="sidebar-principal"
+    [attr.aria-label]="sidebarPlegada() ? 'Mostrar menú lateral' : 'Ocultar menú lateral'">
+    <span aria-hidden="true">{{ sidebarPlegada() ? '☰' : '✕' }}</span>
+  </button>
+
+<aside class="sidebar" id="sidebar-principal">
     <a class="brand" href="#dashboard" aria-label="Zombie Zero inicio">
-      <div class="brand-mark">Z<span>0</span></div>
+      <img class="brand-mark" src="logo.svg" alt="" width="43" height="43" />
       <div>
         <strong>ZOMBIE ZERO</strong>
         <small>EPIDEMIC INTELLIGENCE</small>
@@ -13,6 +19,7 @@
       <a class="nav-item active" href="#dashboard"><span>◈</span> Dashboard <b>01</b></a>
       <a class="nav-item" href="#simulacion"><span>⌘</span> Simulación</a>
       <a class="nav-item" href="#resultados"><span>▥</span> Resultados</a>
+      <a class="nav-item" href="#estados"><span>◐</span> Estados SEIR</a>
       <a class="nav-item" href="#estrategias"><span>⇄</span> Estrategias</a>
       <a class="nav-item" href="#mapa"><span>⌖</span> Mapa EDP</a>
     </nav>
@@ -34,7 +41,13 @@
       <div class="breadcrumb">
         PROYECTO <span>/</span> <strong>VIGILANCIA EPIDEMIOLÓGICA</strong>
       </div>
-      <div class="topbar-right"><span class="avatar">ZZ</span></div>
+      <div class="topbar-right">
+        <span class="production-badge">
+          <span class="production-dot"></span>
+          PRODUCCIÓN
+        </span>
+        <span class="avatar">ZZ</span>
+      </div>
     </header>
 
     <section class="page-heading">
@@ -80,6 +93,10 @@
         </div>
       }
       <app-grafica [resultado]="resultado()" />
+    </section>
+
+    <section class="full-grid">
+      <app-estados [resultado]="resultado()" />
     </section>
 
     <section class="bottom-grid">

@@ -2,14 +2,49 @@
   @let v = r.veredicto;
   <span class="section-index">04 / RECOMENDACIÓN</span>
   <div class="nivel" [class]="v.nivel">{{ titulos[v.nivel] }}</div>
-  <h2>{{ recomendado()?.nombre }}</h2>
-  <p>{{ recomendado()?.descripcion }}</p>
-  <p>
-    Gana al reparto de vacunas al azar en <strong>{{ porcentaje(v.ganaAAzar) }}</strong> de los
-    brotes simulados. Frente a no intervenir salva en promedio
-    <strong>{{ numero(v.salvadosVsNinguna) }}</strong> personas, y
-    <strong>{{ numero(v.salvadosVsAzar) }}</strong> frente al azar.
-  </p>
+  @if (v.nivel === 'insuficiente') {
+    <h2>Con estos recursos ningún plan cambia el resultado.</h2>
+    <p>
+      Ningún plan supera de forma consistente al reparto de vacunas al azar. La mejor opción disponible
+      es <strong>{{ recomendado()?.nombre }}</strong>, que salva en promedio
+      <strong>{{ numero(v.salvadosVsNinguna) }}</strong> personas frente a no intervenir.
+    </p>
+    <p>
+      Para cambiar el resultado hacen falta más vacunas o empezar a actuar antes: prueba subiendo las
+      vacunas o adelantando el día de inicio.
+    </p>
+  } @else {
+    <h2>{{ recomendado()?.nombre }}</h2>
+    <p>{{ recomendado()?.descripcion }}</p>
+    <p>
+      Gana al reparto de vacunas al azar en <strong>{{ porcentaje(v.ganaAAzar) }}</strong> de los
+      brotes en que hubo diferencia. Frente a no intervenir salva en promedio
+      <strong>{{ numero(v.salvadosVsNinguna) }}</strong> personas, y
+      <strong>{{ numero(v.salvadosVsAzar) }}</strong> frente al azar.
+    </p>
+  }
+  @if (v.empatesConAzar) {
+    <p>
+      En {{ porcentaje(v.empatesConAzar) }} de los brotes todos los planes terminaron igual, casi siempre
+      porque la plaga se apagó sola antes de que se pudiera actuar.
+    </p>
+  }
+  @let corte = r.escenario.recursos;
+  @if (corte.corteDias > 0) {
+    <p>
+      Incluye el imprevisto: no llegan vacunas del día {{ corte.corteDesde }} al
+      {{ corte.corteDesde + corte.corteDias - 1 }}. Al reanudarse la entrega, cada plan vuelve a
+      decidir con el brote de ese día.
+    </p>
+  }
+  @let plan = recomendado();
+  @if (plan && plan.vacunas > 0) {
+    <p>
+      Nunca se vacuna a un zombie detectado. De sus {{ numero(plan.vacunas) }} vacunas, en promedio
+      {{ numero(plan.vacunasPerdidas) }} fueron a personas que parecían sanas pero ya estaban mordidas o
+      se habían recuperado sin que se supiera.
+    </p>
+  }
   <div class="insight-footer">
     <span class="status-dot"></span> {{ r.repeticiones }} BROTES · SEMILLA {{ r.escenario.semilla }}
   </div>

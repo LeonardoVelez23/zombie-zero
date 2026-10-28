@@ -26,6 +26,12 @@
   margin-bottom: 12px;
 }
 
+.reproduccion {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+}
+
 label {
   display: grid;
   gap: 6px;

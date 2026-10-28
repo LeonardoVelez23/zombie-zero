@@ -15,6 +15,9 @@ export interface Serie {
   p95: number[];
 }
 
+// 🟢 S sano · 🟡 E mordido (incubando) · 🔴 I zombie (contagia) · 🔵 R exorcizado (inmune).
+export type EstadoSeir = 'S' | 'E' | 'I' | 'R';
+
 export interface Plan {
   id: string;
   nombre: string;
@@ -28,17 +31,25 @@ export interface Plan {
   pico: Estadistico;
   diaPico: number;
   curvaZombies: Serie;
+  // Personas en cada estado por día (media, mediana y p5–p95 entre repeticiones).
+  // Opcional: las respuestas de versiones anteriores de la API no lo traen.
+  estados?: Record<EstadoSeir, Serie>;
   mapa: number[][];
   vacunasPerdidas: number;
   salvadosVsNinguna?: Estadistico;
   salvadosVsAzar?: Estadistico;
+  // Fracción de brotes que gana, contada solo entre los brotes en que hubo diferencia.
   ganaANinguna?: number;
   ganaAAzar?: number;
+  // Fracción de brotes que terminan igual (por ejemplo, la plaga se apagó sola antes de actuar).
+  empateConNinguna?: number;
+  empateConAzar?: number;
 }
 
 export interface Veredicto {
   nivel: 'solida' | 'debil' | 'insuficiente';
   ganaAAzar: number;
+  empatesConAzar?: number;
   salvadosVsNinguna: number;
   salvadosVsAzar: number;
 }

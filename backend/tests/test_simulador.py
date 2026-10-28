@@ -6,7 +6,7 @@ import pytest
 from zombie.config import Escenario
 from zombie.estrategias import Estrategia, crear
 from zombie.modelo import E, I, calibrar_beta, casos_iniciales, estimar_r0, simular
-from zombie.montecarlo import comparar
+from zombie.montecarlo import _veredicto, comparar
 from zombie.poblacion import TRABAJO, construir_red
 
 ESC = Escenario(n_personas=3000, dias=120)
@@ -71,11 +71,58 @@ def test_prohibido_vacunar_zombies(red, beta):
         simular(red, ESC, VacunaZombies(), beta, 0)
 
 
+class AnotaDias(Estrategia):
+    """Anillo que anota en qué días le tocó decidir."""
+
+    def __init__(self, red):
+        self.anillo, self.dias = crear("anillo", red), []
+
+    def elegir(self, obs, dosis, rng):
+        self.dias.append(obs.dia)
+        return self.anillo.elegir(obs, dosis, rng)
+
+
+def test_durante_el_corte_no_llegan_vacunas(red, beta):
+    corte = replace(ESC, inicio="aleatorio", casos_iniciales=30, plaga=replace(ESC.plaga, r0=4.0),
+                    recursos=replace(ESC.recursos, dia_inicio=10, vacunas_por_dia=5,
+                                     corte_desde=15, corte_dias=20))
+    estrategia = AnotaDias(red)
+    simular(red, corte, estrategia, beta, 0)
+    assert estrategia.dias[0] == 10
+    assert not any(15 <= d < 35 for d in estrategia.dias)
+    assert 35 in estrategia.dias  # al reanudarse vuelve a decidir con el brote de ese día
+
+
+def test_un_corte_de_vacunas_no_ayuda(red, beta):
+    corte = replace(ESC, recursos=replace(ESC.recursos, corte_desde=ESC.recursos.dia_inicio,
+                                          corte_dias=30))
+    anillo = crear("anillo", red)
+    normal = np.mean([simular(red, ESC, anillo, beta, r).infectados_total for r in range(10)])
+    cortado = np.mean([simular(red, corte, anillo, beta, r).infectados_total for r in range(10)])
+    assert cortado >= normal
+
+
 def test_estrategia_supera_lineas_base():
     res = comparar(ESC, repeticiones=30)
     inf = {d["id"]: d["infectados"]["media"] for d in res["planes"]}
     assert inf[res["recomendado"]] < inf["azar"] < inf["ninguna"]
     assert res["veredicto"]["nivel"] == "solida"
+
+
+def test_los_empates_no_cuentan_como_derrotas():
+    # Sin vacunas ni dinero para cierres, todos los planes son "no hacer nada": empatan siempre.
+    sin_recursos = replace(ESC, recursos=replace(ESC.recursos, vacunas_disponibles=0, presupuesto=0))
+    res = comparar(sin_recursos, repeticiones=5)
+    v = res["veredicto"]
+    assert v["empates_con_azar"] == 1.0
+    assert v["gana_a_azar"] == 0.0
+    assert v["nivel"] == "insuficiente"
+
+
+def test_no_es_solida_si_en_promedio_no_supera_al_azar():
+    mejor = {"gana_a_azar": 0.9, "empate_con_azar": 0.0,
+             "salvados_vs_ninguna": {"media": 300.0}, "salvados_vs_azar": {"media": -20.0}}
+    assert _veredicto(mejor)["nivel"] == "insuficiente"
 
 
 def test_ningun_plan_se_pasa_del_presupuesto():
@@ -162,3 +209,38 @@ def test_misma_semilla_mismo_monte_carlo():
     a = comparar(ESC, repeticiones=8)
     b = comparar(ESC, repeticiones=8)
     assert a == b
+
+
+def test_reporta_los_cuatro_estados_dia_a_dia():
+    """La API muestra S, E, I, R cada día: la media de los cuatro suma la población."""
+    res = comparar(ESC, repeticiones=6)
+    for d in res["planes"]:
+        estados = d["estados"]
+        assert set(estados) == {"S", "E", "I", "R"}
+        for serie in estados.values():
+            assert len(serie["media"]) == ESC.dias + 1
+            assert all(a <= b <= c for a, b, c in zip(serie["p5"], serie["media"], serie["p95"]))
+        suma = np.sum([estados[k]["media"] for k in "SEIR"], axis=0)
+        assert np.allclose(suma, ESC.n_personas, atol=0.5)
+        assert estados["I"]["media"] == d["curva_zombies"]["media"]
+        # Día 0: el brote empieza con los casos iniciales y nadie exorcizado.
+        assert estados["R"]["media"][0] == 0
+        assert estados["E"]["media"][0] + estados["I"]["media"][0] == ESC.casos_iniciales
+
+
+def test_en_paralelo_da_lo_mismo_que_en_serie(monkeypatch):
+    import multiprocessing.context
+
+    iniciados = []
+    original = multiprocessing.context.ForkProcess.start
+
+    def contar(proceso):
+        iniciados.append(proceso)
+        original(proceso)
+
+    monkeypatch.setattr(multiprocessing.context.ForkProcess, "start", contar)
+    serie = comparar(ESC, repeticiones=10, procesos=1)
+    assert iniciados == []          # con un proceso no se crea ningún trabajador
+    paralelo = comparar(ESC, repeticiones=10, procesos=4)
+    assert len(iniciados) == 4      # la ruta en paralelo sí se ejecutó
+    assert paralelo == serie

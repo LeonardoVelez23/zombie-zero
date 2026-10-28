@@ -17,6 +17,14 @@ import { ResultadoDifusion } from '../../../dominio/modelos/resultado';
 import { numero } from '../../utilidades/formato';
 import { LIMITES_MANTA, SECTORES, VISTAS, VistaId, estiloBase } from './vistas';
 
+// Velocidades de la animación del mapa: milisegundos entre un fotograma y el siguiente
+// (uno por día: 180 días duran ~22 s a 1×).
+const VELOCIDADES = [
+  { nombre: '1×', ms: 120 },
+  { nombre: '2×', ms: 60 },
+  { nombre: '4×', ms: 30 },
+];
+
 @Component({
   selector: 'app-mapa',
   templateUrl: './mapa.html',
@@ -37,6 +45,10 @@ export class Mapa {
   protected readonly fotogramaElegido = signal(0);
   protected readonly mapaListo = signal(false);
   protected readonly errorMapa = signal<string | null>(null);
+  protected readonly velocidades = VELOCIDADES;
+  protected readonly reproduciendo = signal(false);
+  protected readonly velocidad = signal(VELOCIDADES[0].ms);
+  private temporizador: ReturnType<typeof setInterval> | null = null;
 
   private readonly contenedor = viewChild<ElementRef<HTMLDivElement>>('contenedor');
   private mapa: MapaLibre | null = null;
@@ -70,6 +82,7 @@ export class Mapa {
     afterNextRender(() => void this.crearMapa());
     destruir.onDestroy(() => {
       this.destruido = true;
+      this.detener();
       this.liberar();
     });
 
@@ -130,6 +143,45 @@ export class Mapa {
       this.errorMapa.set('Este navegador no puede mostrar el mapa (necesita WebGL).');
       console.warn('No se pudo crear el mapa', e);
     }
+  }
+
+  // Animación: avanza un día por cada tic hasta el último y se detiene; si ya estaba al final,
+  // vuelve a empezar desde el día 0.
+  protected alternarReproduccion(): void {
+    if (this.reproduciendo()) {
+      this.detener();
+      return;
+    }
+    const total = this.escenario()?.fotogramas.length ?? 0;
+    if (total < 2) return;
+    if (this.fotogramaElegido() >= total - 1) this.fotogramaElegido.set(0);
+    this.reproduciendo.set(true);
+    this.programar();
+  }
+
+  protected cambiarVelocidad(ms: number): void {
+    this.velocidad.set(ms);
+    if (this.reproduciendo()) this.programar();
+  }
+
+  private programar(): void {
+    if (this.temporizador) clearInterval(this.temporizador);
+    this.temporizador = setInterval(() => this.avanzar(), this.velocidad());
+  }
+
+  private avanzar(): void {
+    const siguiente = this.fotogramaElegido() + 1;
+    if (siguiente >= (this.escenario()?.fotogramas.length ?? 0)) {
+      this.detener();
+      return;
+    }
+    this.fotogramaElegido.set(siguiente);
+  }
+
+  private detener(): void {
+    if (this.temporizador) clearInterval(this.temporizador);
+    this.temporizador = null;
+    this.reproduciendo.set(false);
   }
 
   private liberar(): void {
