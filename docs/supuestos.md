@@ -24,7 +24,7 @@ número de contactos.
 
 | Parámetro | Valor | Tipo | Justificación |
 |---|---|---|---|
-| Personas simuladas | 5.000 | Supuesto | Manta tiene **271.145 habitantes** según el Censo 2022 [1]. Se simula a escala 1:54 (el reto pide de 2.000 a 5.000 nodos) y los resultados se leen como proporciones. Con 5.000 personas, 1.000 brotes caben en el límite de 60 s de la Lambda (ver `docs/api.md`). Ajustable de 1.000 a 20.000. |
+| Personas simuladas | 10.000 | Supuesto | Manta tiene **271.145 habitantes** según el Censo 2022 [1]. Se simula a escala 1:27 y los resultados se leen como proporciones. |
 | Zona rural | 4,6 % | Fuente | 12.448 personas viven en el área rural (parroquias San Lorenzo y Santa Marianita) y 258.697 en el área urbana [1]. |
 | Parroquias urbanas | Tarqui 30,1 %, Manta 25,1 %, Los Esteros 18,1 %, Eloy Alfaro 15,1 %, San Mateo 7,0 % | Supuesto | El INEC publica la ciudad como un solo bloque urbano; no encontramos datos públicos del Censo 2022 por parroquia urbana. El reparto refleja que Tarqui es la parroquia más poblada [4] y se puede reemplazar con los tabulados por parroquia del INEC. |
 | Edades | 0-4: 8,1 %, 5-17: 20,4 %, 18-64: 63,5 %, 65+: 8,0 % | Fuente | Manta, Censo 2022: 0-14 años = 66.266 (24,4 %), 15-64 = 183.270 (67,6 %), 65+ = 21.609 (8,0 %) [1]. Para pasar a nuestros grupos se supone un reparto uniforme dentro de cada grupo del censo: 0-4 = 5/15 de 0-14; 5-17 = 10/15 de 0-14 más 3/50 de 15-64; 18-64 = 47/50 de 15-64. |
@@ -87,19 +87,9 @@ y por eso la vacunación en anillo es mucho más eficaz con las mismas dosis.
 
 5. Munz, P., Hudea, I., Imad, J. y Smith?, R. J. (2009). "When zombies attack!: Mathematical modelling of an outbreak of zombie infection". En *Infectious Disease Modelling Research Progress*, Nova Science, pp. 133-150.
 
-## Monte Carlo
-
-| Parámetro | Valor | Tipo | Justificación |
-|---|---|---|---|
-| Repeticiones por plan (CLI) | 1.000 | Reto | Lo pide el reglamento. `--n-sims` lo cambia. |
-| Repeticiones por plan (API e interfaz) | 100 (máximo 200) | Medido | 100 × 10 planes = 1.000 brotes en ~20 s en la Lambda de 2 GB; 300 ya no caben en 60 s (ver `docs/api.md`). |
-| Estadísticos | Media, mediana y rango p5–p95 | Reto | De infectados totales, pico de zombies y personas salvadas frente a cada línea base. |
-| Contagio en la simulación | Umbral exponencial por persona (Sellke) | Supuesto | Cada persona sortea una vez un umbral ~ Exponencial(1) y es mordida cuando la presión acumulada de sus contactos zombies lo supera. Es equivalente a sortear cada día con probabilidad 1 − exp(−β · presión), pero permite simular muchos brotes a la vez. Latencia e infeccioso son geométricas con media 3 y 5 días, como el sorteo diario. |
-
 ## Reproducibilidad
 
 La semilla fija la red de Manta y cada repetición `r` usa
-`SeedSequence([semilla, r]).spawn(3)` (inicio, brote y estrategia). El resultado de
-la repetición `r` no depende de con qué otras repeticiones se simule en el lote. Todas las estrategias comparten los mismos números
+`SeedSequence([semilla, r])`. Todas las estrategias comparten los mismos números
 aleatorios del brote, así que con la misma configuración y la misma semilla el
 resultado es idéntico (lo prueba `backend/tests/test_simulador.py`).
