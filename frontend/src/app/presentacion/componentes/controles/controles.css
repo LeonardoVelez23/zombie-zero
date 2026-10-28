@@ -170,3 +170,65 @@ input.ng-invalid {
 .button-hint.invalido {
   color: #ff9cad;
 }
+
+/* Identidad Zombie Zero: botón principal naranja como el de la bienvenida. */
+input:focus,
+select:focus {
+  border-color: var(--orange);
+  box-shadow: 0 0 0 3px rgba(255, 153, 0, .16), 0 0 14px rgba(255, 153, 0, .18);
+}
+
+input,
+select {
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+
+.sorpresa {
+  transition: border-color .15s ease, background-color .15s ease, color .15s ease;
+}
+
+.sorpresa:hover:not(:disabled) {
+  border-color: rgba(255, 153, 0, .6);
+  color: #fff;
+}
+
+.sorpresa.activa {
+  box-shadow: 0 0 12px rgba(255, 153, 0, .25);
+}
+
+legend {
+  font-family: var(--font-mono);
+}
+
+.run-button {
+  border: 1px solid #ffb84d;
+  border-radius: 6px;
+  background: linear-gradient(180deg, #ffb02e, #ff9900);
+  color: #1a0b00;
+  font-family: var(--font-mono);
+  letter-spacing: .5px;
+  box-shadow: 0 0 18px rgba(255, 153, 0, .3), 0 4px 0 #7c2d12, 0 8px 18px rgba(0, 0, 0, .45);
+  transition: transform .15s ease, box-shadow .2s ease, filter .2s ease;
+}
+
+.run-button:hover:not(:disabled) {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+  box-shadow: 0 0 28px rgba(255, 153, 0, .5), 0 5px 0 #7c2d12, 0 10px 22px rgba(0, 0, 0, .5);
+}
+
+.run-button:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 0 14px rgba(255, 153, 0, .35), 0 2px 0 #7c2d12, 0 4px 10px rgba(0, 0, 0, .45);
+}
+
+.run-button:disabled {
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .run-button:hover:not(:disabled),
+  .run-button:active:not(:disabled) {
+    transform: none;
+  }
+}

@@ -86,3 +86,49 @@ describe('Panel: simulaciones que se cruzan', () => {
     expect(p.resultado()?.repeticiones).toBe(22);
   });
 });
+
+describe('Panel: menú lateral', () => {
+  async function renderizar() {
+    const simulador: SimuladorRepositorio = {
+      parametros: () => Promise.resolve(parametrosDePrueba),
+      simular: () => Promise.reject(new Error('no se usa')),
+      difusion: () => Promise.reject(new Error('no se usa')),
+    };
+    TestBed.configureTestingModule({
+      providers: [{ provide: SimuladorRepositorio, useValue: simulador }, ...casosDeUso],
+    });
+    const fixture = TestBed.createComponent(Panel);
+    await fixture.whenStable();
+    return { fixture, raiz: fixture.nativeElement as HTMLElement };
+  }
+
+  const activos = (raiz: HTMLElement) =>
+    [...raiz.querySelectorAll('.nav-item.active')].map((a) => a.getAttribute('href'));
+
+  it('resalta el enlace elegido en lugar de dejar siempre «Dashboard»', async () => {
+    const { fixture, raiz } = await renderizar();
+    expect(activos(raiz)).toEqual(['#dashboard']);
+    expect(raiz.querySelector('.nav-item[href="#dashboard"]')!.getAttribute('aria-current')).toBe('location');
+
+    raiz.querySelector<HTMLAnchorElement>('.nav-item[href="#estrategias"]')!.click();
+    await fixture.whenStable();
+    expect(activos(raiz)).toEqual(['#estrategias']);
+    expect(raiz.querySelector('.nav-item[href="#estrategias"]')!.getAttribute('aria-current')).toBe('location');
+    expect(raiz.querySelector('.nav-item[href="#dashboard"]')!.hasAttribute('aria-current')).toBe(false);
+
+    raiz.querySelector<HTMLAnchorElement>('.brand')!.click();
+    await fixture.whenStable();
+    expect(activos(raiz)).toEqual(['#dashboard']);
+  });
+
+  it('al plegar la barra conserva el punto y el estado real de la API', async () => {
+    const { fixture, raiz } = await renderizar();
+    raiz.querySelector<HTMLButtonElement>('.sidebar-toggle')!.click();
+    await fixture.whenStable();
+    expect(raiz.querySelector('.app-shell')!.classList).toContain('sidebar-plegada');
+    const punto = raiz.querySelector('.status-card .status-dot')!;
+    expect(punto.classList).not.toContain('apagado');
+    expect(raiz.querySelector('.status-card')!.getAttribute('title')).toBe('API conectada');
+    expect(raiz.querySelector('.status-texto strong')!.textContent).toBe('API conectada');
+  });
+});
