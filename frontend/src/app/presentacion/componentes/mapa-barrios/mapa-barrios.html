@@ -1,0 +1,105 @@
+<div class="panel-heading">
+  <div>
+    <span class="section-index">02A / MAPA DEL BROTE</span>
+    <h2>Manta, barrio por barrio</h2>
+  </div>
+  <span class="chart-tag">MODELO DE RED</span>
+</div>
+<p class="panel-description">
+  Porcentaje de cada barrio que ya fue mordido, día a día (promedio de los brotes simulados). Cambia
+  de plan para ver qué zonas protege.
+</p>
+
+@if (resultado()) {
+  <div class="controles-mapa">
+    <div class="planes" role="radiogroup" aria-label="Plan que se muestra en el mapa">
+      @for (p of planes; track p.id) {
+        <button
+          type="button"
+          role="radio"
+          class="plan"
+          [class.activo]="planElegido() === p.id"
+          [attr.aria-checked]="planElegido() === p.id"
+          (click)="planElegido.set(p.id)"
+        >
+          {{ p.nombre }}
+        </button>
+      }
+    </div>
+    <div class="reproduccion">
+      <button
+        type="button"
+        class="boton"
+        [attr.aria-pressed]="reproduciendo()"
+        [disabled]="totalDias() < 1"
+        (click)="alternarReproduccion()"
+      >
+        {{ reproduciendo() ? '❚❚ Pausa' : '▶ Reproducir' }}
+      </button>
+      <select
+        aria-label="Velocidad de la animación"
+        [value]="velocidad()"
+        (change)="cambiarVelocidad(+$any($event.target).value)"
+      >
+        @for (v of velocidades; track v.ms) {
+          <option [value]="v.ms">{{ v.nombre }}</option>
+        }
+      </select>
+    </div>
+  </div>
+  <label class="deslizador">
+    <span>Día {{ dia() }} de {{ totalDias() }}</span>
+    <input
+      type="range"
+      min="0"
+      [max]="totalDias()"
+      [value]="dia()"
+      (input)="elegirDia(+$any($event.target).value)"
+    />
+  </label>
+}
+
+<div class="mapa-contenedor">
+  <div #contenedor class="mapa" role="region" aria-label="Mapa de Manta por barrio"></div>
+  @if (errorMapa(); as mensaje) {
+    <div class="mapa-aviso" role="alert">{{ mensaje }}</div>
+  } @else if (!resultado()) {
+    <div class="mapa-aviso">
+      Ejecuta una simulación para ver cómo avanza la plaga por los barrios.
+    </div>
+  }
+  @if (resultado()) {
+    <ul class="leyenda" aria-label="Leyenda">
+      @for (n of niveles; track n.nombre) {
+        <li>
+          <span class="punto" [style.background]="n.color"></span>{{ n.nombre }}
+          <small>{{ n.rango }}</small>
+        </li>
+      }
+    </ul>
+  }
+</div>
+
+@if (resumen(); as s) {
+  <p class="resumen">
+    Día {{ dia() }}: con <strong>{{ etiquetaPlan() }}</strong> está mordido el
+    <strong>{{ porcentaje(s.conPlan) }}</strong> de la ciudad
+    @if (planElegido() !== 'ninguna') {
+      frente al <strong>{{ porcentaje(s.sinPlan) }}</strong> sin intervenir
+    }
+  </p>
+  <ul class="barrios">
+    @for (b of barrios(); track b.nombre) {
+      <li>
+        <span class="nombre">{{ b.nombre }}</span>
+        <span class="barra" aria-hidden="true">
+          <span
+            [style.width.%]="b.fraccion * 100"
+            [style.background]="nivelDe(b.fraccion).color"
+          ></span>
+        </span>
+        <span class="valor">{{ porcentaje(b.fraccion) }}</span>
+      </li>
+    }
+  </ul>
+}

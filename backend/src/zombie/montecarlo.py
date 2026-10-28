@@ -135,6 +135,7 @@ def _simular_plan(red, esc: Escenario, beta: float, plan: Plan, repeticiones: in
     curvas = np.zeros((repeticiones, esc.dias + 1))
     series = np.zeros((repeticiones, esc.dias + 1, 4))   # personas en S, E, I, R cada día
     mapa = np.zeros((esc.dias + 1, len(BARRIOS)))
+    afectados = np.zeros((esc.dias + 1, len(BARRIOS)))
     perdidas = np.zeros(repeticiones)
     for desde in range(0, repeticiones, TAM_LOTE):
         hasta = min(desde + TAM_LOTE, repeticiones)
@@ -143,6 +144,7 @@ def _simular_plan(red, esc: Escenario, beta: float, plan: Plan, repeticiones: in
         curvas[desde:hasta] = lote.serie[:, :, I]
         series[desde:hasta] = lote.serie
         mapa += lote.serie_barrio.sum(axis=0)
+        afectados += lote.afectados_barrio.sum(axis=0)
         perdidas[desde:hasta] = lote.vacunas_perdidas
     return tot, {
         "id": plan.id,
@@ -160,6 +162,8 @@ def _simular_plan(red, esc: Escenario, beta: float, plan: Plan, repeticiones: in
         "dia_pico": float(curvas.argmax(axis=1).mean().round(1)),
         "vacunas_perdidas": float(perdidas.mean().round(1)),
         "mapa": (mapa / repeticiones).round(2).tolist(),
+        # Mordidos acumulados por barrio y día (promedio): lo que pinta el mapa por barrio.
+        "mapa_afectados": (afectados / repeticiones).round(2).tolist(),
     }
 
 

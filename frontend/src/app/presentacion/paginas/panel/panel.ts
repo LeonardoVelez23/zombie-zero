@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
 
 import { ModelarDifusion } from '../../../aplicacion/casos-uso/modelar-difusion';
 import { ObtenerParametros } from '../../../aplicacion/casos-uso/obtener-parametros';
@@ -8,6 +8,7 @@ import { ResultadoDifusion, ResultadoSimulacion } from '../../../dominio/modelos
 import { comparacion } from '../../../dominio/reglas/planes';
 import { Controles } from '../../componentes/controles/controles';
 import { Grafica } from '../../componentes/grafica/grafica';
+import { MapaBarrios } from '../../componentes/mapa-barrios/mapa-barrios';
 import { Informe } from '../../componentes/informe/informe';
 import { Estados } from '../../componentes/estados/estados';
 import { Mapa } from '../../componentes/mapa/mapa';
@@ -25,11 +26,28 @@ interface Indicador {
 
 @Component({
   selector: 'app-panel',
-  imports: [Controles, Grafica, Estados, Informe, Mapa, Tabla],
+  imports: [Controles, Grafica, Estados, Informe, Mapa, MapaBarrios, Tabla],
   templateUrl: './panel.html',
   styleUrl: './panel.css',
 })
 export class Panel implements OnInit {
+  // Nombre que el operador o jurado escribió en la bienvenida (solo se muestra).
+  readonly operador = input('');
+
+  protected readonly iniciales = computed(() => {
+    // Ignora palabras cortas como "de" o "la" cuando hay otras palabras relevantes.
+    const nombre = this.operador().trim();
+    const palabras = nombre.split(/\s+/).filter((p) => p.length > 2);
+    const relevantes = palabras.length ? palabras : nombre.split(/\s+/).filter(Boolean);
+
+    return (
+      relevantes
+        .slice(0, 2)
+        .map((p) => p[0].toUpperCase())
+        .join('') || 'ZZ'
+    );
+  });
+
   protected readonly sidebarPlegada = signal(false);
 
   protected alternarSidebar(): void {

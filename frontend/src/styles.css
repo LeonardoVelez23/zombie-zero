@@ -1,5 +1,5 @@
 @import "maplibre-gl/dist/maplibre-gl.css";
-@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&family=Geist:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&family=Geist:wght@400;500;600;700;800&family=Press+Start+2P&display=swap');
 
 :root {
   color-scheme: dark;
@@ -67,6 +67,7 @@ select {
 
 .panel-heading {
   display: flex;
+  flex-wrap: wrap;   /* en pantallas angostas la etiqueta baja de línea */
   justify-content: space-between;
   align-items: flex-start;
   gap: 12px;

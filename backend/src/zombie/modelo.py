@@ -48,6 +48,8 @@ class Resultado:
     infectados_total: int
     vacunas_usadas: int
     vacunas_perdidas: int    # aplicadas a quien ya no estaba sano
+    # Al final y opcional: así la firma anterior del constructor sigue sirviendo.
+    afectados_barrio: np.ndarray | None = None  # (dias + 1, len(BARRIOS)): mordidos acumulados por barrio
 
     @property
     def pico(self) -> int:
@@ -138,6 +140,7 @@ class Lote:
     nuevos: np.ndarray         # (R, dias + 1)
     vacunas_usadas: np.ndarray  # (R,)
     vacunas_perdidas: np.ndarray  # (R,)
+    afectados_barrio: np.ndarray | None = None  # (R, dias + 1, len(BARRIOS)); opcional como en Resultado
 
     @property
     def infectados_total(self) -> np.ndarray:
@@ -145,6 +148,7 @@ class Lote:
 
     def resultado(self, k: int) -> Resultado:
         return Resultado(serie=self.serie[k], serie_barrio=self.serie_barrio[k],
+                         afectados_barrio=None if self.afectados_barrio is None else self.afectados_barrio[k],
                          nuevos=self.nuevos[k], infectados_total=int(self.infectados_total[k]),
                          vacunas_usadas=int(self.vacunas_usadas[k]),
                          vacunas_perdidas=int(self.vacunas_perdidas[k]))
@@ -233,6 +237,8 @@ def simular_lote(red: Red, esc: Escenario, estrategia, beta: float, repeticiones
 
     serie[:, 0] = conteo
     serie_barrio[:, 0] = por_barrio(zombies)
+    afectados_barrio = np.zeros_like(serie_barrio)   # quienes ya no están sanos (E, I o R)
+    afectados_barrio[:, 0] = por_barrio(np.flatnonzero(est != S))
     vivas = conteo[:, E] + conteo[:, I] > 0
 
     for dia in range(1, dias + 1):
@@ -291,6 +297,7 @@ def simular_lote(red: Red, esc: Escenario, estrategia, beta: float, repeticiones
         zombies = np.concatenate([zombies[est[zombies] == I], nuevos_zombies])
         serie[:, dia] = conteo
         serie_barrio[:, dia] = por_barrio(zombies)
+        afectados_barrio[:, dia] = afectados_barrio[:, dia - 1] + por_barrio(mordidos)
         nuevos[:, dia] = m
         vivas = conteo[:, E] + conteo[:, I] > 0
 
@@ -298,9 +305,10 @@ def simular_lote(red: Red, esc: Escenario, estrategia, beta: float, repeticiones
         if not vivas.any():
             serie[:, dia + 1:] = serie[:, dia:dia + 1]
             serie_barrio[:, dia + 1:] = serie_barrio[:, dia:dia + 1]
+            afectados_barrio[:, dia + 1:] = afectados_barrio[:, dia:dia + 1]
             break
 
-    return Lote(serie=serie, serie_barrio=serie_barrio, nuevos=nuevos,
+    return Lote(serie=serie, serie_barrio=serie_barrio, afectados_barrio=afectados_barrio, nuevos=nuevos,
                 vacunas_usadas=usadas, vacunas_perdidas=perdidas)
 
 
