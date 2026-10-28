@@ -30,7 +30,7 @@ class Recursos:
 
 @dataclass(frozen=True)
 class Escenario:
-    n_personas: int = 5_000      # ~1:54 de Manta; el reto pide 2.000-5.000 nodos (docs/supuestos.md)
+    n_personas: int = 10_000
     dias: int = 180
     semilla: int = 42
     inicio: str = "aleatorio"     # "aleatorio", "mercado", "colegio" o un barrio de poblacion.BARRIOS

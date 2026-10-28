@@ -3,13 +3,10 @@
 Estados: 🟢 S sano · 🟡 E mordido · 🔴 I zombie · 🔵 R exorcizado.
 
 Reproducibilidad: cada repetición usa SeedSequence([semilla, repetición]) y la
-divide en flujos independientes (inicio, brote, estrategia). Los números del brote
-de cada persona se sacan al empezar y no dependen de la estrategia, así que todas
-las estrategias enfrentan exactamente la misma "suerte" (números aleatorios
+divide en flujos independientes (inicio, brote, estrategia). El flujo del brote
+consume siempre los mismos números cada día, sin importar la estrategia, así que
+todas las estrategias enfrentan exactamente la misma "suerte" (números aleatorios
 comunes) y la comparación entre ellas es justa.
-
-Rendimiento: `simular_lote` avanza muchas repeticiones a la vez con operaciones
-de numpy sobre arreglos (repetición, persona), en vez de un bucle por repetición.
 """
 from dataclasses import dataclass
 
@@ -126,181 +123,97 @@ def casos_iniciales(red: Red, esc: Escenario, rng: np.random.Generator) -> np.nd
 
 def simular(red: Red, esc: Escenario, estrategia, beta: float, repeticion: int = 0,
             cierres: tuple[str, ...] = (), vacunas: int | None = None) -> Resultado:
-    """Simula un brote completo (una sola repetición). Ver `simular_lote`."""
-    return simular_lote(red, esc, estrategia, beta, [repeticion], cierres, vacunas).resultado(0)
-
-
-@dataclass
-class Lote:
-    """Resultados de varias repeticiones del mismo plan, apiladas en el primer eje."""
-    serie: np.ndarray          # (R, dias + 1, 4)
-    serie_barrio: np.ndarray   # (R, dias + 1, len(BARRIOS))
-    nuevos: np.ndarray         # (R, dias + 1)
-    vacunas_usadas: np.ndarray  # (R,)
-    vacunas_perdidas: np.ndarray  # (R,)
-
-    @property
-    def infectados_total(self) -> np.ndarray:
-        return self.serie[:, -1, :].sum(axis=1) - self.serie[:, -1, S]
-
-    def resultado(self, k: int) -> Resultado:
-        return Resultado(serie=self.serie[k], serie_barrio=self.serie_barrio[k],
-                         nuevos=self.nuevos[k], infectados_total=int(self.infectados_total[k]),
-                         vacunas_usadas=int(self.vacunas_usadas[k]),
-                         vacunas_perdidas=int(self.vacunas_perdidas[k]))
-
-
-def simular_lote(red: Red, esc: Escenario, estrategia, beta: float, repeticiones,
-                 cierres: tuple[str, ...] = (), vacunas: int | None = None) -> Lote:
-    """Simula varias repeticiones a la vez, vectorizado con numpy.
+    """Simula un brote completo.
 
     `estrategia` decide a quién vacunar cada día, con como máximo `vacunas` dosis
     en total (por defecto, todo el stock). `cierres` son los lugares que se cierran
     desde el día en que se detecta el brote durante `dias_cierre` días.
-
-    Azar de cada repetición r (independiente de qué otras repeticiones vayan en el lote):
-    SeedSequence([semilla, r]).spawn(3) da tres flujos (inicio, brote, estrategia).
-    Del flujo del brote se sacan, una sola vez y al empezar, los números de cada persona:
-      - umbral ~ Exponencial(1): la persona es mordida el día en que la presión de
-        contagio acumulada (suma de beta * peso de contacto con zombies) lo supera.
-        Equivale a contagiarse cada día con probabilidad 1 - exp(-beta * presión)
-        (construcción de Sellke), pero sin sortear de nuevo cada día;
-      - días de latencia ~ Geométrica(1/dias_latencia) y días infeccioso ~
-        Geométrica(1/dias_infeccioso), las mismas distribuciones que el sorteo diario;
-      - si será detectada cuando se vuelva zombie (probabilidad `deteccion`).
-    Como esos números no dependen de la estrategia, todas las estrategias enfrentan
-    la misma "suerte" en la repetición r (números aleatorios comunes).
     """
-    repeticiones = list(repeticiones)
-    nr, n, dias = len(repeticiones), red.n, esc.dias
+    rng_inicio, rng_brote, rng_estrategia = (
+        np.random.default_rng(s)
+        for s in np.random.SeedSequence([esc.semilla, repeticion]).spawn(3)
+    )
     plaga, recursos = esc.plaga, esc.recursos
+    p_ei = 1.0 / plaga.dias_latencia
+    p_ir = 1.0 / plaga.dias_infeccioso
     vacunas = recursos.vacunas_disponibles if vacunas is None else vacunas
-    nb = len(BARRIOS)
-
-    estado = np.full((nr, n), S, dtype=np.int8)
-    umbral = np.empty((nr, n))
-    latencia = np.empty((nr, n), dtype=np.int32)
-    infeccioso = np.empty((nr, n), dtype=np.int32)
-    detectable = np.empty((nr, n), dtype=bool)
-    detectado = np.zeros((nr, n), dtype=bool)
-    vacunado = np.zeros((nr, n), dtype=bool)
-    agenda: dict[int, list[np.ndarray]] = {}   # día -> personas (índice plano) que cambian de estado ese día
-
-    def agendar(dia_cambio: np.ndarray, personas: np.ndarray) -> None:
-        for d in np.unique(dia_cambio):
-            agenda.setdefault(int(d), []).append(personas[dia_cambio == d])
-    rng_estrategia = []
-    for k, r in enumerate(repeticiones):
-        rng_inicio, rng_brote, rng_est = (
-            np.random.default_rng(s) for s in np.random.SeedSequence([esc.semilla, r]).spawn(3))
-        iniciales = casos_iniciales(red, esc, rng_inicio)
-        umbral[k] = rng_brote.standard_exponential(n)
-        latencia[k] = rng_brote.geometric(1.0 / plaga.dias_latencia, n)
-        infeccioso[k] = rng_brote.geometric(1.0 / plaga.dias_infeccioso, n)
-        detectable[k] = rng_brote.random(n) < plaga.deteccion
-        if esc.inicio == "aeropuerto":
-            # Recién mordidos: nadie sabe que lo están hasta que se vuelven zombies.
-            estado[k, iniciales] = E
-            agendar(latencia[k, iniciales], k * n + iniciales)
-        else:
-            estado[k, iniciales] = I
-            agendar(infeccioso[k, iniciales], k * n + iniciales)
-            detectado[k, iniciales] = rng_inicio.random(len(iniciales)) < plaga.deteccion
-        rng_estrategia.append(rng_est)
-
-    # Vistas planas (repetición k, persona i) -> k * n + i.
-    est, det = estado.ravel(), detectado.ravel()
-    umb, lat, inf, detec, vac = (umbral.ravel(), latencia.ravel(), infeccioso.ravel(),
-                                 detectable.ravel(), vacunado.ravel())
-    presion_acumulada = np.zeros(nr * n)
 
     factor_cerrado = np.ones(len(CAPAS))
     for lugar in cierres:
         factor_cerrado[CERRABLES[lugar]] = 1.0 - recursos.cumplimiento_cierre
     fin_cierre = recursos.dia_inicio + recursos.dias_cierre
 
-    usadas = np.zeros(nr, dtype=np.int64)
-    perdidas = np.zeros(nr, dtype=np.int64)
-    serie = np.zeros((nr, dias + 1, 4), dtype=np.int64)
-    serie_barrio = np.zeros((nr, dias + 1, nb), dtype=np.int64)
-    nuevos = np.zeros((nr, dias + 1), dtype=np.int64)
+    estado = np.full(red.n, S, dtype=np.int8)
+    iniciales = casos_iniciales(red, esc, rng_inicio)
+    detectado = np.zeros(red.n, dtype=bool)
+    if esc.inicio == "aeropuerto":
+        # Recién mordidos: nadie sabe que lo están hasta que se vuelven zombies.
+        estado[iniciales] = E
+    else:
+        estado[iniciales] = I
+        detectado[iniciales] = rng_inicio.random(len(iniciales)) < plaga.deteccion
+    vacunado = np.zeros(red.n, dtype=bool)
+    usadas = perdidas = 0
 
-    conteo = np.stack([(estado == s).sum(axis=1) for s in (S, E, I, R)], axis=1)
-    zombies = np.flatnonzero(est == I)
+    serie = np.zeros((esc.dias + 1, 4), dtype=np.int64)
+    serie_barrio = np.zeros((esc.dias + 1, len(BARRIOS)), dtype=np.int64)
+    nuevos = np.zeros(esc.dias + 1, dtype=np.int64)
 
-    def por_barrio(flat):
-        return np.bincount((flat // n) * nb + red.barrio[flat % n], minlength=nr * nb).reshape(nr, nb)
+    def registrar(dia):
+        serie[dia] = np.bincount(estado, minlength=4)
+        serie_barrio[dia] = np.bincount(red.barrio[estado == I], minlength=len(BARRIOS))
 
-    serie[:, 0] = conteo
-    serie_barrio[:, 0] = por_barrio(zombies)
-    vivas = conteo[:, E] + conteo[:, I] > 0
+    registrar(0)
+    for dia in range(1, esc.dias + 1):
+        # Números del brote: siempre se sacan los mismos, haya o no estrategia.
+        u_contagio = rng_brote.random(red.n)
+        u_ei = rng_brote.random(red.n)
+        u_ir = rng_brote.random(red.n)
+        u_deteccion = rng_brote.random(red.n)
 
-    for dia in range(1, dias + 1):
-        # 1. Vacunación del día con las dosis disponibles (cada repetición decide por su cuenta).
-        if vacunas > 0 and dia >= recursos.dia_inicio:
-            for k in np.flatnonzero(vivas & (usadas < vacunas)):
-                dosis = int(min(recursos.vacunas_por_dia, vacunas - usadas[k]))
-                obs = Observacion(dia, red, detectado[k], vacunado[k],
-                                  np.flatnonzero(detectado[k] & (estado[k] == I)))
-                elegidos = np.asarray(estrategia.elegir(obs, dosis, rng_estrategia[k]), dtype=np.int64)
+        # 1. Vacunación del día con las dosis disponibles.
+        if dia >= recursos.dia_inicio:
+            dosis = min(recursos.vacunas_por_dia, vacunas - usadas)
+            if dosis > 0:
+                obs = Observacion(dia, red, detectado, vacunado,
+                                  np.flatnonzero(detectado & (estado == I)))
+                elegidos = np.asarray(estrategia.elegir(obs, dosis, rng_estrategia), dtype=np.int64)
                 _validar(elegidos, obs, dosis, estrategia)
-                vacunado[k, elegidos] = True
-                usadas[k] += len(elegidos)
-                perdidas[k] += int((estado[k, elegidos] != S).sum())
+                vacunado[elegidos] = True
+                usadas += len(elegidos)
+                perdidas += int((estado[elegidos] != S).sum())
 
         # 2. Contagio: presión de los zombies sobre sus contactos (menor en lugares cerrados).
-        mordidos = np.empty(0, dtype=np.int64)
-        if zombies.size:
-            persona = zombies % n
-            aristas = red.aristas_de(persona)
-            grado = red.indptr[persona + 1] - red.indptr[persona]
-            destino = np.repeat(zombies - persona, grado) + red.destino[aristas]
-            peso = red.peso[aristas]
-            if cierres and recursos.dia_inicio <= dia < fin_cierre:
-                peso = peso * factor_cerrado[red.capa[aristas]]
-            presion = np.bincount(destino, weights=peso, minlength=nr * n)
-            # `expuestos` puede repetir personas: la suma con índices repetidos escribe el
-            # mismo valor varias veces, así que cada persona suma su presión una sola vez.
-            expuestos = destino[est[destino] == S]
-            tasa = beta * presion[expuestos]
-            tasa[vac[expuestos]] *= 1.0 - recursos.eficacia
-            presion_acumulada[expuestos] = presion_acumulada[expuestos] + tasa
-            mordidos = np.unique(expuestos[presion_acumulada[expuestos] >= umb[expuestos]])
+        zombies = np.flatnonzero(estado == I)
+        aristas = red.aristas_de(zombies)
+        peso = red.peso[aristas]
+        if cierres and recursos.dia_inicio <= dia < fin_cierre:
+            peso = peso * factor_cerrado[red.capa[aristas]]
+        presion = np.bincount(red.destino[aristas], weights=peso, minlength=red.n)
+        susceptibilidad = np.where(vacunado, 1.0 - recursos.eficacia, 1.0)
+        p_contagio = 1.0 - np.exp(-beta * presion * susceptibilidad)
+        mordidos = (estado == S) & (u_contagio < p_contagio)
 
         # 3. Progresión con el estado del inicio del día.
-        pendientes = agenda.pop(dia, [])
-        transicion = np.concatenate(pendientes) if pendientes else np.empty(0, dtype=np.int64)
-        previo = est[transicion]
-        nuevos_zombies = transicion[previo == E]
-        exorcizados = transicion[previo == I]
-        est[mordidos] = E
-        agendar(dia + lat[mordidos], mordidos)
-        est[nuevos_zombies] = I
-        agendar(dia + inf[nuevos_zombies], nuevos_zombies)
-        det[nuevos_zombies] |= detec[nuevos_zombies]
-        est[exorcizados] = R
+        nuevos_zombies = (estado == E) & (u_ei < p_ei)
+        exorcizados = (estado == I) & (u_ir < p_ir)
+        estado[mordidos] = E
+        estado[nuevos_zombies] = I
+        estado[exorcizados] = R
+        detectado |= nuevos_zombies & (u_deteccion < plaga.deteccion)
 
-        m = np.bincount(mordidos // n, minlength=nr)
-        z = np.bincount(nuevos_zombies // n, minlength=nr)
-        x = np.bincount(exorcizados // n, minlength=nr)
-        conteo[:, S] -= m
-        conteo[:, E] += m - z
-        conteo[:, I] += z - x
-        conteo[:, R] += x
-        zombies = np.concatenate([zombies[est[zombies] == I], nuevos_zombies])
-        serie[:, dia] = conteo
-        serie_barrio[:, dia] = por_barrio(zombies)
-        nuevos[:, dia] = m
-        vivas = conteo[:, E] + conteo[:, I] > 0
+        registrar(dia)
+        nuevos[dia] = int(mordidos.sum())
 
-        # Todos los brotes extinguidos: ya nada puede cambiar, se repite el último día.
-        if not vivas.any():
-            serie[:, dia + 1:] = serie[:, dia:dia + 1]
-            serie_barrio[:, dia + 1:] = serie_barrio[:, dia:dia + 1]
+        # Brote extinguido: ya nada puede cambiar, se repite el último día.
+        if serie[dia, E] == 0 and serie[dia, I] == 0:
+            serie[dia + 1:] = serie[dia]
+            serie_barrio[dia + 1:] = serie_barrio[dia]
             break
 
-    return Lote(serie=serie, serie_barrio=serie_barrio, nuevos=nuevos,
-                vacunas_usadas=usadas, vacunas_perdidas=perdidas)
+    return Resultado(serie=serie, serie_barrio=serie_barrio, nuevos=nuevos,
+                     infectados_total=int((estado != S).sum()),
+                     vacunas_usadas=usadas, vacunas_perdidas=perdidas)
 
 
 def _validar(elegidos: np.ndarray, obs: Observacion, dosis: int, estrategia) -> None:

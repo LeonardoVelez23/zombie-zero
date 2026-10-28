@@ -4,7 +4,7 @@ La misma API corre en local (`python -m zombie.servidor`, puerto 8000) y en AWS
 Lambda (`zombie.api.lambda_handler`). Todo es JSON en UTF-8.
 
 Respuesta de ejemplo completa y real: [`docs/ejemplos/respuesta-simular.json`](ejemplos/respuesta-simular.json)
-(escenario por defecto, 100 repeticiones, semilla 42).
+(escenario por defecto, 50 repeticiones, semilla 42).
 
 ## `GET /api/salud`
 
@@ -18,13 +18,13 @@ Valores por defecto y límites de cada parámetro, para armar los controles de l
 
 ```json
 {
-  "por_defecto": { "n_personas": 5000, "dias": 180, "semilla": 42, "inicio": "aleatorio", "casos_iniciales": 5,
+  "por_defecto": { "n_personas": 10000, "dias": 180, "semilla": 42, "inicio": "aleatorio", "casos_iniciales": 5,
                    "plaga": {...}, "recursos": {...} },
   "limites": { "escenario": {"n_personas": [1000, 20000], ...},
                "plaga": {"r0": [0.5, 10.0], ...},
                "recursos": {...} },
   "inicios": ["aleatorio", "aeropuerto", "mercado", "colegio", "Tarqui", "Manta", "Los Esteros", "Eloy Alfaro", "San Mateo", "Rural"],
-  "repeticiones": {"por_defecto": 100, "limites": [5, 200]}
+  "repeticiones": {"por_defecto": 50, "limites": [5, 200]}
 }
 ```
 
@@ -36,10 +36,10 @@ Todo es opcional: lo que no se envía toma el valor por defecto.
 
 ```json
 {
-  "repeticiones": 100,
+  "repeticiones": 50,
   "escenario": {
     "semilla": 42,
-    "n_personas": 5000,
+    "n_personas": 10000,
     "dias": 180,
     "inicio": "mercado",
     "casos_iniciales": 5,
@@ -59,7 +59,7 @@ Todo es opcional: lo que no se envía toma el valor por defecto.
 ```json
 {
   "escenario": { ... lo que se simuló, con todos los valores ... },
-  "repeticiones": 100,
+  "repeticiones": 50,
   "r0": 2.5,
   "beta": 0.04626,
   "barrios": ["Tarqui", "Manta", "Los Esteros", "Eloy Alfaro", "San Mateo", "Rural"],
@@ -81,14 +81,14 @@ Todo es opcional: lo que no se envía toma el valor por defecto.
       "cierres": ["mercado"],
       "vacunas": 1000,
       "costo": 18400.0,
-      "infectados":      { "media": 320.0, "mediana": 151.0, "p5": 6.0, "p95": 1882.0 },
-      "pico":            { "media": ..., "mediana": ..., "p5": ..., "p95": ... },
+      "infectados":      { "media": 320.0, "p5": 6.0, "p95": 1882.0 },
+      "pico":            { "media": ..., "p5": ..., "p95": ... },
       "dia_pico": 21.4,
-      "curva_zombies":   { "media": [dias+1 números], "mediana": [...], "p5": [...], "p95": [...] },
+      "curva_zombies":   { "media": [dias+1 números], "p5": [...], "p95": [...] },
       "mapa": [[zombies promedio por barrio el día 0], [día 1], ...],   // (dias+1) × 6
       "vacunas_perdidas": 12.3,
-      "salvados_vs_ninguna": { "media": ..., "mediana": ..., "p5": ..., "p95": ... },
-      "salvados_vs_azar":    { "media": ..., "mediana": ..., "p5": ..., "p95": ... },
+      "salvados_vs_ninguna": { "media": ..., "p5": ..., "p95": ... },
+      "salvados_vs_azar":    { "media": ..., "p5": ..., "p95": ... },
       "gana_a_ninguna": 0.98,
       "gana_a_azar": 0.98
     }
@@ -96,7 +96,7 @@ Todo es opcional: lo que no se envía toma el valor por defecto.
 }
 ```
 
-- `infectados`: personas que llegaron a ser mordidas en todo el brote (media, mediana y rango p5–p95 entre repeticiones).
+- `infectados`: personas que llegaron a ser mordidas en todo el brote (media y rango p5–p95 entre repeticiones).
 - `curva_zombies`: zombies activos por día; sirve para la gráfica con banda de rango.
 - `mapa[d][b] / poblacion_barrio[b]`: fracción de zombies en el barrio `b` el día `d`, para colorear el mapa.
 - `salvados_vs_*`: diferencia pareada (misma semilla) de infectados frente a la línea base.
@@ -110,23 +110,9 @@ Todo es opcional: lo que no se envía toma el valor por defecto.
 
 ### Tiempo de respuesta
 
-El motor simula las repeticiones en lotes vectorizados con numpy
-(`modelo.simular_lote`). Un brote de 5.000 personas cuesta unos 10 ms en un núcleo
-de 2,8 GHz; la Lambda de 2 GB es unas 2,4 veces más lenta (con el motor anterior,
-50 repeticiones de 10.000 personas tardaban ~12 s en local y ~29 s en AWS).
-
-| Repeticiones × 10 planes | Brotes | Local (medido) | Lambda 2 GB (estimado ×2,4) |
-|---|---|---|---|
-| 100 (por defecto) | 1.000 | ~8,5 s | ~20 s |
-| 200 (máximo de la API) | 2.000 | ~19 s | ~45 s |
-| 300 | 3.000 | ~29 s | ~70 s: no cabe en 60 s |
-| 1.000 (CLI) | 10.000 | ~95 s | — |
-
-Por eso la API usa 100 repeticiones por defecto y acepta hasta 200: el reto pide
-1.000 por defecto, pero con 10 planes no caben en los 60 s de la Lambda. La CLI
-(`python -m zombie.cli`, sin límite de tiempo) sí usa 1.000. Escala lineal con
-`repeticiones` y con `n_personas`. Se puede verificar en AWS con la métrica
-`Duration` de CloudWatch.
+Unos 12 s con 50 repeticiones y 10.000 personas (10 planes × 50 brotes). Escala
+lineal con `repeticiones` y con `n_personas`. En AWS conviene una Lambda Function
+URL (hasta 15 min) en vez de API Gateway (corta a los 30 s).
 
 ## `POST /api/edp`
 
