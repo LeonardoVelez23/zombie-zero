@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { EstadoSalud, ParametrosRespuesta } from '../modelos/parametros';
+import { EstadoSalud, ParametrosRespuesta, SimulacionPeticion, SimulacionRespuesta } from '../modelos/parametros';
 
 @Injectable({
   providedIn: 'root',
@@ -16,5 +16,9 @@ export class Api {
 
   comprobarSalud(): Observable<EstadoSalud> {
     return this.http.get<EstadoSalud>(`${this.baseUrl}/salud`);
+  }
+
+  simular(peticion: SimulacionPeticion): Observable<SimulacionRespuesta> {
+    return this.http.post<SimulacionRespuesta>(`${this.baseUrl}/simular`, peticion);
   }
 }

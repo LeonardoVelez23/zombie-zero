@@ -92,3 +92,60 @@ export interface ParametrosRespuesta {
   inicios: string[];
   repeticiones: RepeticionesParametros;
 }
+
+export interface RangoEstadistico {
+  media: number;
+  p5: number;
+  p95: number;
+}
+
+export interface CurvaZombies {
+  media: number[];
+  p5: number[];
+  p95: number[];
+}
+
+export interface PlanResultado {
+  id: string;
+  nombre: string;
+  tipo: 'linea_base' | 'candidato';
+  descripcion: string;
+  vacunacion: string;
+  cierres: string[];
+  vacunas: number;
+  costo: number;
+  infectados: RangoEstadistico;
+  curva_zombies: CurvaZombies;
+  pico: RangoEstadistico;
+  dia_pico: number;
+  vacunas_perdidas: number;
+  mapa: number[][];
+  salvados_vs_ninguna?: RangoEstadistico;
+  gana_a_ninguna?: number;
+  salvados_vs_azar?: RangoEstadistico;
+  gana_a_azar?: number;
+}
+
+export interface Veredicto {
+  nivel: 'solida' | 'debil' | 'insuficiente';
+  gana_a_azar: number;
+  salvados_vs_ninguna: number;
+  salvados_vs_azar: number;
+}
+
+export interface SimulacionRespuesta {
+  escenario: EscenarioParametros;
+  repeticiones: number;
+  beta: number;
+  r0: number;
+  barrios: string[];
+  poblacion_barrio: number[];
+  planes: PlanResultado[];
+  recomendado: string | null;
+  veredicto: Veredicto | null;
+}
+
+export interface SimulacionPeticion {
+  escenario?: Partial<EscenarioParametros>;
+  repeticiones?: number;
+}

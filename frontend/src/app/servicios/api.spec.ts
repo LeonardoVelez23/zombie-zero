@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { Api } from './api';
-import { ParametrosRespuesta } from '../modelos/parametros';
+import { ParametrosRespuesta, SimulacionRespuesta } from '../modelos/parametros';
 
 describe('Api', () => {
   let service: Api;
@@ -66,6 +66,22 @@ describe('Api', () => {
 
     const req = httpTesting.expectOne('http://localhost:8000/api/parametros');
     expect(req.request.method).toBe('GET');
+    req.flush(mockRespuesta);
+  });
+
+  it('should execute simulation', () => {
+    const mockRespuesta: Partial<SimulacionRespuesta> = {
+      repeticiones: 50,
+      recomendado: 'anillo',
+      planes: [],
+    };
+
+    service.simular({ repeticiones: 50 }).subscribe((res) => {
+      expect(res.recomendado).toBe('anillo');
+    });
+
+    const req = httpTesting.expectOne('http://localhost:8000/api/simular');
+    expect(req.request.method).toBe('POST');
     req.flush(mockRespuesta);
   });
 });
