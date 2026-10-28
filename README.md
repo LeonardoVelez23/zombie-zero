@@ -78,6 +78,12 @@ o se mantiene, y sus infectados, personas salvadas y porcentaje de brotes en que
    reales con el ajuste, y el botón **R de Manta 2020** simula la plaga con ese valor. Detalle en
    [docs/supuestos.md](docs/supuestos.md#calibración-con-datos-reales-covid-19-en-manta-2020).
 
+10. **Explica el resultado al alcalde:** el botón **Explicar al alcalde** del panel de recomendación pide a
+    Amazon Bedrock (Nova Micro) un párrafo en lenguaje simple con el plan, cuántos salva, qué tan sólido es y
+    la cifra llevada a toda Manta. **El motor calcula y la IA solo redacta:** recibe las cifras ya calculadas,
+    no vuelve a simular ni cambia la recomendación. Si Bedrock no responde, el informe sale igual con una
+    plantilla fija, marcada «Texto automático (sin IA)». Detalle en [docs/api.md](docs/api.md#post-apiinforme).
+
 ## Cómo probarlo
 
 El repositorio tiene dos partes independientes que se comunican por HTTP:
@@ -198,6 +204,7 @@ Todo está en `infra/` y se despliega en `us-east-1` con una sola plantilla
 | Lambda (Python 3.13, 3.008 MB = 2 vCPU, 60 s) + **Function URL** | La API. Function URL en vez de API Gateway porque una simulación puede pasar de los 30 s que permite API Gateway |
 | S3 privado + CloudFront | La interfaz web en Angular |
 | AWS Budget | Alerta por correo al 80 % del gasto mensual y si el pronóstico pasa del 100 % |
+| Permiso de Bedrock | La Lambda solo puede invocar `amazon.nova-micro-v1:0` (política `zombie-zero-invocar-bedrock`, creada por `infra/github-oidc.yaml`) |
 | CloudWatch Logs | Logs de la API, guardados 7 días |
 
 Requisitos: [AWS CLI v2](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html),
@@ -210,6 +217,16 @@ aws sso login                      # cada vez que expire la sesión
 aws sts get-caller-identity        # comprueba la cuenta
 
 CORREO_ALERTA=equipo@ejemplo.com infra/desplegar.sh
+```
+
+Antes, un administrador despliega una vez la pila de permisos (rol de GitHub por OIDC, política de Bedrock y
+corte de gasto de Bedrock). Tras el primer despliegue de la aplicación se vuelve a desplegar con el nombre del
+rol de la Lambda, que es el que recibe el corte:
+
+```bash
+aws cloudformation deploy --region us-east-1 --template-file infra/github-oidc.yaml \
+  --stack-name zombie-zero-github-oidc --capabilities CAPABILITY_NAMED_IAM \
+  --parameter-overrides CorreoAlerta=equipo@ejemplo.com RolLambda=<nombre del ApiFunctionRole>
 ```
 
 `desplegar.sh` arma el paquete de la Lambda (`infra/empaquetar.sh` descarga
@@ -310,13 +327,19 @@ las intervenciones, la calibración de la dificultad y la reproducibilidad.
   CLI no tiene ese límite y usa 1.000 por defecto.
 - **API sin autenticación:** la Function URL es pública. El costo está acotado por los límites de cada
   parámetro, el tiempo máximo de 60 s y la alerta del AWS Budget, pero no hay un límite de peticiones por
-  usuario.
+  usuario. Para Bedrock sí hay un corte automático: 1 llamada por minuto por contenedor y un Budget de 3 USD
+  que le quita el permiso a la Lambda si se supera.
+- **Informe con IA sin cuota todavía:** AWS le asignó a la cuenta nueva una cuota de 0 solicitudes por minuto
+  para Nova Micro (y también para los modelos Claude Haiku), así que hoy Bedrock responde `ThrottlingException`
+  y el informe sale con la plantilla sin IA. El aumento de cuota se pide a AWS Support; cuando se aprueba, el
+  informe pasa a redactarse con Bedrock sin cambiar código ni volver a desplegar.
 
 ## Costos
 
-Operar la herramienta cuesta **≈ 1,46 USD al mes** en uso normal (3.000 simulaciones) y **≈ 14,57 USD** en un
-mes de brote activo (30.000), sin contar la capa gratuita de AWS; con ella, 0 USD y ≈ 7,35 USD. Casi todo es
-cómputo de Lambda. Gasto real durante el evento: **0,01 USD** (medido el 28/10/2026). El cálculo completo y las mediciones están en
+Operar la herramienta cuesta **≈ 2,50 USD al mes** en uso normal (3.000 simulaciones) y **≈ 24,97 USD** en un
+mes de brote activo (30.000), sin contar la capa gratuita de AWS; con ella, 0 USD y ≈ 16,83 USD. Casi todo es
+cómputo de Lambda (14 s facturados por simulación, medidos en AWS). El informe con IA tiene su propio tope de
+3 USD al mes. Gasto real durante el evento: **0,01 USD** (medido el 28/10/2026 a las 14:53). El cálculo completo y las mediciones están en
 [docs/costos.md](docs/costos.md); `infra/costos.sh` agrega una medición nueva del gasto real.
 
 ## AWS Budget
@@ -328,6 +351,7 @@ La cuenta tiene presupuestos con alerta por correo desde el 1 de octubre de 2026
 | `Costo-Mensual` (captura) | 5 USD | Gasto real al 85 % y al 100 %; gasto previsto al 100 % |
 | `zombie-zero-mensual` (creado por `infra/template.yaml`) | 10 USD | Gasto real al 80 %; gasto previsto al 100 % |
 | `Alerta-Gasto` | 1 USD | Cualquier gasto real (0,01 %) |
+| `zombie-zero-bedrock` (creado por `infra/github-oidc.yaml`) | 3 USD, solo Bedrock | Al 100 % del gasto real avisa por correo y le niega Bedrock a la Lambda (acción automática) |
 
 ![AWS Budget Costo-Mensual con sus alertas](docs/budget.png)
 
