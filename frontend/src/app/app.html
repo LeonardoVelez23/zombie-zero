@@ -17,10 +17,35 @@
     </nav>
 
     <div class="sidebar-bottom">
-      <div class="status-card">
-        <span class="status-dot"></span>
-        <div><strong>Sistema preparado</strong><small>Motor epidemiológico</small></div>
+      <div class="status-card" (click)="estadoConexion() === 'offline' ? reintentar() : null"
+        [style.cursor]="estadoConexion() === 'offline' ? 'pointer' : 'default'"
+        [title]="estadoConexion() === 'offline' ? 'Haz clic para reintentar conexión con la API' : ''">
+        <span class="status-dot" [class.status-online]="estadoConexion() === 'online'"
+          [class.status-offline]="estadoConexion() === 'offline'"
+          [class.status-connecting]="estadoConexion() === 'conectando'"></span>
+
+        <div>
+          <strong>
+            @switch (estadoConexion()) {
+            @case ('conectando') { Conectando API... }
+            @case ('online') { API conectada }
+            @case ('offline') { API desconectada }
+            }
+          </strong>
+          <small>
+            @if (cargandoParametros()) {
+              Cargando parámetros...
+            } @else if (parametros()) {
+              Parámetros sincronizados
+            } @else if (estadoConexion() === 'offline') {
+              Clic para reintentar
+            } @else {
+              Motor epidemiológico
+            }
+          </small>
+        </div>
       </div>
+
       <div class="version">MANTA, ECUADOR <span>v0.1.0</span></div>
     </div>
   </aside>
@@ -73,34 +98,61 @@
         </div>
         <p class="panel-description">Define las condiciones para una nueva simulación.</p>
 
+        @if (errorCarga(); as error) {
+        <div class="resource-note error-note">
+          <span>⚠</span>
+          <div>
+            <strong>Estado de sincronización</strong>
+            <p>{{ error }}</p>
+          </div>
+        </div>
+        }
+
         <label class="field-label" for="population">Población total <span>PERSONAS</span></label>
-        <input id="population" type="number" value="10000" min="1000" max="20000" step="1000">
+        <input id="population" type="number"
+          [value]="parametros()?.por_defecto?.n_personas ?? 10000"
+          [min]="parametros()?.limites?.escenario?.n_personas?.[0] ?? 1000"
+          [max]="parametros()?.limites?.escenario?.n_personas?.[1] ?? 20000"
+          step="1000">
 
         <div class="field-row">
           <div>
             <label class="field-label" for="days">Duración <span>DÍAS</span></label>
-            <input id="days" type="number" value="180" min="30" max="365">
+            <input id="days" type="number"
+              [value]="parametros()?.por_defecto?.dias ?? 180"
+              [min]="parametros()?.limites?.escenario?.dias?.[0] ?? 30"
+              [max]="parametros()?.limites?.escenario?.dias?.[1] ?? 365">
           </div>
           <div>
             <label class="field-label" for="seed">Semilla <span>SEED</span></label>
-            <input id="seed" type="number" value="42" min="0" max="2147483647">
+            <input id="seed" type="number"
+              [value]="parametros()?.por_defecto?.semilla ?? 42"
+              [min]="parametros()?.limites?.escenario?.semilla?.[0] ?? 0"
+              [max]="parametros()?.limites?.escenario?.semilla?.[1] ?? 2147483647">
           </div>
         </div>
 
         <label class="field-label" for="origin">Punto de origen del brote</label>
         <select id="origin">
-          <option value="aleatorio" selected>Aleatorio</option>
-          <option value="aeropuerto">Aeropuerto</option>
-          <option value="mercado">Mercado</option>
-          <option value="colegio">Colegio</option>
-          <option value="Tarqui">Tarqui</option>
-          <option value="Manta">Manta</option>
-          <option value="Los Esteros">Los Esteros</option>
-          <option value="Eloy Alfaro">Eloy Alfaro</option>
-          <option value="San Mateo">San Mateo</option>
-          <option value="Rural">Rural</option>
+          @if (parametros()?.inicios; as inicios) {
+            @for (inicio of inicios; track inicio) {
+              <option [value]="inicio" [selected]="inicio === (parametros()?.por_defecto?.inicio ?? 'aleatorio')">
+                {{ inicio === 'aleatorio' ? 'Aleatorio' : inicio }}
+              </option>
+            }
+          } @else {
+            <option value="aleatorio" selected>Aleatorio</option>
+            <option value="aeropuerto">Aeropuerto</option>
+            <option value="mercado">Mercado</option>
+            <option value="colegio">Colegio</option>
+            <option value="Tarqui">Tarqui</option>
+            <option value="Manta">Manta</option>
+            <option value="Los Esteros">Los Esteros</option>
+            <option value="Eloy Alfaro">Eloy Alfaro</option>
+            <option value="San Mateo">San Mateo</option>
+            <option value="Rural">Rural</option>
+          }
         </select>
-
 
         <label class="field-label" for="strategy">Estrategia de intervención</label>
         <select id="strategy">
@@ -124,7 +176,13 @@
         </div>
         <button class="run-button" type="button" disabled title="Se habilitará al conectar la API"><span>▶</span>
           Ejecutar simulación <span class="button-arrow">↗</span></button>
-        <p class="button-hint">La ejecución estará disponible al conectar el backend.</p>
+        <p class="button-hint">
+          @if (parametros()) {
+            Parámetros oficiales cargados desde la API.
+          } @else {
+            La ejecución estará disponible al conectar el backend.
+          }
+        </p>
       </article>
 
       <article class="panel chart-panel" id="resultados">
