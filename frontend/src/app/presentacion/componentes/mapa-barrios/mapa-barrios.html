@@ -61,6 +61,35 @@
 
 <div class="mapa-contenedor">
   <div #contenedor class="mapa" role="region" aria-label="Mapa de Manta por barrio"></div>
+  @if (resultado()) {
+    <div class="en-vivo" [class.activo]="reproduciendo()">
+      <div class="en-vivo-cabecera">
+        <span class="senal" aria-hidden="true"></span>
+        {{ reproduciendo() ? 'EN VIVO' : 'PAUSA' }} · DÍA {{ dia() }}
+      </div>
+      <div class="contador">
+        <strong>{{ numero(activosHoy()) }}</strong> zombies activos
+      </div>
+      <ol class="eventos" aria-label="Eventos del brote" aria-live="polite">
+        @for (e of eventosRecientes(); track e.dia + e.texto) {
+          <li [class]="e.tipo">
+            <span class="dia">D{{ e.dia }}</span
+            >{{ e.texto }}
+          </li>
+        }
+      </ol>
+    </div>
+  }
+  @if (barrioHover(); as b) {
+    <div class="ficha" [style.left.px]="hover()!.x" [style.top.px]="hover()!.y" aria-live="polite">
+      <strong>{{ b.nombre }}</strong>
+      <span
+        >{{ porcentaje(b.fraccion) }} mordido · {{ numero(b.mordidos) }} de
+        {{ numero(b.poblacion) }}</span
+      >
+      <span>{{ numero(b.activos) }} zombies activos el día {{ dia() }}</span>
+    </div>
+  }
   @if (errorMapa(); as mensaje) {
     <div class="mapa-aviso" role="alert">{{ mensaje }}</div>
   } @else if (!resultado()) {
@@ -76,6 +105,11 @@
           <small>{{ n.rango }}</small>
         </li>
       }
+      <li class="separador">
+        <span class="zombie"></span
+        >{{ escala() === 1 ? '1 zombie activo' : escala() + ' zombies activos' }}
+      </li>
+      <li><small class="sin-margen">Zona: tamaño según población</small></li>
     </ul>
   }
 </div>

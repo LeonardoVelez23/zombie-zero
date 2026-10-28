@@ -145,6 +145,156 @@ input[type='range'] {
   color: #8f94b3;
 }
 
+.leyenda .separador {
+  margin-top: 3px;
+  padding-top: 5px;
+  border-top: 1px solid #282b4d;
+}
+
+.leyenda .sin-margen {
+  margin-left: 0;
+}
+
+.zombie {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin: 0 8px 0 2px;
+  border: 1px solid #1a0610;
+  border-radius: 50%;
+  background: #ff4d6d;
+}
+
+/* Modo en vivo: día, contador y últimos eventos, arriba a la izquierda del mapa. */
+.en-vivo {
+  position: absolute;
+  z-index: 1;
+  top: 10px;
+  left: 10px;
+  width: min(260px, calc(100% - 70px));
+  padding: 8px 10px;
+  border: 1px solid #282b4d;
+  border-radius: 4px;
+  background: rgba(7, 10, 29, 0.88);
+  color: #d8daeb;
+  font-size: 10px;
+  pointer-events: none;
+}
+
+.en-vivo-cabecera {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #b7bad3;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.senal {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #6b6f93;
+}
+
+.en-vivo.activo .en-vivo-cabecera {
+  color: #ff8fa3;
+}
+
+.en-vivo.activo .senal {
+  background: #ff4d6d;
+  box-shadow: 0 0 8px #ff4d6d;
+  animation: latido 1.2s ease-in-out infinite;
+}
+
+@keyframes latido {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.contador {
+  margin: 4px 0 6px;
+  color: #b7bad3;
+}
+
+.contador strong {
+  color: #fff;
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.eventos {
+  display: grid;
+  gap: 3px;
+  margin: 0;
+  padding: 6px 0 0;
+  border-top: 1px solid #282b4d;
+  list-style: none;
+}
+
+.eventos li {
+  display: flex;
+  gap: 6px;
+  line-height: 1.35;
+}
+
+.eventos li:not(:first-child) {
+  opacity: 0.7;
+}
+
+.eventos .dia {
+  flex: none;
+  min-width: 30px;
+  color: #8f94b3;
+  font-variant-numeric: tabular-nums;
+}
+
+.eventos .alerta {
+  color: #ffd79a;
+}
+
+.eventos .control {
+  color: #ff8fa3;
+}
+
+.eventos .accion {
+  color: #86efac;
+}
+
+.eventos .pico {
+  color: #fff;
+  font-weight: 700;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .en-vivo.activo .senal {
+    animation: none;
+  }
+}
+
+.ficha {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  gap: 2px;
+  padding: 7px 10px;
+  border: 1px solid #3a3d66;
+  border-radius: 4px;
+  background: rgba(7, 10, 29, 0.94);
+  color: #b7bad3;
+  font-size: 10px;
+  white-space: nowrap;
+  transform: translate(12px, 12px);
+  pointer-events: none;
+}
+
+.ficha strong {
+  color: #fff;
+  font-size: 11px;
+}
+
 .punto {
   display: inline-block;
   width: 9px;
@@ -214,8 +364,8 @@ input[type='range'] {
   place-items: center;
   border: 2px solid var(--color);
   border-radius: 50%;
-  background: color-mix(in srgb, var(--color) 30%, transparent);
-  box-shadow: 0 0 18px color-mix(in srgb, var(--color) 55%, transparent);
+  background: rgba(7, 10, 29, 0.55);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--color) 45%, transparent);
   color: #fff;
   font-size: 10px;
   font-weight: 800;
