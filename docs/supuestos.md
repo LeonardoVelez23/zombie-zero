@@ -132,6 +132,7 @@ y por eso la vacunación en anillo es mucho más eficaz con las mismas dosis.
 | Repeticiones por plan (API e interfaz) | 100 (máximo 300) | Medido | Los planes se simulan en procesos paralelos (2 en la Lambda de 3.008 MB). Tiempos en `docs/api.md`; falta medir el máximo en AWS. |
 | Estadísticos | Media, mediana y rango p5–p95 | Reto | De infectados totales, pico de zombies y personas salvadas frente a cada línea base. |
 | Contagio en la simulación | Umbral exponencial por persona (Sellke) | Supuesto | Cada persona sortea una vez un umbral ~ Exponencial(1) y es mordida cuando la presión acumulada de sus contactos zombies lo supera. Es equivalente a sortear cada día con probabilidad 1 − exp(−β · presión), pero permite simular muchos brotes a la vez. Latencia e infeccioso son geométricas con media 3 y 5 días, como el sorteo diario. |
+| Corredores de contagio entre barrios | Reparto proporcional a la presión del día | Supuesto | Una mordida ocurre cuando la presión acumulada supera el umbral, así que no tiene un único responsable. Se reparte entre los barrios de los zombies que presionaban a la víctima ese día, en proporción a su peso de contacto. La suma de los corredores es exactamente el número de mordidas (lo comprueba una prueba). Se reporta el promedio de todo el brote por plan. |
 
 ## Reproducibilidad
 
