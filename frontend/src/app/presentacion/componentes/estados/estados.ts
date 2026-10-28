@@ -8,6 +8,9 @@ import { Area, banda, escala, trazo } from '../../utilidades/grafica';
 const AREA: Area = { izquierda: 55, derecha: 675, arriba: 20, abajo: 250 };
 
 type Opcion = 'recomendado' | 'azar' | 'ninguna';
+// Líneas: una curva por estado en número de personas (como el gráfico "Populations" de NetLogo).
+// Áreas: los cuatro estados apilados, que siempre suman la población.
+type Vista = 'lineas' | 'areas';
 
 export interface InfoEstado {
   id: EstadoSeir;
@@ -43,6 +46,11 @@ export class Estados {
     { id: 'ninguna', nombre: 'Sin intervención' },
   ];
   protected readonly opcion = signal<Opcion>('recomendado');
+  protected readonly vista = signal<Vista>('lineas');
+  protected readonly vistas: { id: Vista; nombre: string }[] = [
+    { id: 'lineas', nombre: 'Líneas' },
+    { id: 'areas', nombre: 'Áreas' },
+  ];
   // null = el día del pico sin intervención: un mismo día para comparar los tres planes.
   protected readonly diaElegido = signal<number | null>(null);
 
@@ -85,6 +93,18 @@ export class Estados {
     });
   });
 
+  // Una línea por estado con su banda p5–p95, en personas sobre toda la población.
+  protected readonly lineas = computed(() => {
+    const estados = this.estadosPlan();
+    if (!estados) return [];
+    const e = escala(this.dias(), this.poblacion(), AREA);
+    return ESTADOS.map(({ id }) => ({
+      id,
+      linea: trazo(estados[id].media, e),
+      banda: banda(estados[id].p5, estados[id].p95, e),
+    }));
+  });
+
   // Contorno de los zombies con su rango p5–p95, para que se vean aunque sean pocos.
   protected readonly zombies = computed(() => {
     const zombies = this.estadosPlan()?.I;
@@ -124,7 +144,10 @@ export class Estados {
   protected readonly ejeY = computed(() =>
     [0, 0.25, 0.5, 0.75, 1].map((f) => ({
       y: AREA.abajo - f * (AREA.abajo - AREA.arriba),
-      texto: `${Math.round(f * 100)} %`,
+      texto:
+        this.vista() === 'lineas'
+          ? numero(Math.round(f * this.poblacion()))
+          : `${Math.round(f * 100)} %`,
     })),
   );
 

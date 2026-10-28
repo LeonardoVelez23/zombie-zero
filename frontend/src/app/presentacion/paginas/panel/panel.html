@@ -95,10 +95,23 @@
               <span>{{ indicador.unidad }}</span>
             }
           </div>
+          @if (indicador.manta) {
+            <div class="metric-manta">{{ indicador.manta }}</div>
+          }
           <div class="metric-foot"><span class="mini-square"></span> {{ indicador.nota }}</div>
         </article>
       }
     </section>
+
+    @if (referencia(); as anterior) {
+      @if (resultado(); as actual) {
+        @if (actual !== anterior) {
+          <section class="full-grid">
+            <app-antes-despues [anterior]="anterior" [actual]="actual" (fijar)="referencia.set(actual)" />
+          </section>
+        }
+      }
+    }
 
     <section class="workspace-grid">
       @if (parametros(); as p) {
@@ -108,7 +121,7 @@
           {{ error() ? 'Sin conexión con la API no se pueden cargar los parámetros.' : 'Cargando parámetros…' }}
         </div>
       }
-      <app-mapa-barrios [resultado]="resultado()" />
+      <app-mapa-barrios [resultado]="resultado()" [(dia)]="diaVivo" />
     </section>
 
     <section class="full-grid">

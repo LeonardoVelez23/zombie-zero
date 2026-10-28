@@ -45,7 +45,12 @@ Central. El Comité de Contención tiene pocas vacunas, un presupuesto limitado 
 6. **Muestra el brote barrio por barrio** en un mapa de Manta junto a los controles: qué porcentaje de cada barrio
    ya fue mordido, día a día, con el mismo modelo de red que hace la recomendación. Se elige el plan (sin
    intervenir, al azar o el recomendado) y se reproduce con ▶; cada barrio cambia de color según esté
-   contenido (< 5 %), en alerta (5–20 %) o fuera de control (≥ 20 %).
+   contenido (< 5 %), en alerta (5–20 %) o fuera de control (≥ 20 %). Al terminar cada simulación el mapa
+   arranca **en vivo** desde el día 0: puntos rojos para los zombies activos de cada barrio, un panel con el
+   día, el contador de zombies y los eventos del brote (llegada a cada barrio, cambios de nivel, vacunas,
+   cortes, cierres y pico), y las tarjetas de arriba cuentan lo ocurrido hasta ese día. Las líneas entre
+   barrios son los **corredores de contagio**: cuántas mordidas cruzaron de un barrio a otro en todo el
+   brote (por el trabajo y el mercado); con el plan recomendado se adelgazan.
 7. **Lo contrasta con un mapa de difusión continua** (modelo EDP, abajo en la página): se reproduce día por día
    con ▶ y tres velocidades, o se recorre a mano con el deslizador (en simulaciones de más de 180 días,
    un fotograma cada 2 días o más, por el límite de 6 MB de respuesta de Lambda).
@@ -56,6 +61,9 @@ en que se empieza a actuar, las vacunas por día, la población, la duración y 
 Para la prueba de fuego, los botones **Brote Sorpresa en un clic** aplican los cambios típicos del jurado
 (R0 doble, mitad de vacunas, inicio en el mercado, variante con la mitad de eficacia y un corte de vacunas de
 30 días), se pueden combinar y simulan de inmediato; **Restablecer** vuelve al escenario por defecto.
+Cada simulación nueva se compara con una **referencia** (la primera, o la que se fija con *Fijar como
+referencia*, por ejemplo la de la semilla del jurado): qué cambió en el escenario, si la recomendación cambia
+o se mantiene, y sus infectados, personas salvadas y porcentaje de brotes en que gana al azar, lado a lado.
 
 8. **Recalcula ante imprevistos:** se puede simular un corte en la entrega de vacunas (por ejemplo, un bloqueo
    de la vía desde el día 21 durante 30 días). Al reanudarse la entrega, cada plan vuelve a decidir con el brote
@@ -267,7 +275,10 @@ las intervenciones, la calibración de la dificultad y la reproducibilidad.
 ## Limitaciones conocidas
 
 - **Escala:** se simulan 5.000 personas (cerca de 1 de cada 54 habitantes de Manta), no la ciudad completa.
-  La interfaz permite hasta 20.000, a costa de más tiempo de cálculo.
+  La interfaz permite hasta 20.000, a costa de más tiempo de cálculo (35 s en local; 271.145 personas
+  tardarían unos 8 minutos y la Lambda corta a los 60 s). Por eso las tarjetas, la comparación del Brote
+  Sorpresa y el informe muestran además cada cifra llevada a toda Manta (× 271.145 / personas simuladas,
+  redondeada a centenas): es una proyección de la muestra, no una simulación de la ciudad completa.
 - **Población parcialmente supuesta:** el reparto entre parroquias urbanas es un supuesto, porque no
   encontramos datos públicos del Censo 2022 por parroquia urbana. Los tamaños de colegios, trabajos y buses
   también son supuestos.
@@ -288,7 +299,7 @@ las intervenciones, la calibración de la dificultad y la reproducibilidad.
 
 Operar la herramienta cuesta **≈ 1,46 USD al mes** en uso normal (3.000 simulaciones) y **≈ 14,57 USD** en un
 mes de brote activo (30.000), sin contar la capa gratuita de AWS; con ella, 0 USD y ≈ 7,35 USD. Casi todo es
-cómputo de Lambda. Gasto real durante el evento: **0,00 USD**. El cálculo completo y las mediciones están en
+cómputo de Lambda. Gasto real durante el evento: **0,01 USD** (medido el 28/10/2026). El cálculo completo y las mediciones están en
 [docs/costos.md](docs/costos.md); `infra/costos.sh` agrega una medición nueva del gasto real.
 
 ## AWS Budget

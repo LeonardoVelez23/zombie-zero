@@ -37,6 +37,9 @@ export interface Plan {
   mapa: number[][];
   // Mordidos acumulados por barrio y día (promedio). Opcional: versiones anteriores de la API no lo traen.
   mapaAfectados?: number[][];
+  // Mordidas de cada barrio (fila) a cada barrio (columna) en todo el brote, en promedio.
+  // Opcional: versiones anteriores de la API no lo traen.
+  corredores?: number[][];
   vacunasPerdidas: number;
   salvadosVsNinguna?: Estadistico;
   salvadosVsAzar?: Estadistico;

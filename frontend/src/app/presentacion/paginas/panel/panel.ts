@@ -4,8 +4,10 @@ import { ModelarDifusion } from '../../../aplicacion/casos-uso/modelar-difusion'
 import { ObtenerParametros } from '../../../aplicacion/casos-uso/obtener-parametros';
 import { SimularBrote } from '../../../aplicacion/casos-uso/simular-brote';
 import { ConfiguracionSimulacion, Parametros } from '../../../dominio/modelos/escenario';
-import { ResultadoDifusion, ResultadoSimulacion } from '../../../dominio/modelos/resultado';
+import { Plan, ResultadoDifusion, ResultadoSimulacion } from '../../../dominio/modelos/resultado';
+import { POBLACION_MANTA, enManta, factorManta } from '../../../dominio/reglas/escala';
 import { comparacion } from '../../../dominio/reglas/planes';
+import { AntesDespues } from '../../componentes/antes-despues/antes-despues';
 import { Controles } from '../../componentes/controles/controles';
 import { Grafica } from '../../componentes/grafica/grafica';
 import { Guia } from '../../componentes/guia/guia';
@@ -20,6 +22,8 @@ interface Indicador {
   etiqueta: string;
   valor: string;
   unidad?: string;
+  // La misma cifra llevada a toda Manta (la red simulada es una muestra de la ciudad).
+  manta?: string;
   nota: string;
   color: 'violet' | 'red' | 'green' | 'orange';
   icono: string;
@@ -27,7 +31,7 @@ interface Indicador {
 
 @Component({
   selector: 'app-panel',
-  imports: [Controles, Grafica, Estados, Informe, Mapa, MapaBarrios, Tabla, Guia],
+  imports: [AntesDespues, Controles, Grafica, Estados, Informe, Mapa, MapaBarrios, Tabla, Guia],
   templateUrl: './panel.html',
   styleUrl: './panel.css',
 })
@@ -64,10 +68,14 @@ export class Panel implements OnInit {
 
   protected readonly parametros = signal<Parametros | null>(null);
   protected readonly resultado = signal<ResultadoSimulacion | null>(null);
+  // Resultado contra el que se compara (Brote Sorpresa): la primera simulación, hasta que se fije otra.
+  protected readonly referencia = signal<ResultadoSimulacion | null>(null);
   protected readonly difusion = signal<ResultadoDifusion | null>(null);
   protected readonly simulando = signal(false);
   protected readonly calculandoDifusion = signal(false);
   protected readonly error = signal<string | null>(null);
+  // Día que muestra el mapa del brote: los indicadores cuentan lo ocurrido hasta ese día.
+  protected readonly diaVivo = signal(0);
   protected readonly errorDifusion = signal<string | null>(null);
 
   // El mapa EDP usa el escenario de la última simulación (o el por defecto si aún no hay).
@@ -85,6 +93,9 @@ export class Panel implements OnInit {
       etiqueta: 'POBLACIÓN SIMULADA',
       valor: poblacion ? numero(poblacion) : '—',
       unidad: 'hab.',
+      manta: poblacion
+        ? `Representa a ${numero(POBLACION_MANTA)} hab. (1 : ${Math.round(factorManta(poblacion))})`
+        : undefined,
       nota: 'Red de contactos sintética de Manta',
       color: 'violet',
       icono: '⌂',
@@ -111,26 +122,46 @@ export class Panel implements OnInit {
       ];
     }
     const { sinIntervencion, recomendado } = comparacion(r);
+    // Mientras el mapa reproduce el brote se muestran los mordidos acumulados hasta ese día;
+    // en el último día, los totales de la simulación (son los mismos valores).
+    const dia = this.diaVivo();
+    const enCurso = dia < r.escenario.dias;
+    const hastaHoy = (plan: Plan) => {
+      const fila = plan.mapaAfectados?.[dia];
+      return enCurso && fila ? fila.reduce((a, b) => a + b, 0) : plan.infectados.media;
+    };
+    const sin = hastaHoy(sinIntervencion);
+    const con = hastaHoy(recomendado);
+    const salvados = enCurso ? Math.max(0, sin - con) : r.veredicto.salvadosVsNinguna;
+    const manta = (valor: number) => `≈ ${numero(enManta(valor, r.escenario.nPersonas))} en toda Manta`;
+    const pico = `pico hacia el día ${Math.round(sinIntervencion.diaPico)}`;
     return [
       tarjetaPoblacion,
       {
         etiqueta: 'INFECTADOS SIN INTERVENIR',
-        valor: numero(sinIntervencion.infectados.media),
-        nota: `Pico hacia el día ${Math.round(sinIntervencion.diaPico)}`,
+        valor: numero(sin),
+        manta: manta(sin),
+        nota: enCurso
+          ? `Día ${dia} de ${r.escenario.dias} · ${pico}`
+          : `Pico hacia el día ${Math.round(sinIntervencion.diaPico)}`,
         color: 'red',
         icono: '⌁',
       },
       {
         etiqueta: 'INFECTADOS CON EL PLAN',
-        valor: numero(recomendado.infectados.media),
+        valor: numero(con),
+        manta: manta(con),
         nota: recomendado.nombre,
         color: 'green',
         icono: '✓',
       },
       {
         etiqueta: 'PERSONAS SALVADAS',
-        valor: numero(r.veredicto.salvadosVsNinguna),
-        nota: 'Frente a no intervenir (media)',
+        valor: numero(salvados),
+        manta: manta(salvados),
+        nota: enCurso
+          ? `Hasta el día ${dia}, frente a no intervenir`
+          : 'Frente a no intervenir (media)',
         color: 'orange',
         icono: '✚',
       },
@@ -153,6 +184,7 @@ export class Panel implements OnInit {
     try {
       const resultado = await this.simularBrote.ejecutar(configuracion);
       if (!vigente()) return;
+      if (!this.referencia()) this.referencia.set(resultado);
       this.resultado.set(resultado);
       this.ultimaConfiguracion = configuracion;
     } catch (e) {
@@ -180,4 +212,5 @@ export class Panel implements OnInit {
   }
 }
 
-const mensaje = (error: unknown): string => (error instanceof Error ? error.message : String(error));
+const mensaje = (error: unknown): string =>
+  error instanceof Error ? error.message : String(error);

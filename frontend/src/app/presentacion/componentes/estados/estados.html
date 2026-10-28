@@ -7,7 +7,8 @@
 </div>
 <p class="panel-description">
   Cada persona de la red está en uno de cuatro estados y cambia día a día: 🟢 sana → 🟡 mordida → 🔴
-  zombie → 🔵 exorcizada. Las áreas suman toda la población (promedio de los brotes simulados).
+  zombie → 🔵 exorcizada. Cada línea es el promedio de los brotes simulados y su banda, el rango
+  p5–p95; en la vista de áreas, los cuatro estados suman toda la población.
 </p>
 
 @if (plan() && !estadosPlan()) {
@@ -27,6 +28,20 @@
           (click)="elegirPlan(o.id)"
         >
           {{ o.nombre }}
+        </button>
+      }
+    </div>
+    <div class="opciones" role="radiogroup" aria-label="Tipo de gráfica">
+      @for (v of vistas; track v.id) {
+        <button
+          type="button"
+          role="radio"
+          class="opcion"
+          [class.activa]="vista() === v.id"
+          [attr.aria-checked]="vista() === v.id"
+          (click)="vista.set(v.id)"
+        >
+          {{ v.nombre }}
         </button>
       }
     </div>
@@ -58,44 +73,63 @@
   </ul>
 
   <div class="graficas">
-    <svg viewBox="0 0 700 280" role="img" [attr.aria-label]="resumen()">
-      <g class="grid-lines">
-        @for (marca of ejeY(); track marca.y) {
-          <line
-            [attr.x1]="area.izquierda"
-            [attr.x2]="area.derecha"
-            [attr.y1]="marca.y"
-            [attr.y2]="marca.y"
-          />
+    <div class="principal">
+      <svg viewBox="0 0 700 280" role="img" [attr.aria-label]="resumen()">
+        <g class="grid-lines">
+          @for (marca of ejeY(); track marca.y) {
+            <line
+              [attr.x1]="area.izquierda"
+              [attr.x2]="area.derecha"
+              [attr.y1]="marca.y"
+              [attr.y2]="marca.y"
+            />
+          }
+        </g>
+        @if (vista() === 'lineas') {
+          @for (l of lineas(); track l.id) {
+            <path [class]="'banda-estado ' + l.id" [attr.d]="l.banda" />
+          }
+          @for (l of lineas(); track l.id) {
+            <path [class]="'linea-estado ' + l.id" [attr.d]="l.linea" />
+          }
+        } @else {
+          @for (capa of capas(); track capa.id) {
+            <path [class]="'capa ' + capa.id" [attr.d]="capa.d" />
+          }
         }
-      </g>
-      @for (capa of capas(); track capa.id) {
-        <path [class]="'capa ' + capa.id" [attr.d]="capa.d" />
+        <line
+          class="marca-dia"
+          [attr.x1]="xDia()"
+          [attr.x2]="xDia()"
+          [attr.y1]="area.arriba"
+          [attr.y2]="area.abajo"
+        />
+        <g class="axis-labels">
+          @for (marca of ejeY(); track marca.y) {
+            <text [attr.x]="area.izquierda - 10" [attr.y]="marca.y + 4" text-anchor="end">
+              {{ marca.texto }}
+            </text>
+          }
+          @for (marca of ejeX(); track marca.x; let primera = $first; let ultima = $last) {
+            <text
+              [attr.x]="marca.x"
+              [attr.y]="area.abajo + 24"
+              [attr.text-anchor]="primera ? 'start' : ultima ? 'end' : 'middle'"
+            >
+              {{ marca.texto }}
+            </text>
+          }
+        </g>
+      </svg>
+
+      @if (vista() === 'lineas') {
+        <ul class="leyenda-estados" aria-label="Leyenda">
+          @for (e of estados; track e.id) {
+            <li><span [class]="'trazo ' + e.id"></span>{{ e.nombre }}</li>
+          }
+        </ul>
       }
-      <line
-        class="marca-dia"
-        [attr.x1]="xDia()"
-        [attr.x2]="xDia()"
-        [attr.y1]="area.arriba"
-        [attr.y2]="area.abajo"
-      />
-      <g class="axis-labels">
-        @for (marca of ejeY(); track marca.y) {
-          <text [attr.x]="area.izquierda - 10" [attr.y]="marca.y + 4" text-anchor="end">
-            {{ marca.texto }}
-          </text>
-        }
-        @for (marca of ejeX(); track marca.x; let primera = $first; let ultima = $last) {
-          <text
-            [attr.x]="marca.x"
-            [attr.y]="area.abajo + 24"
-            [attr.text-anchor]="primera ? 'start' : ultima ? 'end' : 'middle'"
-          >
-            {{ marca.texto }}
-          </text>
-        }
-      </g>
-    </svg>
+    </div>
 
     @if (zombies(); as z) {
       <div class="zoom-zombies">

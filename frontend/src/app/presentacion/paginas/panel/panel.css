@@ -495,6 +495,13 @@
   letter-spacing: 0;
 }
 
+.metric-manta {
+  margin-top: 4px;
+  color: #c9b8f5;
+  font-size: 11px;
+  font-weight: 600;
+}
+
 .metric-foot {
   display: flex;
   align-items: center;

@@ -36,11 +36,17 @@ describe('Mapa del brote por barrio', () => {
     fixture.detectChanges();
     const panel = fixture.nativeElement as HTMLElement;
     const texto = () => panel.textContent?.replace(/\s+/g, ' ') ?? '';
-    return { fixture, panel, texto };
+    // El brote se reproduce solo: se adelanta hasta el último día.
+    const terminar = () => {
+      vi.advanceTimersByTime(240);
+      fixture.detectChanges();
+    };
+    return { fixture, panel, texto, terminar };
   }
 
   it('muestra el último día del plan recomendado frente a no intervenir', () => {
-    const { texto } = renderizar();
+    const { texto, terminar } = renderizar();
+    terminar();
     expect(texto()).toContain('Día 2 de 2');
     expect(texto()).toContain(
       'con anillo está mordido el 3 % de la ciudad frente al 50 % sin intervenir',
@@ -49,7 +55,8 @@ describe('Mapa del brote por barrio', () => {
   });
 
   it('al elegir otro plan cambian los barrios', () => {
-    const { fixture, panel, texto } = renderizar();
+    const { fixture, panel, texto, terminar } = renderizar();
+    terminar();
     [...panel.querySelectorAll<HTMLButtonElement>('.plan')]
       .find((b) => b.textContent?.includes('Sin intervenir'))!
       .click();
@@ -58,13 +65,22 @@ describe('Mapa del brote por barrio', () => {
     expect(texto()).toContain('Manta60 %');
   });
 
-  it('la animación recorre los días desde el principio', () => {
-    const { fixture, panel, texto } = renderizar();
+  it('con una simulación nueva el brote se reproduce en vivo desde el día 0', () => {
+    const { texto, terminar } = renderizar();
+    expect(texto()).toContain('Día 0 de 2');
+    expect(texto()).toContain('EN VIVO · DÍA 0');
+    terminar();
+    expect(texto()).toContain('Día 2 de 2');
+    expect(texto()).toContain('PAUSA · DÍA 2');
+  });
+
+  it('se puede volver a reproducir desde el principio', () => {
+    const { fixture, panel, texto, terminar } = renderizar();
+    terminar();
     panel.querySelector<HTMLButtonElement>('.reproduccion .boton')!.click();
     fixture.detectChanges();
     expect(texto()).toContain('Día 0 de 2');
-    vi.advanceTimersByTime(240);
-    fixture.detectChanges();
+    terminar();
     expect(texto()).toContain('Día 2 de 2');
   });
 

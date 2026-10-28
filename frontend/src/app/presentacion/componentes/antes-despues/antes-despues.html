@@ -1,0 +1,61 @@
+<div class="panel-heading">
+  <div>
+    <span class="section-index">BROTE SORPRESA / ANTES Y DESPUÉS</span>
+    <h2>
+      @if (cambiaPlan()) {
+        La recomendación cambia
+      } @else {
+        La recomendación se mantiene
+      }
+    </h2>
+  </div>
+  <button type="button" class="fijar" (click)="fijar.emit()">Fijar como referencia</button>
+</div>
+
+@if (cambios().length) {
+  <ul class="cambios" aria-label="Qué cambió en el escenario">
+    @for (c of cambios(); track c.parametro) {
+      <li>
+        <strong>{{ c.parametro }}</strong> {{ c.antes }} <span aria-label="pasa a">→</span>
+        {{ c.ahora }}
+      </li>
+    }
+  </ul>
+} @else {
+  <p class="sin-cambios">
+    Misma configuración que la referencia: el resultado cambia solo por el azar de las repeticiones.
+  </p>
+}
+
+<div class="columnas">
+  @for (col of columnas(); track col.titulo) {
+    <section class="columna" [class.ahora]="col.titulo === 'Ahora'">
+      <span class="titulo">{{ col.titulo }}</span>
+      <strong class="plan">{{ col.plan }}</strong>
+      <dl>
+        <div>
+          <dt>Infectados con el plan</dt>
+          <dd>
+            {{ numero(col.infectados.media) }}
+            <small>({{ numero(col.infectados.p5) }}–{{ numero(col.infectados.p95) }})</small>
+          </dd>
+        </div>
+        <div>
+          <dt>Sin intervenir</dt>
+          <dd>{{ numero(col.sinIntervenir) }}</dd>
+        </div>
+        <div>
+          <dt>Personas salvadas</dt>
+          <dd>
+            {{ numero(col.salvados) }}
+            <small>(≈ {{ numero(col.salvadosManta) }} en Manta)</small>
+          </dd>
+        </div>
+        <div>
+          <dt>Gana al azar</dt>
+          <dd>{{ porcentaje(col.ganaAAzar) }} de los brotes</dd>
+        </div>
+      </dl>
+    </section>
+  }
+</div>
