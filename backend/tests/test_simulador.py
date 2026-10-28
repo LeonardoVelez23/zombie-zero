@@ -251,3 +251,12 @@ def test_mordidos_por_barrio_suman_el_total(red, beta):
         res = simular(red, ESC, crear("anillo", red), beta, r)
         assert res.afectados_barrio[-1].sum() == res.infectados_total
         assert (np.diff(res.afectados_barrio, axis=0) >= 0).all()   # acumulado: nunca baja
+
+
+def test_la_firma_anterior_de_los_resultados_sigue_sirviendo():
+    from zombie.modelo import Lote, Resultado
+    vacio = np.zeros((1, 2, 4))
+    lote = Lote(vacio, np.zeros((1, 2, 6)), np.zeros((1, 2)), np.zeros(1), np.zeros(1))
+    assert lote.afectados_barrio is None
+    assert lote.resultado(0).afectados_barrio is None
+    assert Resultado(vacio[0], np.zeros((2, 6)), np.zeros(2), 0, 0, 0).afectados_barrio is None

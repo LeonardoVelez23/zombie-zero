@@ -44,11 +44,12 @@ class Observacion:
 class Resultado:
     serie: np.ndarray        # (dias + 1, 4): cuántos S, E, I, R hay cada día
     serie_barrio: np.ndarray  # (dias + 1, len(BARRIOS)): zombies activos por barrio
-    afectados_barrio: np.ndarray  # (dias + 1, len(BARRIOS)): mordidos acumulados por barrio
     nuevos: np.ndarray       # mordidos nuevos cada día
     infectados_total: int
     vacunas_usadas: int
     vacunas_perdidas: int    # aplicadas a quien ya no estaba sano
+    # Al final y opcional: así la firma anterior del constructor sigue sirviendo.
+    afectados_barrio: np.ndarray | None = None  # (dias + 1, len(BARRIOS)): mordidos acumulados por barrio
 
     @property
     def pico(self) -> int:
@@ -136,10 +137,10 @@ class Lote:
     """Resultados de varias repeticiones del mismo plan, apiladas en el primer eje."""
     serie: np.ndarray          # (R, dias + 1, 4)
     serie_barrio: np.ndarray   # (R, dias + 1, len(BARRIOS))
-    afectados_barrio: np.ndarray  # (R, dias + 1, len(BARRIOS))
     nuevos: np.ndarray         # (R, dias + 1)
     vacunas_usadas: np.ndarray  # (R,)
     vacunas_perdidas: np.ndarray  # (R,)
+    afectados_barrio: np.ndarray | None = None  # (R, dias + 1, len(BARRIOS)); opcional como en Resultado
 
     @property
     def infectados_total(self) -> np.ndarray:
@@ -147,7 +148,7 @@ class Lote:
 
     def resultado(self, k: int) -> Resultado:
         return Resultado(serie=self.serie[k], serie_barrio=self.serie_barrio[k],
-                         afectados_barrio=self.afectados_barrio[k],
+                         afectados_barrio=None if self.afectados_barrio is None else self.afectados_barrio[k],
                          nuevos=self.nuevos[k], infectados_total=int(self.infectados_total[k]),
                          vacunas_usadas=int(self.vacunas_usadas[k]),
                          vacunas_perdidas=int(self.vacunas_perdidas[k]))
