@@ -128,7 +128,13 @@ def comparar(esc: Escenario, repeticiones: int = 100, planes: list[Plan] | None 
             if base.id in totales and base.id != datos["id"]:
                 salvados = totales[base.id] - totales[datos["id"]]
                 datos[f"salvados_vs_{base.id}"] = _rango(salvados)
-                datos[f"gana_a_{base.id}"] = float((salvados > 0).mean())
+                # Un brote que se apaga solo antes de poder actuar termina igual con cualquier plan:
+                # ese empate no dice nada de la estrategia, así que se cuenta aparte y "gana" se mide
+                # solo entre los brotes en que hubo diferencia.
+                decididos = salvados != 0
+                datos[f"gana_a_{base.id}"] = (
+                    float((salvados[decididos] > 0).mean()) if decididos.any() else 0.0)
+                datos[f"empate_con_{base.id}"] = float((~decididos).mean())
 
     candidatos = [d for d in resumen if d["tipo"] == "candidato"]
     mejor = min(candidatos, key=lambda d: d["infectados"]["media"]) if candidatos else None
@@ -148,17 +154,20 @@ def comparar(esc: Escenario, repeticiones: int = 100, planes: list[Plan] | None 
 def _veredicto(mejor: dict | None) -> dict | None:
     """Qué tan confiable es la recomendación frente a repartir lo mismo al azar.
 
-    "solida": gana al azar en al menos 80 % de los brotes simulados.
+    Se mide entre los brotes en que hubo diferencia (los empates se reportan aparte):
+    "solida": gana al azar en al menos 80 % de esos brotes y salva más personas en promedio.
     "debil": gana más veces de las que pierde, pero no siempre.
-    "insuficiente": con estos recursos ningún plan cambia el resultado de forma consistente.
+    "insuficiente": con estos recursos ningún plan supera al azar de forma consistente.
     """
     if mejor is None:
         return None
     gana = mejor.get("gana_a_azar", 0.0)
-    nivel = "solida" if gana >= 0.8 else "debil" if gana > 0.5 else "insuficiente"
+    mejora = mejor["salvados_vs_azar"]["media"] > 0
+    nivel = "solida" if gana >= 0.8 and mejora else "debil" if gana > 0.5 and mejora else "insuficiente"
     return {
         "nivel": nivel,
         "gana_a_azar": gana,
+        "empates_con_azar": mejor.get("empate_con_azar", 0.0),
         "salvados_vs_ninguna": mejor["salvados_vs_ninguna"]["media"],
         "salvados_vs_azar": mejor["salvados_vs_azar"]["media"],
     }

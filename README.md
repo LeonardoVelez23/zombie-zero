@@ -45,8 +45,8 @@ Central. El Comité de Contención tiene pocas vacunas, un presupuesto limitado 
 6. **Muestra el avance en un mapa de Manta** (modelo de difusión espacial) que se recorre día por día.
 
 Todo se calcula en vivo con cada cambio de parámetros, sin resultados guardados de antemano. En la interfaz se
-cambian el punto de origen del brote, el R0, la detección, el presupuesto, las vacunas, su eficacia, la
-población, la duración y la semilla.
+cambian el punto de origen del brote, el R0, la detección, el presupuesto, las vacunas, su eficacia, el día
+en que se empieza a actuar, las vacunas por día, la población, la duración y la semilla.
 
 ## Cómo probarlo
 
@@ -149,8 +149,9 @@ justificado en [docs/supuestos.md](docs/supuestos.md).
 | Vacunas al azar | 1.795 | |
 | **Recomendado: anillo + cerrar colegios** | **546** | 7 – 1.768 |
 
-La recomendación le gana al azar en el 86 % de los brotes simulados (veredicto "sólida") y salva en promedio
-unas 1.660 personas frente a no intervenir.
+La recomendación le gana al azar en el 100 % de los brotes en que hubo diferencia (veredicto "sólida") y salva
+en promedio unas 1.660 personas frente a no intervenir. En el 14 % de los brotes la plaga se apagó sola antes del
+día 21 y todos los planes terminaron igual; esos empates se reportan aparte.
 
 **Para reproducirlo:** abrir la web sin cambiar nada y pulsar simular, o `POST /api/simular` con `{}`. Con la
 misma configuración y la misma semilla el resultado es idéntico, en local y en AWS. Cada repetición usa
@@ -227,7 +228,11 @@ Archivo fuente editable: [`docs/arquitectura.drawio`](docs/arquitectura.drawio) 
 - **Recursos que llegan por días y decisiones que cambian con el brote.** Las vacunas llegan a un ritmo diario
   desde el día en que se detecta el brote, y el anillo vuelve a decidir cada día según los nuevos casos.
 - **Se reportan rangos, no un solo resultado.** Media, mediana, p5–p95 y porcentaje de brotes en que el plan le
-  gana al azar. El veredicto es "sólida" solo si gana al azar en al menos el 80 % de los brotes.
+  gana al azar. Ese porcentaje se cuenta solo entre los brotes en que hubo diferencia: si la plaga se apaga sola
+  antes de poder actuar, todos los planes empatan y eso no dice nada de la estrategia, así que los empates se
+  muestran aparte. El veredicto es "sólida" si gana al azar en al menos el 80 % de esos brotes y además salva más
+  personas en promedio; si ningún plan supera al azar, el informe dice "recursos insuficientes" y sugiere qué
+  cambiar (más vacunas o actuar antes).
 - **Planes que combinan intervenciones con un presupuesto.** Cada estrategia de vacunación se prueba sola y con
   cada combinación de cierres que cabe en el presupuesto; lo que sobra tras los cierres se gasta en vacunas.
 - **Motor vectorizado con numpy.** Simula muchas repeticiones a la vez, sin un bucle por repetición. Así

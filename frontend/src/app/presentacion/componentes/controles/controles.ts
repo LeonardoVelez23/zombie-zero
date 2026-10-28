@@ -27,9 +27,21 @@ const SECCIONES: { titulo: string; campos: Campo[] }[] = [
   {
     titulo: 'Escenario',
     campos: [
-      { grupo: 'escenario', nombre: 'nPersonas', etiqueta: 'Población', unidad: 'PERSONAS', paso: 1000 },
+      {
+        grupo: 'escenario',
+        nombre: 'nPersonas',
+        etiqueta: 'Población',
+        unidad: 'PERSONAS',
+        paso: 1000,
+      },
       { grupo: 'escenario', nombre: 'dias', etiqueta: 'Duración', unidad: 'DÍAS', paso: 1 },
-      { grupo: 'escenario', nombre: 'casosIniciales', etiqueta: 'Casos iniciales', unidad: 'ZOMBIES', paso: 1 },
+      {
+        grupo: 'escenario',
+        nombre: 'casosIniciales',
+        etiqueta: 'Casos iniciales',
+        unidad: 'ZOMBIES',
+        paso: 1,
+      },
       { grupo: 'escenario', nombre: 'semilla', etiqueta: 'Semilla', unidad: 'SEED', paso: 1 },
     ],
   },
@@ -43,9 +55,30 @@ const SECCIONES: { titulo: string; campos: Campo[] }[] = [
   {
     titulo: 'Recursos',
     campos: [
-      { grupo: 'recursos', nombre: 'presupuesto', etiqueta: 'Presupuesto', unidad: 'USD', paso: 1000 },
-      { grupo: 'recursos', nombre: 'vacunasDisponibles', etiqueta: 'Vacunas', unidad: 'DOSIS', paso: 100 },
+      {
+        grupo: 'recursos',
+        nombre: 'presupuesto',
+        etiqueta: 'Presupuesto',
+        unidad: 'USD',
+        paso: 1000,
+      },
+      {
+        grupo: 'recursos',
+        nombre: 'vacunasDisponibles',
+        etiqueta: 'Vacunas',
+        unidad: 'DOSIS',
+        paso: 100,
+      },
       { grupo: 'recursos', nombre: 'eficacia', etiqueta: 'Eficacia', unidad: '0 – 1', paso: 0.05 },
+      // Cuándo se empieza a actuar y a qué ritmo llegan las vacunas: lo que más cambia el resultado.
+      { grupo: 'recursos', nombre: 'diaInicio', etiqueta: 'Día de inicio', unidad: 'DÍA', paso: 1 },
+      {
+        grupo: 'recursos',
+        nombre: 'vacunasPorDia',
+        etiqueta: 'Vacunas por día',
+        unidad: 'DOSIS',
+        paso: 10,
+      },
     ],
   },
 ];

@@ -65,14 +65,20 @@ difícil de verdad: repartir las vacunas al azar casi no sirve y la estrategia t
 
 Medido con el inicio en el aeropuerto, 5.000 personas y 100 repeticiones (infectados en promedio):
 
-| Escenario | Sin intervenir | Vacunas al azar | Estrategia recomendada | Gana al azar |
+| Escenario | Sin intervenir | Vacunas al azar | Estrategia recomendada | Gana al azar (empates aparte) |
 |---|---|---|---|---|
-| Inicial (70 %, día 3, 1.000 vacunas), semilla 42 | 2.204 | 1.080 | 23 (−99 %) | 95 % |
-| Actual (40 %, día 21, 500 vacunas), semilla 42 | 2.204 | 1.795 | 546 (−75 %), p5–p95: 7–1.767 | 86 % |
-| Actual, semilla 7 | 2.204 | 1.818 | 552 (−75 %), p5–p95: 8–1.705 | 88 % |
+| Inicial (70 %, día 3, 1.000 vacunas), semilla 42 | 2.204 | 1.080 | 23 (−99 %) | 99 % (4 % de empates) |
+| Actual (40 %, día 21, 500 vacunas), semilla 42 | 2.204 | 1.795 | 546 (−75 %), p5–p95: 7–1.767 | 100 % (14 % de empates) |
+| Actual, semilla 7 | 2.204 | 1.818 | 552 (−75 %), p5–p95: 8–1.705 | 99 % (11 % de empates) |
 
 El rango p5–p95 muestra que en algunos brotes la plaga se escapa aun con la mejor estrategia; por eso
-se reportan rangos y no una sola simulación.
+se reportan rangos y no una sola simulación. "Gana al azar" se cuenta solo entre los brotes en que hubo
+diferencia: en un empate la plaga se apagó sola antes del día en que se empieza a actuar y ningún plan
+llegó a influir.
+
+Con el Brote Sorpresa "el doble de contagiosa" (R0 = 5) ningún plan supera al azar: con R0 = 5 haría falta
+inmunizar a cerca del 80 % de la población (1 − 1/R0) y solo hay vacunas para el 10 %. El sistema lo informa
+como "recursos insuficientes" en vez de presentar un plan como ganador.
 
 ## Modelo de contraste (EDP espacial)
 

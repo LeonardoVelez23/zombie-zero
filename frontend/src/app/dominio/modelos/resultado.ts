@@ -38,13 +38,18 @@ export interface Plan {
   vacunasPerdidas: number;
   salvadosVsNinguna?: Estadistico;
   salvadosVsAzar?: Estadistico;
+  // Fracción de brotes que gana, contada solo entre los brotes en que hubo diferencia.
   ganaANinguna?: number;
   ganaAAzar?: number;
+  // Fracción de brotes que terminan igual (por ejemplo, la plaga se apagó sola antes de actuar).
+  empateConNinguna?: number;
+  empateConAzar?: number;
 }
 
 export interface Veredicto {
   nivel: 'solida' | 'debil' | 'insuficiente';
   ganaAAzar: number;
+  empatesConAzar?: number;
   salvadosVsNinguna: number;
   salvadosVsAzar: number;
 }
