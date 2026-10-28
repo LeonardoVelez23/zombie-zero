@@ -15,7 +15,7 @@ table {
   width: 100%;
   min-width: 660px;
   border-collapse: collapse;
-  font-size: 10px;
+  font-size: 11px;
 }
 
 th,
@@ -30,7 +30,7 @@ td {
 thead th {
   border-top: 0;
   color: #777caa;
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 800;
   letter-spacing: .8px;
   text-transform: uppercase;
@@ -46,7 +46,7 @@ tbody th {
 }
 
 tbody th strong {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
 }
 
@@ -54,7 +54,7 @@ small {
   display: block;
   margin-top: 4px;
   color: #888daf;
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 400;
   letter-spacing: 0;
   text-transform: none;
@@ -87,7 +87,7 @@ tr.recomendado th {
   padding: 2px 5px;
   border: 1px solid rgba(34, 197, 94, .4);
   color: #4ade80;
-  font-size: 7px;
+  font-size: 10px;
   font-weight: 800;
   letter-spacing: .6px;
 }
@@ -140,6 +140,13 @@ th.al-dia,
 td.al-dia {
   background: rgba(168, 85, 247, 0.07);
   font-variant-numeric: tabular-nums;
+}
+
+.nota-presupuesto {
+  margin: 10px 0 0;
+  color: #a19dc2;
+  font-size: 11px;
+  line-height: 1.6;
 }
 
 .ver-todos {

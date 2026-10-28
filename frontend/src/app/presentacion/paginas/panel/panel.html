@@ -15,7 +15,8 @@
       class="brand"
       href="#dashboard"
       aria-label="Zombie Zero inicio"
-      (click)="seccionActiva.set('dashboard')"
+      title="Ir al inicio del panel"
+      (click)="irA('dashboard')"
     >
       <img class="brand-mark" src="logo.svg" alt="" width="43" height="43" />
       <div>
@@ -25,63 +26,74 @@
     </a>
 
     <div class="nav-label">CENTRO DE CONTROL</div>
-    <nav class="nav-menu">
+    <!-- En el mismo orden que las secciones de la página. Con la barra plegada solo se ven los
+         iconos: el texto sigue en el enlace (lectores de pantalla) y en el title (tooltip). -->
+    <nav class="nav-menu" aria-label="Secciones del panel">
       <a
         class="nav-item"
         href="#dashboard"
+        title="Dashboard"
         [class.active]="seccionActiva() === 'dashboard'"
         [attr.aria-current]="seccionActiva() === 'dashboard' ? 'location' : null"
-        (click)="seccionActiva.set('dashboard')"
-        ><span>◈</span> Dashboard <b>01</b></a
+        (click)="irA('dashboard')"
+        ><span aria-hidden="true">◈</span> Dashboard</a
       >
+      <a
+        class="nav-item"
+        href="#recomendacion"
+        title="Recomendación"
+        [class.active]="seccionActiva() === 'recomendacion'"
+        [attr.aria-current]="seccionActiva() === 'recomendacion' ? 'location' : null"
+        (click)="irA('recomendacion')"
+        ><span aria-hidden="true">✳</span> Recomendación</a
+      >
+      <!-- Una sola entrada: los parámetros y el mapa (con su selector de modelo) están en el mismo
+           bloque; en escritorio, lado a lado, y en pantallas estrechas, el mapa justo debajo. -->
       <a
         class="nav-item"
         href="#simulacion"
+        title="Simulación y mapa"
         [class.active]="seccionActiva() === 'simulacion'"
         [attr.aria-current]="seccionActiva() === 'simulacion' ? 'location' : null"
-        (click)="seccionActiva.set('simulacion')"
-        ><span>⌘</span> Simulación</a
-      >
-      <a
-        class="nav-item"
-        href="#selector-modelo"
-        [class.active]="seccionActiva() === 'mapa-brote'"
-        [attr.aria-current]="seccionActiva() === 'mapa-brote' ? 'location' : null"
-        (click)="seccionActiva.set('mapa-brote')"
-        ><span>⬢</span> Mapa del brote</a
-      >
-      <a
-        class="nav-item"
-        href="#graficas"
-        [class.active]="seccionActiva() === 'resultados'"
-        [attr.aria-current]="seccionActiva() === 'resultados' ? 'location' : null"
-        (click)="seccionActiva.set('resultados'); grafica.set('curva')"
-        ><span>▥</span> Resultados</a
-      >
-      <a
-        class="nav-item"
-        href="#graficas"
-        [class.active]="seccionActiva() === 'estados'"
-        [attr.aria-current]="seccionActiva() === 'estados' ? 'location' : null"
-        (click)="seccionActiva.set('estados'); grafica.set('estados')"
-        ><span>◐</span> Estados SEIR</a
+        (click)="irA('simulacion')"
+        ><span aria-hidden="true">⌘</span> Simulación y mapa</a
       >
       <a
         class="nav-item"
         href="#estrategias"
+        title="Estrategias"
         [class.active]="seccionActiva() === 'estrategias'"
         [attr.aria-current]="seccionActiva() === 'estrategias' ? 'location' : null"
-        (click)="seccionActiva.set('estrategias')"
-        ><span>⇄</span> Estrategias</a
+        (click)="irA('estrategias')"
+        ><span aria-hidden="true">⇄</span> Estrategias</a
+      >
+      <a
+        class="nav-item"
+        href="#graficas"
+        title="Resultados"
+        [class.active]="seccionActiva() === 'resultados'"
+        [attr.aria-current]="seccionActiva() === 'resultados' ? 'location' : null"
+        (click)="irA('resultados'); grafica.set('curva')"
+        ><span aria-hidden="true">▥</span> Resultados</a
+      >
+      <a
+        class="nav-item"
+        href="#graficas"
+        title="Estados SEIR"
+        [class.active]="seccionActiva() === 'estados'"
+        [attr.aria-current]="seccionActiva() === 'estados' ? 'location' : null"
+        (click)="irA('estados'); grafica.set('estados')"
+        ><span aria-hidden="true">◐</span> Estados SEIR</a
       >
       @if (parametros()?.calibracion) {
         <a
           class="nav-item"
           href="#calibracion"
+          title="Datos reales"
           [class.active]="seccionActiva() === 'calibracion'"
           [attr.aria-current]="seccionActiva() === 'calibracion' ? 'location' : null"
-          (click)="seccionActiva.set('calibracion')"
-          ><span>◎</span> Datos reales</a
+          (click)="irA('calibracion')"
+          ><span aria-hidden="true">◎</span> Datos reales</a
         >
       }
     </nav>
@@ -97,6 +109,10 @@
       <div class="version">MANTA, ECUADOR <span>v0.1.0</span></div>
     </div>
   </aside>
+
+  <!-- Solo en pantallas estrechas con la barra abierta (ver panel.css): oscurece el contenido y,
+       al tocarlo, vuelve a plegar la barra. Con teclado se cierra con el botón ✕. -->
+  <div class="sidebar-velo" aria-hidden="true" (click)="sidebarPlegada.set(true)"></div>
 
   <main class="main-content" id="dashboard">
     <header class="topbar">
@@ -136,6 +152,26 @@
 
     <app-linea-tiempo [resultado]="resultado()" />
 
+    <div class="metrics-estado">
+      @if (estadoCifras(); as e) {
+        @if (e.parcial) {
+          <span class="etiqueta-estado parcial"
+            >Cifras parciales · día {{ e.dia }} de {{ e.dias }}</span
+          >
+          <button type="button" class="ver-final" (click)="reloj.irA(e.dias)">
+            Ver resultado final
+          </button>
+        } @else {
+          <span class="etiqueta-estado final"
+            >Resultado final · promedio de {{ e.repeticiones }} brotes</span
+          >
+        }
+      }
+      @if (contextoPoblacion(); as contexto) {
+        <span class="contexto-poblacion">{{ contexto }}</span>
+      }
+    </div>
+
     <section class="metrics-grid" aria-label="Indicadores del brote">
       @for (indicador of indicadores(); track indicador.etiqueta) {
         <article class="metric-card" [class]="indicador.color">
@@ -155,6 +191,11 @@
           <div class="metric-foot"><span class="mini-square"></span> {{ indicador.nota }}</div>
         </article>
       }
+    </section>
+
+    <!-- La decisión, justo debajo de los indicadores: qué plan aplicar y qué tan sólido es. -->
+    <section class="full-grid">
+      <app-informe id="recomendacion" [resultado]="resultado()" />
     </section>
 
     @if (referencia(); as anterior) {
@@ -250,9 +291,8 @@
       </div>
     </section>
 
-    <section class="bottom-grid">
+    <section class="full-grid">
       <app-tabla [resultado]="resultado()" />
-      <app-informe [resultado]="resultado()" />
     </section>
 
     <section class="full-grid graficas" id="graficas">
