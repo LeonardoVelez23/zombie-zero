@@ -1,20 +1,25 @@
 import { TestBed } from '@angular/core/testing';
 
 import { resultadoDePrueba } from '../../../../testing/datos';
+import { RelojBrote } from '../../servicios/reloj-brote';
 import { Estados } from './estados';
 
 describe('Estados SEIR día a día', () => {
-  async function renderizar() {
+  async function renderizar(dia = 1) {
+    // El día lo marca el reloj compartido (la línea de tiempo del panel).
+    const reloj = TestBed.inject(RelojBrote);
+    reloj.total.set(3);
+    reloj.irA(dia);
     const fixture = TestBed.createComponent(Estados);
     fixture.componentRef.setInput('resultado', resultadoDePrueba);
     await fixture.whenStable();
-    return { fixture, panel: fixture.nativeElement as HTMLElement };
+    return { fixture, reloj, panel: fixture.nativeElement as HTMLElement };
   }
 
   const contadores = (panel: HTMLElement) =>
     Array.from(panel.querySelectorAll('.contador strong')).map((e) => e.textContent?.trim());
 
-  it('muestra los cuatro estados el día del pico sin intervención', async () => {
+  it('muestra los cuatro estados el día del reloj', async () => {
     const { panel } = await renderizar();
     const nombres = Array.from(panel.querySelectorAll('.contador .nombre')).map(
       (e) => e.textContent,
@@ -51,14 +56,21 @@ describe('Estados SEIR día a día', () => {
     expect(panel.querySelector('.graficas .axis-labels')?.textContent).toContain('100 %');
   });
 
-  it('cambia de día con el deslizador', async () => {
-    const { fixture, panel } = await renderizar();
-    const deslizador = panel.querySelector<HTMLInputElement>('.deslizador input')!;
-    deslizador.value = '3';
-    deslizador.dispatchEvent(new Event('input'));
+  it('cambia de día cuando avanza el reloj', async () => {
+    const { fixture, panel, reloj } = await renderizar();
+    reloj.irA(3);
     await fixture.whenStable();
     expect(contadores(panel)).toEqual(['9.968', '1', '1', '30']);
     expect(panel.querySelector('.resumen')?.textContent).toContain('El día 3');
+  });
+
+  it('«Ir al pico» lleva a todas las pantallas al pico sin intervención', async () => {
+    const { fixture, panel, reloj } = await renderizar(3);
+    panel.querySelector<HTMLButtonElement>('.ir-pico')!.click();
+    await fixture.whenStable();
+    // Datos de prueba: el pico sin intervención es el día 2 (recomendado: S 9.970 · E 6 · I 4 · R 20).
+    expect(reloj.dia()).toBe(2);
+    expect(contadores(panel)).toEqual(['9.970', '6', '4', '20']);
   });
 
   it('si la API no trae estados avisa en lugar de fallar', async () => {

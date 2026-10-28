@@ -6,7 +6,8 @@
   <span class="chart-tag">MEDIA Y RANGO P5–P95</span>
 </div>
 <p class="panel-description">
-  Línea: promedio entre brotes simulados. Banda: 90 % de los brotes cae dentro.
+  Línea: promedio entre brotes simulados. Banda: 90 % de los brotes cae dentro. Haz clic o
+  arrastra sobre la gráfica para ir a un día.
 </p>
 
 @if (resultado(); as r) {
@@ -22,6 +23,8 @@
       viewBox="0 0 700 300"
       role="img"
       aria-label="Zombies activos por día con y sin intervención"
+      (pointerdown)="elegirDia($event)"
+      (pointermove)="elegirDia($event)"
     >
       <g class="grid-lines">
         @for (marca of ejeY(); track marca.y) {
@@ -46,10 +49,36 @@
         <path class="banda" [class]="curva.clase" [attr.d]="curva.banda" />
       }
       @for (curva of curvas(); track curva.clase) {
-        <path class="linea" [class]="curva.clase" [attr.d]="curva.linea" />
+        <path class="linea completa" [class]="curva.clase" [attr.d]="curva.linea" />
+      }
+      @for (tramo of recorrido(); track tramo.clase) {
+        <path class="linea" [class]="tramo.clase" [attr.d]="tramo.linea" />
+      }
+      @if (cursor(); as c) {
+        <g class="cursor">
+          <line [attr.x1]="c.x" [attr.x2]="c.x" [attr.y1]="area.arriba - 8" [attr.y2]="area.abajo" />
+          <text [attr.x]="c.x" [attr.y]="area.arriba - 12" [attr.text-anchor]="c.alinear === 'end' ? 'end' : 'start'">
+            Día {{ c.dia }}
+          </text>
+          @for (p of c.puntos; track p.clase) {
+            <circle [class]="p.clase" [attr.cx]="c.x" [attr.cy]="p.y" r="4.5" />
+          }
+        </g>
       }
     </svg>
   </div>
+
+  @if (cursor(); as c) {
+    <ul class="valores-dia" aria-live="polite" aria-label="Zombies activos el día elegido">
+      @for (p of c.puntos; track p.clase) {
+        <li>
+          <i class="legend-dot" [class]="p.clase"></i>
+          <span>{{ p.etiqueta }}</span>
+          <strong>{{ numero(p.valor) }}</strong>
+        </li>
+      }
+    </ul>
+  }
 
   <div class="chart-foot">
     <span><i class="tiny-dot"></i> {{ r.repeticiones }} brotes simulados por plan</span>

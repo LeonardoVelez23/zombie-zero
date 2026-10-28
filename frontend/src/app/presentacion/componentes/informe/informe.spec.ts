@@ -4,18 +4,23 @@ import { Veredicto } from '../../../dominio/modelos/resultado';
 import { parametrosDePrueba, resultadoDePrueba } from '../../../../testing/datos';
 import { casosDeUso } from '../../../app.config';
 import { SimuladorRepositorio } from '../../../dominio/puertos/simulador.repositorio';
+import { RelojBrote } from '../../servicios/reloj-brote';
 import { Informe } from './informe';
 
 describe('Informe para el alcalde', () => {
-  async function renderizar(veredicto: Partial<Veredicto>) {
+  beforeEach(() => {
     const simulador: SimuladorRepositorio = {
       parametros: () => Promise.resolve(parametrosDePrueba),
       simular: () => Promise.reject(new Error('no se usa')),
+      informe: () => Promise.reject(new Error('no se usa')),
       difusion: () => Promise.reject(new Error('no se usa')),
     };
     TestBed.configureTestingModule({
       providers: [{ provide: SimuladorRepositorio, useValue: simulador }, ...casosDeUso],
     });
+  });
+
+  async function renderizar(veredicto: Partial<Veredicto>) {
     const fixture = TestBed.createComponent(Informe);
     fixture.componentRef.setInput('resultado', {
       ...resultadoDePrueba,
@@ -65,5 +70,24 @@ describe('Informe para el alcalde', () => {
   it('si ningún plan gana ofrece calcular qué haría falta', async () => {
     const texto = await renderizar({ nivel: 'insuficiente' });
     expect(texto).toContain('¿Qué haría falta para ganar?');
+  });
+
+  it('mientras avanza el brote dice cuánto lleva salvado el plan; al final, solo el total', async () => {
+    const reloj = TestBed.inject(RelojBrote);
+    reloj.total.set(3);
+    reloj.irA(1);
+    const fixture = TestBed.createComponent(Informe);
+    fixture.componentRef.setInput('resultado', resultadoDePrueba);
+    await fixture.whenStable();
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.querySelector('.en-curso')?.textContent).toContain('Día 1 de 3');
+    reloj.irA(3);
+    await fixture.whenStable();
+    expect(raiz.querySelector('.en-curso')).toBeNull();
+  });
+
+  it('ofrece explicar el resultado al alcalde', async () => {
+    const texto = await renderizar({ nivel: 'solida' });
+    expect(texto).toContain('Explicar al alcalde');
   });
 });
