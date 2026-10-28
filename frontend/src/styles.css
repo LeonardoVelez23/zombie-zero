@@ -7,7 +7,16 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: #030617;
+  --bg: #030617;
+  --surface: #080b20;
+  --surface-2: #0c1028;
+  --border: #202344;
+  --muted: #8589a9;
+  --orange: #ff9900;
+  --violet: #a855f7;
+  --green: #22c55e;
+  --red: #fb4b69;
+  background: var(--bg);
 }
 
 * {
@@ -44,3 +53,96 @@ select {
   background: #7e22ce;
 }
 
+
+/* Piezas compartidas por los paneles de todos los componentes. */
+
+.panel {
+  min-width: 0;
+  padding: 19px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: linear-gradient(145deg, rgba(12, 16, 40, .97), rgba(7, 10, 28, .97));
+}
+
+.panel-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.panel-heading h2 {
+  margin: 7px 0 0;
+  font-size: 16px;
+  line-height: 1.4;
+  letter-spacing: -.3px;
+}
+
+.section-index {
+  color: #777caa;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  font-weight: 800;
+}
+
+.panel-description {
+  margin: 8px 0 20px;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.7;
+}
+
+.chart-tag {
+  white-space: nowrap;
+  padding: 7px 8px;
+  border: 1px solid #34375c;
+  background: #10142c;
+  color: #a6a9c6;
+  font-size: 8px;
+  letter-spacing: 1px;
+  font-weight: 800;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 10px rgba(34, 197, 94, .5);
+}
+
+.status-dot.apagado {
+  background: var(--red);
+  box-shadow: 0 0 10px rgba(251, 75, 105, .5);
+}
+
+.vacio {
+  display: grid;
+  place-items: center;
+  min-height: 180px;
+  padding: 20px;
+  color: #7f83a3;
+  font-size: 10px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.error {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(251, 75, 105, .35);
+  border-radius: 4px;
+  background: rgba(251, 75, 105, .08);
+  color: #ff9cad;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+@media (min-width: 1500px) {
+  .panel { padding: 23px; }
+}
+
+@media (max-width: 760px) {
+  .panel { padding: 15px; }
+}

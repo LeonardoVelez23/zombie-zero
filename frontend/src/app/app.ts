@@ -1,12 +1,10 @@
-import { Component, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component } from '@angular/core';
+
+import { Panel } from './presentacion/paginas/panel/panel';
 
 @Component({
-  imports: [RouterOutlet],
   selector: 'app-root',
-  styleUrl: './app.css',
-  templateUrl: './app.html',
+  imports: [Panel],
+  template: '<app-panel />',
 })
-export class App {
-  protected readonly title = signal('zombie-zero-ui');
-}
+export class App {}
