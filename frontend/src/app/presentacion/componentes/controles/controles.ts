@@ -28,8 +28,8 @@ interface Campo {
   paso: number;
 }
 
-// Solo los parámetros que más cambian el resultado; el resto toma el valor por defecto.
-// Las secciones "avanzadas" quedan plegadas para que el formulario no abrume a primera vista.
+// A la vista, solo los cuatro parámetros que más cambian el resultado y que cualquiera entiende.
+// El resto queda plegado en «Más parámetros» para que el formulario no abrume a primera vista.
 interface Seccion {
   titulo: string;
   campos: Campo[];
@@ -40,15 +40,9 @@ interface Seccion {
 
 const SECCIONES: Seccion[] = [
   {
-    titulo: 'Plaga',
+    titulo: 'Lo esencial',
     campos: [
       { grupo: 'plaga', nombre: 'r0', etiqueta: 'R0', unidad: 'CONTAGIOS', paso: 0.1 },
-      { grupo: 'plaga', nombre: 'deteccion', etiqueta: 'Detección', unidad: '0 – 1', paso: 0.05 },
-    ],
-  },
-  {
-    titulo: 'Recursos',
-    campos: [
       {
         grupo: 'recursos',
         nombre: 'presupuesto',
@@ -63,9 +57,16 @@ const SECCIONES: Seccion[] = [
         unidad: 'DOSIS',
         paso: 100,
       },
-      { grupo: 'recursos', nombre: 'eficacia', etiqueta: 'Eficacia', unidad: '0 – 1', paso: 0.05 },
-      // Cuándo se empieza a actuar y a qué ritmo llegan las vacunas: lo que más cambia el resultado.
+      // Cuándo se empieza a actuar: lo que más cambia el resultado.
       { grupo: 'recursos', nombre: 'diaInicio', etiqueta: 'Día de inicio', unidad: 'DÍA', paso: 1 },
+    ],
+  },
+  {
+    titulo: 'Plaga y vacuna',
+    avanzada: true,
+    campos: [
+      { grupo: 'plaga', nombre: 'deteccion', etiqueta: 'Detección', unidad: '0 – 1', paso: 0.05 },
+      { grupo: 'recursos', nombre: 'eficacia', etiqueta: 'Eficacia', unidad: '0 – 1', paso: 0.05 },
       {
         grupo: 'recursos',
         nombre: 'vacunasPorDia',
@@ -73,13 +74,6 @@ const SECCIONES: Seccion[] = [
         unidad: 'DOSIS',
         paso: 10,
       },
-    ],
-  },
-  {
-    titulo: 'Monte Carlo',
-    conRepeticiones: true,
-    campos: [
-      { grupo: 'escenario', nombre: 'semilla', etiqueta: 'Semilla', unidad: 'SEED', paso: 1 },
     ],
   },
   {
@@ -112,12 +106,21 @@ const SECCIONES: Seccion[] = [
       { grupo: 'recursos', nombre: 'corteDias', etiqueta: 'Durante', unidad: 'DÍAS', paso: 1 },
     ],
   },
+  {
+    titulo: 'Monte Carlo',
+    avanzada: true,
+    conRepeticiones: true,
+    campos: [
+      { grupo: 'escenario', nombre: 'semilla', etiqueta: 'Semilla', unidad: 'SEED', paso: 1 },
+    ],
+  },
 ];
 
 const CAMPOS = SECCIONES.flatMap((s) => s.campos);
-const AVANZADOS = new Set(
-  SECCIONES.filter((s) => s.avanzada).flatMap((s) => s.campos.map((c) => c.nombre)),
-);
+const AVANZADOS = new Set([
+  'repeticiones',
+  ...SECCIONES.filter((s) => s.avanzada).flatMap((s) => s.campos.map((c) => c.nombre)),
+]);
 
 interface Sorpresa {
   nombre: string;

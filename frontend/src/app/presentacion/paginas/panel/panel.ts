@@ -1,7 +1,9 @@
 import {
   ApplicationRef,
   Component,
+  Injector,
   OnInit,
+  afterNextRender,
   computed,
   inject,
   input,
@@ -63,17 +65,10 @@ interface Indicador {
   icono: string;
 }
 
-type ModeloMapa = 'red' | 'edp';
-type GraficaId = 'curva' | 'estados';
-
-const GRAFICAS: { id: GraficaId; nombre: string }[] = [
-  { id: 'curva', nombre: 'Curva de contagios' },
-  { id: 'estados', nombre: 'Estados SEIR' },
-];
-
-const MODELOS: { id: ModeloMapa; nombre: string }[] = [
-  { id: 'red', nombre: 'Modelo de red' },
-  { id: 'edp', nombre: 'Modelo EDP (contraste)' },
+// Gráficas que van al PDF: el componente que la dibuja (por su id) y los elementos de su leyenda.
+const GRAFICAS: { nombre: string; id: string; leyenda: string }[] = [
+  { nombre: 'Curva de contagios', id: 'resultados', leyenda: '.chart-legend > span' },
+  { nombre: 'Estados SEIR', id: 'estados', leyenda: '.leyenda-estados > li' },
 ];
 
 @Component({
@@ -138,6 +133,7 @@ export class Panel implements OnInit {
   private readonly modelarDifusion = inject(ModelarDifusion);
   private readonly obtenerHistorial = inject(ObtenerHistorial);
   private readonly appRef = inject(ApplicationRef);
+  private readonly injector = inject(Injector);
   private readonly controles = viewChild(Controles);
 
   protected readonly parametros = signal<Parametros | null>(null);
@@ -154,13 +150,25 @@ export class Panel implements OnInit {
   // Últimas simulaciones guardadas en S3 (de todos); vacío si la API no las tiene.
   protected readonly historial = signal<SimulacionGuardada[]>([]);
 
-  // Modelo que muestra el mapa principal: el de red (el que decide) o la EDP de contraste.
-  protected readonly modelos = MODELOS;
-  protected readonly modeloMapa = signal<ModeloMapa>('red');
+  // «Opciones avanzadas» desplegadas: comparativa, estados SEIR, modelo EDP, historial y datos
+  // reales. Empiezan plegadas para que la pantalla principal muestre solo lo necesario para decidir.
+  protected readonly avanzado = signal(false);
 
-  // Las dos gráficas grandes comparten lugar: se ve una a la vez.
-  protected readonly graficas = GRAFICAS;
-  protected readonly grafica = signal<GraficaId>('curva');
+  protected alternarAvanzado(): void {
+    this.avanzado.update((abierto) => !abierto);
+  }
+
+  // Desde el menú lateral: despliega las opciones avanzadas y lleva hasta ellas (la sección no
+  // existe en la página mientras está plegada, así que el ancla sola no bastaría).
+  protected irAAvanzado(evento: Event): void {
+    evento.preventDefault();
+    this.irA('avanzado');
+    this.avanzado.set(true);
+    afterNextRender(
+      () => document.getElementById('boton-avanzado')?.scrollIntoView?.({ behavior: 'smooth' }),
+      { injector: this.injector },
+    );
+  }
 
   // El mismo escenario en los dos modelos: infectados sin intervenir y con la intervención de cada uno.
   protected readonly contraste = computed(() => {
@@ -194,7 +202,7 @@ export class Panel implements OnInit {
     };
   });
 
-  // El mapa EDP usa el escenario de la última simulación (o el por defecto si aún no hay).
+  // El mapa EDP (en las opciones avanzadas) usa el escenario de la última simulación (o el por defecto si aún no hay).
   private ultimaConfiguracion: ConfiguracionSimulacion = {};
 
   // Número de la última petición enviada: si una respuesta vieja llega tarde, se descarta
@@ -346,7 +354,6 @@ export class Panel implements OnInit {
       this.difusion.set(null);
       this.errorDifusion.set(null);
       this.calculandoDifusion.set(false);
-      if (this.modeloMapa() === 'edp') void this.calcularDifusion();
       // La simulación recién guardada aparece en «Resultados anteriores».
       void this.cargarHistorial();
     } catch (e) {
@@ -378,24 +385,19 @@ export class Panel implements OnInit {
       await this.repetir(configuracion);
       if (this.error()) return;
     }
-    // Las gráficas se copian con el brote completo (último día) y se deja todo como estaba.
-    const pestana = this.grafica();
+    // Las gráficas se copian con el brote completo (último día) y con las opciones avanzadas a la
+    // vista (allí están los estados SEIR y la calibración); después se deja todo como estaba.
+    const avanzado = this.avanzado();
     const dia = this.reloj.dia();
+    this.avanzado.set(true);
     this.reloj.irA(s.dias);
+    this.appRef.tick();
     const graficas: GraficaInforme[] = [];
     for (const g of GRAFICAS) {
-      this.grafica.set(g.id);
-      this.appRef.tick();
-      const svg = mayorSvg('#graficas');
-      const leyenda = capturarLeyenda([
-        ...document.querySelectorAll(
-          '#graficas .chart-legend > span, #graficas .leyenda-estados > li',
-        ),
-      ]);
+      const svg = mayorSvg(`#${g.id}`);
+      const leyenda = capturarLeyenda([...document.querySelectorAll(`#${g.id} ${g.leyenda}`)]);
       if (svg) graficas.push({ titulo: g.nombre, svg: capturarSvg(svg), leyenda });
     }
-    this.grafica.set(pestana);
-    this.reloj.irA(dia);
     const calibracion = mayorSvg('#calibracion');
     if (calibracion) {
       graficas.push({
@@ -403,17 +405,9 @@ export class Panel implements OnInit {
         svg: capturarSvg(calibracion),
       });
     }
+    this.reloj.irA(dia);
+    this.avanzado.set(avanzado);
     imprimirInforme(informeHtml(s, { operador: this.operador(), alcalde, graficas }));
-  }
-
-  protected elegirModelo(modelo: ModeloMapa): void {
-    this.modeloMapa.set(modelo);
-    if (modelo !== 'edp') return;
-    // Sin el mapa de red a la vista, todas las pantallas saltan al brote completo
-    // (la línea de tiempo sigue disponible para recorrerlo).
-    const r = this.resultado();
-    if (r) this.reloj.irA(r.escenario.dias);
-    if (!this.difusion() && !this.calculandoDifusion()) void this.calcularDifusion();
   }
 
   protected async calcularDifusion(): Promise<void> {

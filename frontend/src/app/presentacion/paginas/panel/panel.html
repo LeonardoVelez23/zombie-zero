@@ -60,50 +60,24 @@
       >
       <a
         class="nav-item"
-        href="#estrategias"
-        title="Estrategias"
-        [class.active]="seccionActiva() === 'estrategias'"
-        [attr.aria-current]="seccionActiva() === 'estrategias' ? 'location' : null"
-        (click)="irA('estrategias')"
-        ><span aria-hidden="true">⇄</span> Estrategias</a
-      >
-      <a
-        class="nav-item"
-        href="#graficas"
-        title="Resultados"
+        href="#resultados"
+        title="Curva de contagios"
         [class.active]="seccionActiva() === 'resultados'"
         [attr.aria-current]="seccionActiva() === 'resultados' ? 'location' : null"
-        (click)="irA('resultados'); grafica.set('curva')"
-        ><span aria-hidden="true">▥</span> Resultados</a
+        (click)="irA('resultados')"
+        ><span aria-hidden="true">▥</span> Curva de contagios</a
       >
+      <!-- Lo demás (comparativa, SEIR, EDP, historial, datos reales) vive en «Opciones avanzadas»:
+           el enlace la despliega y lleva hasta ella. -->
       <a
-        class="nav-item"
-        href="#graficas"
-        title="Estados SEIR"
-        [class.active]="seccionActiva() === 'estados'"
-        [attr.aria-current]="seccionActiva() === 'estados' ? 'location' : null"
-        (click)="irA('estados'); grafica.set('estados')"
-        ><span aria-hidden="true">◐</span> Estados SEIR</a
+        class="nav-item nav-avanzado"
+        href="#avanzado"
+        title="Opciones avanzadas"
+        [class.active]="seccionActiva() === 'avanzado'"
+        [attr.aria-current]="seccionActiva() === 'avanzado' ? 'location' : null"
+        (click)="irAAvanzado($event)"
+        ><span aria-hidden="true">⚙</span> Opciones avanzadas</a
       >
-      <a
-        class="nav-item"
-        href="#historial"
-        [class.active]="seccionActiva() === 'historial'"
-        [attr.aria-current]="seccionActiva() === 'historial' ? 'location' : null"
-        (click)="seccionActiva.set('historial')"
-        ><span>↺</span> Resultados anteriores</a
-      >
-      @if (parametros()?.calibracion) {
-        <a
-          class="nav-item"
-          href="#calibracion"
-          title="Datos reales"
-          [class.active]="seccionActiva() === 'calibracion'"
-          [attr.aria-current]="seccionActiva() === 'calibracion' ? 'location' : null"
-          (click)="irA('calibracion')"
-          ><span aria-hidden="true">◎</span> Datos reales</a
-        >
-      }
     </nav>
 
     <div class="sidebar-bottom">
@@ -232,113 +206,97 @@
           }}
         </div>
       }
-      <div class="columna-mapa">
-        <div
-          class="selector-modelo"
-          id="selector-modelo"
-          role="radiogroup"
-          aria-label="Modelo que muestra el mapa"
-        >
-          @for (m of modelos; track m.id) {
-            <button
-              type="button"
-              role="radio"
-              class="modelo"
-              [class.activo]="modeloMapa() === m.id"
-              [attr.aria-checked]="modeloMapa() === m.id"
-              (click)="elegirModelo(m.id)"
-            >
-              {{ m.nombre }}
-            </button>
+      <app-mapa-barrios [resultado]="resultado()" />
+    </section>
+
+    <section class="full-grid">
+      <app-grafica [resultado]="resultado()" />
+    </section>
+
+    <!-- Todo lo que no hace falta para decidir queda plegado tras este botón, para que la
+         pantalla principal sea limpia: indicadores, recomendación, parámetros, mapa y curva. -->
+    <section class="full-grid avanzado-bloque">
+      <button
+        class="avanzado-toggle"
+        id="boton-avanzado"
+        type="button"
+        [attr.aria-expanded]="avanzado()"
+        aria-controls="avanzado"
+        (click)="alternarAvanzado()"
+      >
+        <span class="avanzado-icono" aria-hidden="true">⚙</span>
+        <span class="avanzado-texto">
+          <strong>{{ avanzado() ? 'Ocultar opciones avanzadas' : 'Opciones avanzadas' }}</strong>
+          <small>
+            Comparativa de planes, estados SEIR, modelo EDP, resultados anteriores
+            {{ parametros()?.calibracion ? 'y datos reales' : '' }}
+          </small>
+        </span>
+        <span class="avanzado-flecha" aria-hidden="true">{{ avanzado() ? '▴' : '▾' }}</span>
+      </button>
+
+      @if (avanzado()) {
+        <div class="avanzado-contenido" id="avanzado">
+          <app-tabla [resultado]="resultado()" />
+          <app-estados [resultado]="resultado()" />
+
+          <div class="columna-mapa">
+            <app-mapa
+              [resultado]="difusion()"
+              [cargando]="calculandoDifusion()"
+              [error]="errorDifusion()"
+              (ejecutar)="calcularDifusion()"
+            />
+            @if (contraste(); as c) {
+              <div class="panel contraste" aria-label="El mismo escenario en los dos modelos">
+                <table>
+                  <thead>
+                    <tr>
+                      <th scope="col">Mismo escenario</th>
+                      <th scope="col">Sin intervenir</th>
+                      <th scope="col">Con su intervención</th>
+                      <th scope="col">Salvados</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (f of c.filas; track f.nombre) {
+                      <tr>
+                        <th scope="row">{{ f.nombre }}</th>
+                        <td>{{ f.sin }}</td>
+                        <td>
+                          {{ f.con }} <small>{{ f.plan }}</small>
+                        </td>
+                        <td>
+                          <strong>{{ f.salvados }}</strong>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+                <p>
+                  La EDP mezcla a todos los de una zona y no sabe quién es contacto de quién.
+                  @if (c.veces && c.veces > 1) {
+                    Con las mismas dosis, la red salva unas
+                    <strong>{{ c.veces }} veces</strong> más.
+                  }
+                </p>
+              </div>
+            }
+          </div>
+
+          <app-historial
+            [simulaciones]="historial()"
+            [cargando]="simulando()"
+            (repetir)="repetir($event)"
+            (descargar)="descargarPdf($event)"
+          />
+
+          @if (parametros()?.calibracion; as calibracion) {
+            <app-calibracion [calibracion]="calibracion" />
           }
         </div>
-        @if (modeloMapa() === 'red') {
-          <app-mapa-barrios [resultado]="resultado()" />
-        } @else {
-          <app-mapa
-            [resultado]="difusion()"
-            [cargando]="calculandoDifusion()"
-            [error]="errorDifusion()"
-            (ejecutar)="calcularDifusion()"
-          />
-        }
-        @if (contraste(); as c) {
-          <div class="panel contraste" aria-label="El mismo escenario en los dos modelos">
-            <table>
-              <thead>
-                <tr>
-                  <th scope="col">Mismo escenario</th>
-                  <th scope="col">Sin intervenir</th>
-                  <th scope="col">Con su intervención</th>
-                  <th scope="col">Salvados</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (f of c.filas; track f.nombre) {
-                  <tr>
-                    <th scope="row">{{ f.nombre }}</th>
-                    <td>{{ f.sin }}</td>
-                    <td>
-                      {{ f.con }} <small>{{ f.plan }}</small>
-                    </td>
-                    <td>
-                      <strong>{{ f.salvados }}</strong>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-            <p>
-              La EDP mezcla a todos los de una zona y no sabe quién es contacto de quién.
-              @if (c.veces && c.veces > 1) {
-                Con las mismas dosis, la red salva unas <strong>{{ c.veces }} veces</strong> más.
-              }
-            </p>
-          </div>
-        }
-      </div>
-    </section>
-
-    <section class="full-grid">
-      <app-tabla [resultado]="resultado()" />
-    </section>
-
-    <section class="full-grid graficas" id="graficas">
-      <div class="selector-modelo" role="tablist" aria-label="Gráficas del brote">
-        @for (g of graficas; track g.id) {
-          <button
-            type="button"
-            role="tab"
-            class="modelo"
-            [class.activo]="grafica() === g.id"
-            [attr.aria-selected]="grafica() === g.id"
-            (click)="grafica.set(g.id)"
-          >
-            {{ g.nombre }}
-          </button>
-        }
-      </div>
-      @if (grafica() === 'curva') {
-        <app-grafica [resultado]="resultado()" />
-      } @else {
-        <app-estados [resultado]="resultado()" />
       }
     </section>
-
-    <section class="full-grid">
-      <app-historial
-        [simulaciones]="historial()"
-        [cargando]="simulando()"
-        (repetir)="repetir($event)"
-        (descargar)="descargarPdf($event)"
-      />
-    </section>
-
-    @if (parametros()?.calibracion; as calibracion) {
-      <section class="full-grid">
-        <app-calibracion [calibracion]="calibracion" />
-      </section>
-    }
 
     <footer class="page-footer">
       <span>ZOMBIE ZERO <span class="footer-separator">/</span> PROTOTIPO ACADÉMICO</span>

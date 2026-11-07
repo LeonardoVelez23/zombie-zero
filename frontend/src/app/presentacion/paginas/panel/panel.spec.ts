@@ -165,10 +165,10 @@ describe('Panel: menú lateral', () => {
       'location',
     );
 
-    raiz.querySelector<HTMLAnchorElement>('.nav-item[href="#estrategias"]')!.click();
+    raiz.querySelector<HTMLAnchorElement>('.nav-item[href="#resultados"]')!.click();
     await fixture.whenStable();
-    expect(activos(raiz)).toEqual(['#estrategias']);
-    expect(raiz.querySelector('.nav-item[href="#estrategias"]')!.getAttribute('aria-current')).toBe(
+    expect(activos(raiz)).toEqual(['#resultados']);
+    expect(raiz.querySelector('.nav-item[href="#resultados"]')!.getAttribute('aria-current')).toBe(
       'location',
     );
     expect(raiz.querySelector('.nav-item[href="#dashboard"]')!.hasAttribute('aria-current')).toBe(
@@ -184,15 +184,52 @@ describe('Panel: menú lateral', () => {
     const { raiz } = await renderizar();
     const destinos = [...raiz.querySelectorAll('.nav-item')].map((a) => a.getAttribute('href'));
     expect(destinos.filter((d) => d === '#simulacion')).toHaveLength(1);
-    expect(destinos).not.toContain('#selector-modelo');
     // Los destinos que usa la guía siguen existiendo en la página.
     expect(raiz.querySelector('#simulacion')).not.toBeNull();
-    expect(raiz.querySelector('#selector-modelo')).not.toBeNull();
+    expect(raiz.querySelector('#boton-avanzado')).not.toBeNull();
+  });
+
+  it('la pantalla principal es simple: lo avanzado empieza plegado tras un botón', async () => {
+    const { fixture, raiz } = await renderizar();
+    const boton = raiz.querySelector<HTMLButtonElement>('#boton-avanzado')!;
+    expect(boton.getAttribute('aria-expanded')).toBe('false');
+    for (const id of ['#avanzado', '#estrategias', '#estados', '#mapa', '#historial']) {
+      expect(raiz.querySelector(id)).toBeNull();
+    }
+    // A la vista: indicadores, recomendación, parámetros, mapa de red y curva.
+    for (const id of [
+      '.metrics-grid',
+      'app-informe',
+      '#simulacion',
+      '#mapa-brote',
+      '#resultados',
+    ]) {
+      expect(raiz.querySelector(id)).not.toBeNull();
+    }
+
+    boton.click();
+    await fixture.whenStable();
+    expect(boton.getAttribute('aria-expanded')).toBe('true');
+    for (const id of ['#estrategias', '#estados', '#mapa', '#historial']) {
+      expect(raiz.querySelector(id)).not.toBeNull();
+    }
+
+    boton.click();
+    await fixture.whenStable();
+    expect(raiz.querySelector('#avanzado')).toBeNull();
+  });
+
+  it('el enlace «Opciones avanzadas» del menú las despliega', async () => {
+    const { fixture, raiz } = await renderizar();
+    raiz.querySelector<HTMLAnchorElement>('.nav-item[href="#avanzado"]')!.click();
+    await fixture.whenStable();
+    expect(activos(raiz)).toEqual(['#avanzado']);
+    expect(raiz.querySelector('#estrategias')).not.toBeNull();
   });
 
   it('en escritorio navegar no pliega la barra', async () => {
     const { fixture, raiz } = await renderizar();
-    raiz.querySelector<HTMLAnchorElement>('.nav-item[href="#estrategias"]')!.click();
+    raiz.querySelector<HTMLAnchorElement>('.nav-item[href="#resultados"]')!.click();
     await fixture.whenStable();
     expect(raiz.querySelector('.app-shell')!.classList).not.toContain('sidebar-plegada');
   });
@@ -213,12 +250,12 @@ describe('Panel: menú lateral', () => {
       expect(shell.classList).not.toContain('sidebar-plegada');
       expect(boton.getAttribute('aria-expanded')).toBe('true');
 
-      raiz.querySelector<HTMLAnchorElement>('.nav-item[href="#estrategias"]')!.click();
+      raiz.querySelector<HTMLAnchorElement>('.nav-item[href="#resultados"]')!.click();
       await fixture.whenStable();
       expect(shell.classList).toContain('sidebar-plegada');
-      expect(activos(raiz)).toEqual(['#estrategias']);
+      expect(activos(raiz)).toEqual(['#resultados']);
       // Plegada, las opciones siguen en el carril para volver a navegar.
-      expect(raiz.querySelectorAll('.nav-item').length).toBeGreaterThan(5);
+      expect(raiz.querySelectorAll('.nav-item').length).toBe(5);
     });
 
     it('tocar el velo detrás de la barra abierta la pliega', async () => {
@@ -243,7 +280,7 @@ describe('Panel: menú lateral', () => {
   });
 });
 
-describe('Panel: selector de modelo del mapa', () => {
+describe('Panel: modelo EDP de contraste', () => {
   let difusiones: number;
 
   // Solo lo que usa la comparación: los infectados de cada escenario de la EDP.
@@ -256,7 +293,6 @@ describe('Panel: selector de modelo del mapa', () => {
 
   interface Selector {
     simular: (configuracion: object) => Promise<void>;
-    elegirModelo: (modelo: 'red' | 'edp') => void;
     calcularDifusion: () => Promise<void>;
     difusion: () => ResultadoDifusion | null;
     contraste: () => { filas: { salvados: string }[]; veces: number | null } | null;
@@ -283,14 +319,12 @@ describe('Panel: selector de modelo del mapa', () => {
   const panelSelector = () =>
     TestBed.createComponent(Panel).componentInstance as unknown as Selector;
 
-  it('al elegir la EDP la calcula una sola vez y compara los dos modelos', async () => {
+  it('solo se calcula al pedirla y compara los dos modelos', async () => {
     const p = panelSelector();
     await p.simular({});
-    p.elegirModelo('edp');
+    expect(difusiones).toBe(0);
     await p.calcularDifusion();
-    p.elegirModelo('red');
-    p.elegirModelo('edp');
-    expect(difusiones).toBe(2); // la llamada al elegir y la de la prueba; volver a elegirla no recalcula
+    expect(difusiones).toBe(1);
     const c = p.contraste()!;
     expect(c.filas[1].salvados).toBe('500');
     expect(c.veces).toBeGreaterThan(1);
