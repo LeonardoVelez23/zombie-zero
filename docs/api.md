@@ -253,9 +253,12 @@ pueden ir sueltas o como rango `{ "media": ... }`. Máximo 50 KB y 64 planes.
 { "fuente": "bedrock", "modelo": "amazon.nova-micro-v1:0", "texto": "Se recomienda ..." }
 ```
 
-- `fuente: "bedrock"`: lo redactó Amazon Bedrock (Converse API, máximo 400 tokens, temperatura 0,2).
-- `fuente: "local"` y `modelo: null`: plantilla fija sin IA. Se usa cuando `IA_ACTIVA` no es `true` (por
-  defecto en local) o cuando Bedrock falla; la interfaz la muestra como «Texto automático (sin IA)».
+Es la tarea `alcalde` de [`/api/asistente`](#post-apiasistente), con la misma cadena de proveedores:
+
+- `fuente: "bedrock"`: lo redactó Amazon Bedrock (Converse API en streaming, temperatura 0,2).
+- `fuente: "groq"`: Bedrock falló o se quedó sin cupo y lo redactó Groq (respaldo, si hay `GROQ_API_KEY`).
+- `fuente: "local"` y `modelo: null`: plantilla fija sin IA, cuando ninguna IA respondió; la interfaz la
+  muestra como «Texto automático (sin IA)».
 
 Al modelo solo le llega lo necesario (sin mapas ni curvas), más la cifra ya calculada para toda Manta,
 para que no tenga que hacer cuentas. Las instrucciones le piden usar solo esas cifras, no presentar la
@@ -268,15 +271,86 @@ falla, en los logs queda solo el tipo de error, nunca los datos.
   defecto). Pasado ese cupo responde la plantilla, sin costo de Bedrock.
 - Si se pide el informe del mismo resultado, se reutiliza el texto ya generado (caché de los últimos 256 por
   contenedor) y no se vuelve a pagar. Los fallos no se guardan.
-- Cada llamada está acotada a 400 tokens de salida y a unos 1.100 de entrada (cuerpo de 50 KB como máximo,
-  medido en bytes UTF-8).
+- Cada llamada está acotada en tokens de salida según la tarea (de 1.500 a 4.000) y el cuerpo a 50 KB como
+  máximo, medido en bytes UTF-8.
 - Tiempos de Bedrock: 3 s para conectar, 12 s de lectura y 2 intentos en total (≈ 31 s en el peor caso). Así,
   si Bedrock no responde, queda tiempo de devolver la plantilla antes del corte de 60 s de la Lambda.
 
-Variables de entorno de la Lambda (`infra/template.yaml`): `IA_ACTIVA`, `MODELO_IA` e `IA_LLAMADAS_POR_MINUTO`. El permiso IAM
+Variables de entorno de la Lambda (`infra/template.yaml`): `IA_ACTIVA`, `MODELO_IA`, `IA_LLAMADAS_POR_MINUTO`
+y, para el respaldo, `GROQ_API_KEY`, `MODELO_GROQ` y `GROQ_LLAMADAS_POR_MINUTO`. El permiso IAM
 es solo `bedrock:InvokeModel` sobre ese modelo. Si se usa un ID que empieza con `us.` (un *inference
 profile*), la política tiene que permitir también el ARN de ese perfil.
 
 Respuesta 400 si falta algún campo, si el cuerpo pasa de 50 KB, si alguna cifra no es un número finito
 (se rechazan `NaN`, `Infinity` y valores por encima de 10⁹) o si `nivel` no es `solida`, `debil` o
 `insuficiente`.
+
+## `POST /api/asistente`
+
+El asistente con IA sobre una simulación ya hecha. Igual que el informe, **el motor calcula y la IA solo
+redacta**: no vuelve a simular ni cambia la recomendación. Ver `backend/src/zombie/asistente_ia.py`.
+
+### Petición
+
+```json
+{
+  "tarea": "pregunta",
+  "resultado": { "...": "el mismo resumen que /api/informe, con el escenario completo" },
+  "pregunta": "¿Qué pasa si llegan la mitad de las vacunas?",
+  "conversacion": [
+    { "rol": "usuario", "texto": "¿Por qué este plan?" },
+    { "rol": "asistente", "texto": "Porque ..." }
+  ]
+}
+```
+
+| `tarea` | Qué redacta | Campos extra |
+|---|---|---|
+| `alcalde` | La recomendación en máximo 5 frases (botón «Explicar al alcalde») | — |
+| `informe` | Informe ejecutivo de 250 a 450 palabras: situación, plan, por qué, riesgos y qué haría falta. Va en el PDF | — |
+| `pregunta` | Responde una pregunta sobre la simulación. Si es sobre un escenario que no se simuló, dice qué cambiar y sugiere volver a simular | `pregunta` (hasta 500 caracteres) y `conversacion` (hasta 6 mensajes, alternando y empezando por `usuario`) |
+| `comparar` | Qué cambió entre dos simulaciones (tarjeta «Antes y después») | `anterior`: el resumen de la simulación de referencia |
+
+Del escenario solo se usan los parámetros que explican el resultado (R0, detección, recursos, día de
+inicio, corte de vacunas, origen, duración y casos iniciales). Cuerpo de 120 KB como máximo.
+
+### Respuesta
+
+```json
+{ "fuente": "groq", "modelo": "openai/gpt-oss-120b", "texto": "..." }
+```
+
+Si la IA se corta a mitad de texto, además trae `"aviso"` y el texto puede estar incompleto.
+
+### `POST /api/asistente/stream`
+
+La misma petición, con la respuesta en [Server-Sent Events](https://developer.mozilla.org/es/docs/Web/API/Server-sent_events)
+para mostrar el texto mientras se escribe. Cada evento es una línea `data: {...}`:
+
+```text
+data: {"tipo": "inicio", "fuente": "groq", "modelo": "openai/gpt-oss-120b"}
+data: {"tipo": "texto", "texto": "Se recomienda"}
+data: {"tipo": "texto", "texto": " vacunar ..."}
+data: {"tipo": "fin"}
+```
+
+`tipo` puede ser `inicio`, `texto`, `aviso` (la IA se cortó) o `fin`. Un `inicio` nuevo significa que
+respondió otro proveedor: el texto anterior se descarta. La petición se valida antes de transmitir:
+si no vale, la respuesta es un 400 en JSON, como en las demás rutas.
+
+En el servidor local el texto llega a medida que se escribe. En la Lambda los mismos eventos llegan
+juntos al terminar, porque el runtime de Python de Lambda no transmite la respuesta por partes.
+
+### Proveedores y respaldo
+
+1. **Amazon Bedrock** (`MODELO_IA`), si `IA_ACTIVA=true` y queda cupo en el minuto.
+2. **Groq** (`MODELO_GROQ`, por defecto `openai/gpt-oss-120b`), si Bedrock falla antes de escribir nada
+   (cuota agotada, `ThrottlingException`, corte del Budget, red) o se le acabó el cupo, y si hay
+   `GROQ_API_KEY`. Tiene su propio cupo por contenedor (`GROQ_LLAMADAS_POR_MINUTO`) y un tope de 15 s.
+3. **Plantilla sin IA** (`fuente: "local"`), si ninguno respondió.
+
+Si un proveedor se corta a mitad de texto no se pasa al siguiente (no se mezclan dos textos): se manda
+un `aviso`. Los textos completos se guardan en caché (256 por contenedor); los incompletos, no. Las
+claves solo viven en el backend: en local, en `backend/.env` (ignorado por git); en AWS, en el parámetro
+`GroqApiKey` de la pila, con `NoEcho`, que GitHub Actions llena desde el secret `GROQ_API_KEY`.
+

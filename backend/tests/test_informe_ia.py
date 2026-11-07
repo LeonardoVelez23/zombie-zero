@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from zombie import informe_ia
+from zombie import asistente_ia, informe_ia
 from zombie.api import atender
 from zombie.informe_ia import ResumenInvalido, redactar, resumir
 
@@ -23,24 +23,27 @@ RESULTADO = {
 
 
 @pytest.fixture(autouse=True)
-def limpiar_estado():
-    """El cupo por minuto y la caché viven en el módulo: cada prueba empieza de cero."""
+def limpiar_estado(monkeypatch):
+    """El cupo por minuto y la caché viven en el módulo: cada prueba empieza de cero, sin Groq."""
     informe_ia._llamadas.clear()
     informe_ia._cache.clear()
+    asistente_ia._llamadas_groq.clear()
+    monkeypatch.delenv("GROQ_API_KEY", raising=False)
 
 
 @pytest.fixture
 def bedrock(monkeypatch):
-    """Cliente de Bedrock falso: guarda la petición y responde lo que se le indique."""
+    """Cliente de Bedrock falso: guarda la petición y responde en trozos lo que se le indique."""
     llamadas = []
 
     class Cliente:
         def __init__(self, responder):
             self.responder = responder
 
-        def converse(self, **peticion):
+        def converse_stream(self, **peticion):
             llamadas.append(peticion)
-            return self.responder()
+            trozos = self.responder()
+            return {"stream": [{"contentBlockDelta": {"delta": {"text": t}}} for t in trozos]}
 
     def usar(responder):
         monkeypatch.setattr(informe_ia, "ACTIVA", True)
@@ -91,12 +94,12 @@ def test_plantilla_insuficiente_no_presenta_el_plan_como_victoria(monkeypatch):
 
 
 def test_con_bedrock_manda_solo_el_resumen_y_devuelve_su_texto(bedrock):
-    llamadas = bedrock(lambda: {"output": {"message": {"content": [{"text": " Texto del asesor. "}]}}})
+    llamadas = bedrock(lambda: [" Texto ", "del asesor. "])
     informe = redactar(RESULTADO)
     assert informe == {"fuente": "bedrock", "modelo": informe_ia.MODELO, "texto": "Texto del asesor."}
-    mensaje = llamadas[0]["messages"][0]["content"][0]["text"]
-    assert mensaje.startswith("<datos>") and "mapa" not in mensaje
-    assert llamadas[0]["inferenceConfig"]["maxTokens"] == 400
+    sistema = llamadas[0]["system"][0]["text"]
+    assert "<datos>" in sistema and "mapa" not in sistema
+    assert llamadas[0]["inferenceConfig"]["maxTokens"] == asistente_ia.TAREAS["alcalde"].max_tokens
 
 
 def test_si_bedrock_falla_cae_a_la_plantilla(bedrock):
@@ -134,14 +137,15 @@ def test_el_limite_del_cuerpo_se_mide_en_bytes_utf8(monkeypatch):
     assert atender("POST", "/api/informe", cuerpo)[0] == 400
 
 
-def test_los_reintentos_de_bedrock_caben_en_el_limite_de_la_lambda():
+def test_bedrock_y_luego_groq_caben_en_el_limite_de_la_lambda():
     peor_caso = informe_ia.INTENTOS * (informe_ia.CONEXION_S + informe_ia.LECTURA_S)
-    assert peor_caso + 10 < informe_ia.LIMITE_LAMBDA_S   # margen para el resto de la petición
+    peor_caso += asistente_ia.GROQ_TOPE_S + asistente_ia.GROQ_LECTURA_S
+    assert peor_caso + 5 < informe_ia.LIMITE_LAMBDA_S   # margen para el resto de la petición
 
 
 def test_pasado_el_cupo_por_minuto_responde_la_plantilla(bedrock, monkeypatch):
     monkeypatch.setattr(informe_ia, "LLAMADAS_POR_MINUTO", 2)
-    llamadas = bedrock(lambda: {"output": {"message": {"content": [{"text": "IA"}]}}})
+    llamadas = bedrock(lambda: ["IA"])
     fuentes = []
     for i in range(3):   # resultados distintos para que no los sirva la caché
         resultado = {**RESULTADO, "repeticiones": 100 + i}
@@ -157,7 +161,7 @@ def test_el_cupo_se_libera_al_pasar_el_minuto():
 
 
 def test_el_mismo_resultado_no_vuelve_a_pagar_bedrock(bedrock):
-    llamadas = bedrock(lambda: {"output": {"message": {"content": [{"text": "IA"}]}}})
+    llamadas = bedrock(lambda: ["IA"])
     assert redactar(RESULTADO) == redactar(RESULTADO)
     assert len(llamadas) == 1
 

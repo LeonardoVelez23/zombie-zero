@@ -63,3 +63,7 @@ figcaption {
   color: #fda4af;
   font-size: 11px;
 }
+
+.aviso {
+  color: var(--orange);
+}

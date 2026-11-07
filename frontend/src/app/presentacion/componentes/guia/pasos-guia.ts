@@ -36,7 +36,7 @@ export const PASOS_GUIA: PasoGuia[] = [
   {
     titulo: 'Parámetros del brote',
     texto:
-      'Elige un «Brote Sorpresa» o ajusta a mano el punto de origen, el escenario, la plaga, los recursos y las repeticiones Monte Carlo. Pasa el cursor sobre un campo para ver sus límites.',
+      'Elige un «Brote Sorpresa» o ajusta lo esencial: punto de origen, R0, presupuesto, vacunas y día de inicio. El resto está en «Más parámetros». Pasa el cursor sobre un campo para ver sus límites.',
     objetivos: ['#simulacion'],
   },
   {
@@ -52,22 +52,16 @@ export const PASOS_GUIA: PasoGuia[] = [
     objetivos: ['#mapa-brote'],
   },
   {
-    titulo: 'Comparativa de planes',
+    titulo: 'Curva de contagios',
     texto:
-      'Todos los planes con su costo, infectados, personas salvadas, vacunas y cuántas veces ganan al reparto al azar. El recomendado lleva su insignia.',
-    objetivos: ['#estrategias'],
+      'Zombies activos cada día con cada plan: la media y la banda del percentil 5 al 95 de los brotes simulados.',
+    objetivos: ['#resultados'],
   },
   {
-    titulo: 'Curva y estados SEIR',
+    titulo: 'Opciones avanzadas',
     texto:
-      'Dos pestañas: la curva de zombies activos de cada plan (media y banda del percentil 5 al 95) y cuántas personas están sanas, mordidas, zombies o exorcizadas cada día.',
-    objetivos: ['#graficas'],
-  },
-  {
-    titulo: 'Modelo de red o EDP',
-    texto:
-      'Arriba del mapa puedes cambiar al modelo EDP: la difusión continua sobre el mapa real con el mismo escenario. Debajo aparece la comparación de los dos modelos; la recomendación sale del modelo de red.',
-    objetivos: ['#selector-modelo'],
+      'Para quien quiera profundizar: la comparativa de todos los planes, los estados SEIR, el modelo EDP de contraste y los resultados anteriores (con su PDF). Están plegadas para que la pantalla principal sea simple.',
+    objetivos: ['#boton-avanzado'],
   },
   {
     titulo: '¡Listo para contener el brote!',

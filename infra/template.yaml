@@ -14,6 +14,13 @@ Parameters:
     Type: Number
     Default: 10
     Description: Límite mensual del AWS Budget, en dólares.
+  GroqApiKey:
+    Type: String
+    NoEcho: true                # no aparece en la consola ni en las salidas de CloudFormation
+    Default: ''
+    Description: >
+      Clave de Groq, respaldo del asistente con IA cuando Bedrock falla o se queda sin cuota.
+      Vacía = sin respaldo (Bedrock y, si falla, la plantilla sin IA). En CI sale del secret GROQ_API_KEY.
   ConcurrenciaMaxima:
     Type: Number
     Default: 0
@@ -30,7 +37,7 @@ Resources:
   ApiFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Description: API del simulador (POST /api/simular, POST /api/edp, POST /api/informe)
+      Description: API del simulador (POST /api/simular, /api/edp, /api/informe, /api/asistente)
       CodeUri: .build/lambda/     # lo arma empaquetar.sh (código + numpy para Linux)
       Handler: zombie.api.lambda_handler
       Runtime: python3.13
@@ -52,6 +59,12 @@ Resources:
           # Por contenedor (hasta 10 en esta cuenta). El corte de gasto de toda la cuenta está en
           # infra/github-oidc.yaml: un Budget de Bedrock que niega la IA si se pasa del límite.
           IA_LLAMADAS_POR_MINUTO: '1'
+          # Respaldo de Bedrock (asistente_ia.py): si Bedrock falla o pasa su tope, responde Groq.
+          # Groq no pasa por el Budget de AWS: su gasto lo limita este tope por contenedor y el
+          # límite de la cuenta de Groq.
+          GROQ_API_KEY: !Ref GroqApiKey
+          MODELO_GROQ: openai/gpt-oss-120b
+          GROQ_LLAMADAS_POR_MINUTO: '10'
           # Resumen de cada simulación para consultarlo con Athena (docs/resultados.md).
           RESULTADOS_BUCKET: !Ref ResultadosBucket
       # Mínimo privilegio: solo invocar nova-micro. La política la crea infra/github-oidc.yaml (pila

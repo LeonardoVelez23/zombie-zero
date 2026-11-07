@@ -5,6 +5,7 @@ import {
 } from '../modelos/escenario';
 import {
   InformeIa,
+  PeticionIa,
   ResultadoDifusion,
   ResultadoSimulacion,
   SimulacionGuardada,
@@ -15,6 +16,10 @@ export abstract class SimuladorRepositorio {
   abstract parametros(): Promise<Parametros>;
   abstract simular(configuracion: ConfiguracionSimulacion): Promise<ResultadoSimulacion>;
   abstract difusion(configuracion: ConfiguracionDifusion): Promise<ResultadoDifusion>;
-  abstract informe(resultado: ResultadoSimulacion): Promise<InformeIa>;
+  // El asistente con IA. `alEscribir` recibe el texto acumulado a medida que la IA lo escribe.
+  abstract asistente(
+    peticion: PeticionIa,
+    alEscribir?: (parcial: InformeIa) => void,
+  ): Promise<InformeIa>;
   abstract historial(): Promise<SimulacionGuardada[]>;
 }

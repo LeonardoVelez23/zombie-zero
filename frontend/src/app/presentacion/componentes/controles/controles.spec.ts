@@ -59,7 +59,13 @@ describe('Más parámetros', () => {
     const raiz = fixture.nativeElement as HTMLElement;
     const avanzado = raiz.querySelector<HTMLDetailsElement>('details.avanzado')!;
     expect(avanzado.open).toBe(false);
-    expect(raiz.querySelector('#semilla')).not.toBeNull(); // la semilla siempre a la vista
+    // A la vista solo lo esencial; el resto (como la semilla) dentro de «Más parámetros».
+    const fuera = [...raiz.querySelectorAll('form > fieldset:not(.sorpresas) input')].map(
+      (i) => i.id,
+    );
+    expect(fuera).toEqual(['r0', 'presupuesto', 'vacunasDisponibles', 'diaInicio']);
+    expect(avanzado.querySelector('#semilla')).not.toBeNull();
+    expect(avanzado.querySelector('#repeticiones')).not.toBeNull();
 
     [...raiz.querySelectorAll<HTMLButtonElement>('.sorpresa')]
       .find((b) => b.textContent?.includes('Corte de vacunas'))!

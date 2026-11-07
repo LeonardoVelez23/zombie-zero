@@ -59,3 +59,27 @@
     </section>
   }
 </div>
+
+@if (explicacion(); as e) {
+  <figure class="explicacion" [class.sin-ia]="e.fuente === 'local'" aria-live="polite">
+    <blockquote>
+      {{ e.texto }}
+      @if (explicando()) {
+        <span class="cursor" aria-hidden="true">▍</span>
+      }
+    </blockquote>
+    <figcaption>
+      {{ etiqueta(e) }}
+      @if (e.aviso) {
+        · <span class="aviso">{{ e.aviso }}</span>
+      }
+    </figcaption>
+  </figure>
+} @else {
+  <button type="button" class="explicar" [disabled]="explicando()" (click)="explicarCambio()">
+    {{ explicando() ? 'Redactando…' : 'Explicar el cambio' }}
+  </button>
+  @if (errorExplicacion(); as mensaje) {
+    <p class="error" role="alert">No se pudo explicar el cambio: {{ mensaje }}</p>
+  }
+}
