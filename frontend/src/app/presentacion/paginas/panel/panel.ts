@@ -28,7 +28,6 @@ import { POBLACION_MANTA, enManta, factorManta } from '../../../dominio/reglas/e
 import { comparacion } from '../../../dominio/reglas/planes';
 import { AntesDespues } from '../../componentes/antes-despues/antes-despues';
 import { Asistente } from '../../componentes/asistente/asistente';
-import { Calibracion } from '../../componentes/calibracion/calibracion';
 import { Controles } from '../../componentes/controles/controles';
 import { Grafica } from '../../componentes/grafica/grafica';
 import { Guia } from '../../componentes/guia/guia';
@@ -78,7 +77,6 @@ const GRAFICAS: { nombre: string; id: string; leyenda: string }[] = [
   imports: [
     AntesDespues,
     Asistente,
-    Calibracion,
     Controles,
     Grafica,
     Estados,
@@ -154,8 +152,8 @@ export class Panel implements OnInit {
   // Últimas simulaciones guardadas en S3 (de todos); vacío si la API no las tiene.
   protected readonly historial = signal<SimulacionGuardada[]>([]);
 
-  // «Opciones avanzadas» desplegadas: comparativa, estados SEIR, modelo EDP, historial y datos
-  // reales. Empiezan plegadas para que la pantalla principal muestre solo lo necesario para decidir.
+  // «Opciones avanzadas» desplegadas: comparativa, estados SEIR, modelo EDP e historial.
+  // Empiezan plegadas para que la pantalla principal muestre solo lo necesario para decidir.
   protected readonly avanzado = signal(false);
 
   protected alternarAvanzado(): void {
@@ -390,7 +388,7 @@ export class Panel implements OnInit {
       if (this.error()) return;
     }
     // Las gráficas se copian con el brote completo (último día) y con las opciones avanzadas a la
-    // vista (allí están los estados SEIR y la calibración); después se deja todo como estaba.
+    // vista (allí están los estados SEIR); después se deja todo como estaba.
     const avanzado = this.avanzado();
     const dia = this.reloj.dia();
     this.avanzado.set(true);
@@ -401,13 +399,6 @@ export class Panel implements OnInit {
       const svg = mayorSvg(`#${g.id}`);
       const leyenda = capturarLeyenda([...document.querySelectorAll(`#${g.id} ${g.leyenda}`)]);
       if (svg) graficas.push({ titulo: g.nombre, svg: capturarSvg(svg), leyenda });
-    }
-    const calibracion = mayorSvg('#calibracion');
-    if (calibracion) {
-      graficas.push({
-        titulo: 'Calibración con datos reales (Manta, 2020)',
-        svg: capturarSvg(calibracion),
-      });
     }
     this.reloj.irA(dia);
     this.avanzado.set(avanzado);

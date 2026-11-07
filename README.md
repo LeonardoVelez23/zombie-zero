@@ -74,9 +74,10 @@ o se mantiene, y sus infectados, personas salvadas y porcentaje de brotes en que
 9. **Se calibra con datos reales de Manta:** con los casos positivos semanales de COVID-19 de 2020 (SNGRE, vía
    [ecuacovid](https://github.com/andrab/ecuacovid)) ajusta el crecimiento de la segunda ola (23 de agosto al
    15 de noviembre: +2,04 % por día, se duplicaba cada 34 días) y lo convierte en un **R efectivo de 1,17**
-   (IC 95 %: 1,07–1,27) con las ecuaciones del SEIR. El panel *Calibración con datos reales* muestra los casos
-   reales con el ajuste, y el botón **R de Manta 2020** simula la plaga con ese valor. Detalle en
-   [docs/supuestos.md](docs/supuestos.md#calibración-con-datos-reales-covid-19-en-manta-2020).
+   (IC 95 %: 1,07–1,27) con las ecuaciones del SEIR. El botón **R de Manta 2020** de los parámetros simula la
+   plaga con ese valor. La gráfica de los casos reales con el ajuste y el detalle del cálculo están en
+   [docs/supuestos.md](docs/supuestos.md#calibración-con-datos-reales-covid-19-en-manta-2020); no van en el
+   panel, que se queda con lo que sirve para decidir.
 
 10. **Asistente con IA:** **El motor calcula y la IA solo redacta:** recibe las cifras ya calculadas, no
     vuelve a simular ni cambia la recomendación, y el texto aparece mientras se escribe.
@@ -394,7 +395,7 @@ las intervenciones, la calibración de la dificultad y la reproducibilidad.
 Operar la herramienta cuesta **≈ 2,52 USD al mes** en uso normal (3.000 simulaciones) y **≈ 25,13 USD** en un
 mes de brote activo (30.000), sin contar la capa gratuita de AWS; con ella, ≈ 0,02 USD y ≈ 16,99 USD. Casi todo es
 cómputo de Lambda (14 s facturados por simulación, medidos en AWS). El informe con IA tiene su propio tope de
-3 USD al mes. Gasto real durante el evento: **0,01 USD** (medido el 28/10/2026 a las 14:53). El cálculo completo y las mediciones están en
+3 USD al mes. Gasto real durante el evento: **0,01 USD** (0,006 USD; medido el 28/10/2026 a las 17:52). El cálculo completo y las mediciones están en
 [docs/costos.md](docs/costos.md); `infra/costos.sh` agrega una medición nueva del gasto real.
 
 ## AWS Budget
@@ -405,8 +406,12 @@ La cuenta tiene presupuestos con alerta por correo desde el 1 de octubre de 2026
 |---|---|---|
 | `Costo-Mensual` (captura) | 5 USD | Gasto real al 85 % y al 100 %; gasto previsto al 100 % |
 | `zombie-zero-mensual` (creado por `infra/template.yaml`) | 10 USD | Gasto real al 80 %; gasto previsto al 100 % |
-| `Alerta-Gasto` | 1 USD | Cualquier gasto real (0,01 %) |
+| `Alerta-Gasto` | 1 USD | Cualquier gasto real: avisa cuando pasa de 0,01 USD |
 | `zombie-zero-bedrock` (creado por `infra/github-oidc.yaml`) | 3 USD, solo Bedrock | Al 100 % del gasto real avisa por correo y le niega Bedrock a la Lambda (acción automática) |
+
+Estado al 28/10/2026, 17:52: gasto real del mes **0,006 USD** en los tres presupuestos de la cuenta, ninguna
+alerta disparada y el corte de Bedrock en espera (0 USD gastados en Bedrock). El gasto previsto todavía sale
+vacío: AWS necesita algunos días de historial de una cuenta nueva para calcularlo.
 
 ![AWS Budget Costo-Mensual con sus alertas](docs/budget.png)
 

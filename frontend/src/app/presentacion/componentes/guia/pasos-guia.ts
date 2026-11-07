@@ -60,7 +60,7 @@ export const PASOS_GUIA: PasoGuia[] = [
   {
     titulo: 'Opciones avanzadas',
     texto:
-      'Para quien quiera profundizar: la comparativa de todos los planes, los estados SEIR, el modelo EDP de contraste, los resultados anteriores (con su PDF) y los datos reales. Están plegadas para que la pantalla principal sea simple.',
+      'Para quien quiera profundizar: la comparativa de todos los planes, los estados SEIR, el modelo EDP de contraste y los resultados anteriores (con su PDF). Están plegadas para que la pantalla principal sea simple.',
     objetivos: ['#boton-avanzado'],
   },
   {

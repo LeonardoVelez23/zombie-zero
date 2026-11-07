@@ -67,7 +67,7 @@
         (click)="irA('resultados')"
         ><span aria-hidden="true">▥</span> Curva de contagios</a
       >
-      <!-- Lo demás (comparativa, SEIR, EDP, historial, datos reales) vive en «Opciones avanzadas»:
+      <!-- Lo demás (comparativa, SEIR, EDP e historial) vive en «Opciones avanzadas»:
            el enlace la despliega y lleva hasta ella. -->
       <a
         class="nav-item nav-avanzado"
@@ -235,8 +235,7 @@
         <span class="avanzado-texto">
           <strong>{{ avanzado() ? 'Ocultar opciones avanzadas' : 'Opciones avanzadas' }}</strong>
           <small>
-            Comparativa de planes, estados SEIR, modelo EDP, resultados anteriores
-            {{ parametros()?.calibracion ? 'y datos reales' : '' }}
+            Comparativa de planes, estados SEIR, modelo EDP y resultados anteriores
           </small>
         </span>
         <span class="avanzado-flecha" aria-hidden="true">{{ avanzado() ? '▴' : '▾' }}</span>
@@ -297,10 +296,6 @@
             (repetir)="repetir($event)"
             (descargar)="descargarPdf($event)"
           />
-
-          @if (parametros()?.calibracion; as calibracion) {
-            <app-calibracion [calibracion]="calibracion" />
-          }
         </div>
       }
     </section>
