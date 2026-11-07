@@ -11,6 +11,7 @@ import {
   viewChild,
 } from '@angular/core';
 
+import { ConsultarAsistente } from '../../../aplicacion/casos-uso/consultar-asistente';
 import { ObtenerHistorial } from '../../../aplicacion/casos-uso/obtener-historial';
 import { ModelarDifusion } from '../../../aplicacion/casos-uso/modelar-difusion';
 import { ObtenerParametros } from '../../../aplicacion/casos-uso/obtener-parametros';
@@ -26,6 +27,7 @@ import { mordidosHasta, salvadosHasta } from '../../../dominio/reglas/dias';
 import { POBLACION_MANTA, enManta, factorManta } from '../../../dominio/reglas/escala';
 import { comparacion } from '../../../dominio/reglas/planes';
 import { AntesDespues } from '../../componentes/antes-despues/antes-despues';
+import { Asistente } from '../../componentes/asistente/asistente';
 import { Calibracion } from '../../componentes/calibracion/calibracion';
 import { Controles } from '../../componentes/controles/controles';
 import { Grafica } from '../../componentes/grafica/grafica';
@@ -75,6 +77,7 @@ const GRAFICAS: { nombre: string; id: string; leyenda: string }[] = [
   selector: 'app-panel',
   imports: [
     AntesDespues,
+    Asistente,
     Calibracion,
     Controles,
     Grafica,
@@ -132,6 +135,7 @@ export class Panel implements OnInit {
   private readonly simularBrote = inject(SimularBrote);
   private readonly modelarDifusion = inject(ModelarDifusion);
   private readonly obtenerHistorial = inject(ObtenerHistorial);
+  private readonly consultarAsistente = inject(ConsultarAsistente);
   private readonly appRef = inject(ApplicationRef);
   private readonly injector = inject(Injector);
   private readonly controles = viewChild(Controles);
@@ -407,7 +411,13 @@ export class Panel implements OnInit {
     }
     this.reloj.irA(dia);
     this.avanzado.set(avanzado);
-    imprimirInforme(informeHtml(s, { operador: this.operador(), alcalde, graficas }));
+    // El análisis con IA del PDF (Bedrock, Groq de respaldo o la plantilla). Si la API falla, el PDF
+    // sale igual, sin ese apartado.
+    const resultado = this.resultado();
+    const analisis = resultado
+      ? await this.consultarAsistente.ejecutar({ tarea: 'informe', resultado }).catch(() => null)
+      : null;
+    imprimirInforme(informeHtml(s, { operador: this.operador(), alcalde, graficas, analisis }));
   }
 
   protected async calcularDifusion(): Promise<void> {

@@ -1,5 +1,6 @@
-import { SimulacionGuardada } from '../../dominio/modelos/resultado';
+import { InformeIa, SimulacionGuardada } from '../../dominio/modelos/resultado';
 import { capitalizar, numero, porcentaje } from './formato';
+import { etiquetaFuente } from './ia';
 
 const NIVELES: Record<string, string> = {
   solida: 'sólida',
@@ -36,6 +37,8 @@ export interface GraficaInforme {
 export interface ExtrasInforme {
   operador?: string;
   alcalde?: string | null;
+  // Informe ejecutivo redactado por el asistente (con su fuente: IA o plantilla).
+  analisis?: InformeIa | null;
   graficas?: GraficaInforme[];
 }
 
@@ -103,6 +106,7 @@ export function informeHtml(s: SimulacionGuardada, extras: ExtrasInforme = {}): 
   th { background: #f3f4f6; }
   td.n, th.n { text-align: right; white-space: nowrap; }
   tr.recomendado td { background: #ecfdf5; }
+  .fuente-ia { color: #6b7280; font-size: 11px; margin: 4px 0 0; }
   .alcalde { border-left: 4px solid #6d28d9; padding: 6px 10px; background: #f5f3ff; white-space: pre-line; }
   figure { margin: 14px 0 0; break-inside: avoid; }
   figcaption { font-weight: 600; margin-bottom: 4px; }
@@ -125,6 +129,12 @@ export function informeHtml(s: SimulacionGuardada, extras: ExtrasInforme = {}): 
 </div>
 
 ${extras.alcalde ? `<h2>Para el alcalde</h2><div class="alcalde">${escapar(extras.alcalde.trim())}</div>` : ''}
+${
+  extras.analisis?.texto
+    ? `<h2>Análisis</h2><div class="alcalde">${escapar(extras.analisis.texto.trim())}</div>` +
+      `<p class="fuente-ia">${escapar(etiquetaFuente(extras.analisis))}. Las cifras salen de la simulación; el texto solo las explica.</p>`
+    : ''
+}
 
 <h2>Configuración</h2>
 <ul>

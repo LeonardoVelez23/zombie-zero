@@ -1,0 +1,61 @@
+<div class="panel-heading">
+  <div>
+    <span class="section-index">ASISTENTE / PREGUNTAS</span>
+    <h2>Pregúntale al asistente</h2>
+  </div>
+</div>
+<p class="panel-description">
+  Responde con las cifras de esta simulación. Para otro escenario, cambia los parámetros y vuelve a
+  simular.
+</p>
+
+@if (mensajes().length) {
+  <ol class="conversacion" aria-live="polite">
+    @for (m of mensajes(); track $index; let ultimo = $last) {
+      <li [class]="m.rol">
+        <span class="quien">{{ m.rol === 'usuario' ? 'Tú' : 'Asistente' }}</span>
+        <p>
+          {{ m.texto }}
+          @if (ultimo && escribiendo()) {
+            <span class="cursor" aria-hidden="true">▍</span>
+          }
+        </p>
+        @if (m.informe; as i) {
+          <small [class.sin-ia]="i.fuente === 'local'">
+            {{ etiqueta(i) }}
+            @if (i.aviso) {
+              · <span class="aviso">{{ i.aviso }}</span>
+            }
+          </small>
+        }
+      </li>
+    }
+  </ol>
+} @else {
+  <div class="sugerencias">
+    @for (s of sugerencias; track s) {
+      <button type="button" class="sugerencia" [disabled]="escribiendo()" (click)="preguntar(s)">
+        {{ s }}
+      </button>
+    }
+  </div>
+}
+
+<form class="preguntar" (submit)="$event.preventDefault(); preguntar()">
+  <label class="visualmente-oculto" for="pregunta-asistente">Tu pregunta</label>
+  <input
+    id="pregunta-asistente"
+    type="text"
+    autocomplete="off"
+    placeholder="Escribe una pregunta sobre la simulación…"
+    [maxLength]="maxPregunta"
+    [value]="pregunta()"
+    (input)="escribir($event)"
+  />
+  <button type="submit" [disabled]="escribiendo() || !pregunta().trim()">
+    {{ escribiendo() ? 'Escribiendo…' : 'Preguntar' }}
+  </button>
+</form>
+@if (error(); as mensaje) {
+  <p class="error" role="alert">No se pudo responder: {{ mensaje }}</p>
+}

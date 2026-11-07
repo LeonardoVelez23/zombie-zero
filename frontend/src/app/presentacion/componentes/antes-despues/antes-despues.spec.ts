@@ -1,11 +1,29 @@
 import { TestBed } from '@angular/core/testing';
 
 import { resultadoDePrueba } from '../../../../testing/datos';
-import { ResultadoSimulacion } from '../../../dominio/modelos/resultado';
+import { ConsultarAsistente } from '../../../aplicacion/casos-uso/consultar-asistente';
+import { InformeIa, PeticionIa, ResultadoSimulacion } from '../../../dominio/modelos/resultado';
 import { AntesDespues } from './antes-despues';
 
 describe('Antes y después del Brote Sorpresa', () => {
+  let pedidos: PeticionIa[];
+
   function renderizar(actual: ResultadoSimulacion) {
+    pedidos = [];
+    TestBed.configureTestingModule({
+      providers: [
+        {
+          provide: ConsultarAsistente,
+          useValue: {
+            ejecutar: async (peticion: PeticionIa, alEscribir?: (p: InformeIa) => void) => {
+              pedidos.push(peticion);
+              alEscribir?.({ fuente: 'groq', modelo: 'm', texto: 'Antes se' });
+              return { fuente: 'groq', modelo: 'm', texto: 'Antes se vacunaba menos.' };
+            },
+          },
+        },
+      ],
+    });
     const fixture = TestBed.createComponent(AntesDespues);
     fixture.componentRef.setInput('anterior', resultadoDePrueba);
     fixture.componentRef.setInput('actual', actual);
@@ -41,5 +59,16 @@ describe('Antes y después del Brote Sorpresa', () => {
     fixture.componentInstance.fijar.subscribe(() => (fijado = true));
     el.querySelector<HTMLButtonElement>('.fijar')!.click();
     expect(fijado).toBe(true);
+  });
+
+  it('explica el cambio con la IA solo cuando se pide', async () => {
+    const actual = { ...resultadoDePrueba, repeticiones: 50 };
+    const { fixture, el } = renderizar(actual);
+    expect(pedidos).toHaveLength(0);
+    el.querySelector<HTMLButtonElement>('button.explicar')!.click();
+    await fixture.whenStable();
+    expect(pedidos[0]).toEqual({ tarea: 'comparar', resultado: actual, anterior: resultadoDePrueba });
+    expect(el.textContent).toContain('Antes se vacunaba menos.');
+    expect(el.textContent).toContain('Redactado por Groq (m)');
   });
 });

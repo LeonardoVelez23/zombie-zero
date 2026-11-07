@@ -6,12 +6,14 @@ Ver docs/api.md.
 """
 import base64
 import json
+from collections.abc import Iterator
 from dataclasses import asdict, fields, replace
 
 from .calibracion import manta_2020
 from .config import Escenario, Plaga, Recursos
 from .edp import Difusion, resolver
 from .guardado import guardar, historial
+from . import asistente_ia
 from .informe_ia import ResumenInvalido, redactar
 from .montecarlo import comparar
 from .poblacion import BARRIOS
@@ -61,6 +63,9 @@ REPETICIONES = (5, 300)
 REPETICIONES_POR_DEFECTO = 100
 # El informe recibe un resumen compacto de la simulación (unos pocos KB), no el resultado con mapas y curvas.
 MAX_CUERPO_INFORME = 50_000
+# El asistente puede llevar dos resúmenes (comparar) y una conversación corta.
+MAX_CUERPO_ASISTENTE = 120_000
+RUTAS_ASISTENTE_STREAM = ("/api/asistente/stream", "/asistente/stream")
 
 
 class PeticionInvalida(ValueError):
@@ -132,6 +137,31 @@ def _json(cuerpo: str | None):
         raise PeticionInvalida("El cuerpo no es JSON válido") from None
 
 
+def _peticion_asistente(cuerpo: str | None) -> asistente_ia.Peticion:
+    if len((cuerpo or "").encode("utf-8")) > MAX_CUERPO_ASISTENTE:
+        raise PeticionInvalida("La petición al asistente es demasiado grande")
+    try:
+        return asistente_ia.preparar(_json(cuerpo))
+    except ResumenInvalido as error:
+        raise PeticionInvalida(str(error)) from None
+
+
+def es_stream(metodo: str, ruta: str) -> bool:
+    """Rutas que responden Server-Sent Events en vez de un JSON."""
+    return metodo == "POST" and "/" + ruta.strip("/") in RUTAS_ASISTENTE_STREAM
+
+
+def atender_stream(cuerpo: str | None) -> tuple[int, dict | Iterator[str]]:
+    """POST /api/asistente/stream: (200, eventos SSE) o (400, error en JSON) si la petición no vale.
+
+    Se valida todo antes de empezar a transmitir: una vez enviado el 200 ya no se puede cambiar.
+    """
+    try:
+        return 200, asistente_ia.eventos_sse(_peticion_asistente(cuerpo))
+    except PeticionInvalida as e:
+        return 400, {"error": str(e)}
+
+
 def atender(metodo: str, ruta: str, cuerpo: str | None) -> tuple[int, dict]:
     """Enruta una petición y devuelve (código HTTP, JSON)."""
     ruta = "/" + ruta.strip("/")
@@ -161,6 +191,9 @@ def atender(metodo: str, ruta: str, cuerpo: str | None) -> tuple[int, dict]:
                 return 200, redactar(_json(cuerpo))
             except ResumenInvalido as error:
                 raise PeticionInvalida(str(error)) from None
+        if metodo == "POST" and ruta in ("/api/asistente", "/asistente"):
+            peticion = _peticion_asistente(cuerpo)
+            return 200, asistente_ia.responder_peticion(peticion)
         return 404, {"error": f"No existe {metodo} {ruta}"}
     except PeticionInvalida as e:
         return 400, {"error": str(e)}
@@ -172,7 +205,23 @@ def lambda_handler(evento: dict, contexto) -> dict:
     cuerpo = evento.get("body")
     if cuerpo and evento.get("isBase64Encoded"):
         cuerpo = base64.b64decode(cuerpo).decode("utf-8")
-    codigo, respuesta = atender(http.get("method", "GET"), evento.get("rawPath", "/"), cuerpo)
+    metodo, ruta = http.get("method", "GET"), evento.get("rawPath", "/")
+    if es_stream(metodo, ruta):
+        # El runtime de Python de Lambda no transmite la respuesta por partes: los mismos eventos
+        # SSE llegan juntos al terminar. En el servidor local sí llegan a medida que se escriben.
+        codigo, respuesta = atender_stream(cuerpo)
+        if codigo == 200:
+            return {
+                "statusCode": 200,
+                "headers": {"Content-Type": "text/event-stream; charset=utf-8", "Cache-Control": "no-cache"},
+                "body": "".join(respuesta),
+            }
+        return {
+            "statusCode": codigo,
+            "headers": {"Content-Type": "application/json; charset=utf-8"},
+            "body": json.dumps(respuesta, ensure_ascii=False),
+        }
+    codigo, respuesta = atender(metodo, ruta, cuerpo)
     return {
         "statusCode": codigo,
         "headers": {"Content-Type": "application/json; charset=utf-8"},

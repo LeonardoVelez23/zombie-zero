@@ -1,8 +1,16 @@
 @if (informe(); as i) {
-  <figure class="informe-ia" [class.sin-ia]="i.fuente === 'local'">
-    <blockquote>{{ i.texto }}</blockquote>
+  <figure class="informe-ia" [class.sin-ia]="i.fuente === 'local'" aria-live="polite">
+    <blockquote>
+      {{ i.texto }}
+      @if (redactando()) {
+        <span class="cursor" aria-hidden="true">▍</span>
+      }
+    </blockquote>
     <figcaption>
       <span class="fuente">{{ etiqueta() }}</span>
+      @if (i.aviso) {
+        <span class="aviso" role="status">{{ i.aviso }}</span>
+      }
       <span>Las cifras salen de la simulación; el texto solo las explica.</span>
     </figcaption>
   </figure>

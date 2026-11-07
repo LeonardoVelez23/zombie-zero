@@ -2,6 +2,7 @@
 # Requiere en GitHub (Settings -> Secrets and variables -> Actions -> Secrets):
 #   AWS_ROLE_ARN   salida RolArn de infra/github-oidc.yaml
 #   CORREO_ALERTA  correo del AWS Budget (si falta, el despliegue se detiene para no borrar el Budget)
+#   GROQ_API_KEY   clave de Groq, respaldo del asistente con IA (opcional: sin ella no hay respaldo)
 # Van como Secrets y no como Variables porque el repo es público y los logs de Actions también:
 # los secrets salen como *** en los logs; las variables, en claro.
 #
@@ -107,6 +108,9 @@ jobs:
 
       - name: Backend (Lambda, CloudFront, Budget)
         if: steps.vigente.outputs.ok == 'true'
+        # La clave de Groq solo en este paso: no la ven npm ci ni las demás herramientas del job.
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: SIN_EMPAQUETAR=1 infra/desplegar.sh
 
       - name: Frontend (S3 + CloudFront)

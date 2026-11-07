@@ -180,6 +180,13 @@
       <app-informe id="recomendacion" [resultado]="resultado()" />
     </section>
 
+    <!-- Preguntas sobre la simulación en pantalla; aparece cuando ya hay un resultado. -->
+    @if (resultado(); as r) {
+      <section class="full-grid">
+        <app-asistente [resultado]="r" />
+      </section>
+    }
+
     @if (referencia(); as anterior) {
       @if (resultado(); as actual) {
         @if (actual !== anterior) {

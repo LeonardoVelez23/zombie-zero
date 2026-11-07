@@ -78,11 +78,17 @@ o se mantiene, y sus infectados, personas salvadas y porcentaje de brotes en que
    reales con el ajuste, y el botón **R de Manta 2020** simula la plaga con ese valor. Detalle en
    [docs/supuestos.md](docs/supuestos.md#calibración-con-datos-reales-covid-19-en-manta-2020).
 
-10. **Explica el resultado al alcalde:** el botón **Explicar al alcalde** del panel de recomendación pide a
-    Amazon Bedrock (Nova Micro) un párrafo en lenguaje simple con el plan, cuántos salva, qué tan sólido es y
-    la cifra llevada a toda Manta. **El motor calcula y la IA solo redacta:** recibe las cifras ya calculadas,
-    no vuelve a simular ni cambia la recomendación. Si Bedrock no responde, el informe sale igual con una
-    plantilla fija, marcada «Texto automático (sin IA)». Detalle en [docs/api.md](docs/api.md#post-apiinforme).
+10. **Asistente con IA:** **El motor calcula y la IA solo redacta:** recibe las cifras ya calculadas, no
+    vuelve a simular ni cambia la recomendación, y el texto aparece mientras se escribe.
+    - **Explicar al alcalde:** un párrafo en lenguaje simple con el plan, cuántos salva y qué tan sólido es.
+    - **Pregúntale al asistente:** preguntas sobre la simulación en pantalla («¿qué pasa si llegan la mitad
+      de las vacunas?»); si piden otro escenario, sugiere qué cambiar y volver a simular.
+    - **Explicar el cambio:** en la tarjeta «Antes y después», qué cambió entre las dos simulaciones.
+    - **Informe en PDF:** incluye un análisis ejecutivo (situación, plan, riesgos, qué haría falta).
+
+    Usa Amazon Bedrock (Nova Micro); si Bedrock falla o se queda sin cuota, responde **Groq** con la clave
+    `GROQ_API_KEY`; y si tampoco, una plantilla fija marcada «Texto automático (sin IA)». Detalle en
+    [docs/api.md](docs/api.md#post-apiasistente).
 
 11. **Guarda cada simulación y muestra las anteriores:** cada corrida guarda un resumen en S3. La sección
     **Resultados anteriores** lista las últimas 10 con la configuración usada (origen, R0, vacunas,
@@ -138,6 +144,13 @@ Simular desde la terminal, sin interfaz (útil para el Brote Sorpresa):
 ```
 
 En Windows, cambia `.venv/bin/python` por `.venv\Scripts\python`.
+
+Para el asistente con IA en local, crea `backend/.env` (git lo ignora) con tu clave de Groq; el servidor
+la lee al arrancar:
+
+```bash
+GROQ_API_KEY=gsk_...
+```
 
 ### 2. Frontend
 
@@ -373,7 +386,8 @@ las intervenciones, la calibración de la dificultad y la reproducibilidad.
 - **Informe con IA sin cuota todavía:** AWS le asignó a la cuenta nueva una cuota de 0 solicitudes por minuto
   para Nova Micro (y también para los modelos Claude Haiku), así que hoy Bedrock responde `ThrottlingException`
   y el informe sale con la plantilla sin IA. El aumento de cuota se pide a AWS Support; cuando se aprueba, el
-  informe pasa a redactarse con Bedrock sin cambiar código ni volver a desplegar.
+  informe pasa a redactarse con Bedrock sin cambiar código ni volver a desplegar. Mientras tanto, con el
+  secret `GROQ_API_KEY` configurado, el asistente responde con Groq.
 
 ## Costos
 

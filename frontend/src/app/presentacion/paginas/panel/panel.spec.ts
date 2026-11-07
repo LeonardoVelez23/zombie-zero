@@ -40,7 +40,7 @@ describe('Panel: simulaciones que se cruzan', () => {
         return d.promesa;
       },
       historial: () => Promise.resolve([]),
-      informe: () => Promise.reject(new Error('no se usa')),
+      asistente: () => Promise.reject(new Error('no se usa')),
       difusion: () => Promise.reject(new Error('sin EDP en esta prueba')),
     };
     await TestBed.configureTestingModule({
@@ -101,7 +101,7 @@ describe('Panel: indicadores en vivo', () => {
       parametros: () => Promise.resolve(parametrosDePrueba),
       simular: () => Promise.resolve(resultadoDePrueba),
       historial: () => Promise.resolve([]),
-      informe: () => Promise.reject(new Error('no se usa')),
+      asistente: () => Promise.reject(new Error('no se usa')),
       difusion: () => Promise.reject(new Error('sin EDP en esta prueba')),
     };
     await TestBed.configureTestingModule({
@@ -144,7 +144,7 @@ describe('Panel: menú lateral', () => {
       parametros: () => Promise.resolve(parametrosDePrueba),
       simular: () => Promise.reject(new Error('no se usa')),
       historial: () => Promise.resolve([]),
-      informe: () => Promise.reject(new Error('no se usa')),
+      asistente: () => Promise.reject(new Error('no se usa')),
       difusion: () => Promise.reject(new Error('no se usa')),
     };
     TestBed.configureTestingModule({
@@ -304,7 +304,7 @@ describe('Panel: modelo EDP de contraste', () => {
       parametros: () => Promise.resolve(parametrosDePrueba),
       simular: () => Promise.resolve(resultadoDePrueba),
       historial: () => Promise.resolve([]),
-      informe: () => Promise.reject(new Error('no se usa')),
+      asistente: () => Promise.reject(new Error('no se usa')),
       difusion: () => {
         difusiones++;
         return Promise.resolve(difusion);

@@ -1,14 +1,14 @@
 import { TestBed } from '@angular/core/testing';
 
 import { casosDeUso } from '../../../app.config';
-import { InformeIa, ResultadoSimulacion } from '../../../dominio/modelos/resultado';
+import { InformeIa, PeticionIa } from '../../../dominio/modelos/resultado';
 import { SimuladorRepositorio } from '../../../dominio/puertos/simulador.repositorio';
 import { parametrosDePrueba, resultadoDePrueba } from '../../../../testing/datos';
 import { ExplicarAlcalde } from './explicar-alcalde';
 
 describe('Explicar al alcalde', () => {
   let responder: () => Promise<InformeIa>;
-  let pedidos: ResultadoSimulacion[];
+  let pedidos: PeticionIa[];
 
   async function renderizar() {
     pedidos = [];
@@ -17,8 +17,10 @@ describe('Explicar al alcalde', () => {
       simular: () => Promise.reject(new Error('no se usa')),
       difusion: () => Promise.reject(new Error('no se usa')),
       historial: () => Promise.resolve([]),
-      informe: (resultado) => {
-        pedidos.push(resultado);
+      asistente: (peticion, alEscribir) => {
+        pedidos.push(peticion);
+        // Primero un trozo, como cuando la IA escribe en streaming.
+        alEscribir?.({ fuente: 'groq', modelo: 'm', texto: 'Se recom' });
         return responder();
       },
     };
@@ -49,7 +51,7 @@ describe('Explicar al alcalde', () => {
       Promise.resolve({ fuente: 'bedrock', modelo: 'amazon.nova-micro-v1:0', texto: 'Se recomienda vacunar.' });
     const { explicar } = await renderizar();
     const texto = await explicar();
-    expect(pedidos).toEqual([resultadoDePrueba]);
+    expect(pedidos).toEqual([{ tarea: 'alcalde', resultado: resultadoDePrueba }]);
     expect(texto).toContain('Se recomienda vacunar.');
     expect(texto).toContain('Redactado por Amazon Bedrock (amazon.nova-micro-v1:0)');
   });
