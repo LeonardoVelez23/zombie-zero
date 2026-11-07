@@ -202,6 +202,17 @@ select {
   .panel { padding: 15px; }
 }
 
+/* Cursor que parpadea mientras la IA escribe (explicación, chat, comparación). */
+.cursor {
+  margin-left: 2px;
+  color: var(--violet);
+  animation: cursor-ia 1s steps(2, start) infinite;
+}
+
+@keyframes cursor-ia {
+  to { visibility: hidden; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after {

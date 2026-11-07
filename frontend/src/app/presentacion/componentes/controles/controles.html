@@ -43,6 +43,24 @@
   </select>
 
   @for (seccion of principales; track seccion.titulo) {
+    <ng-container *ngTemplateOutlet="bloque; context: { $implicit: seccion }" />
+  }
+
+  <details
+    class="avanzado"
+    [open]="verAvanzado()"
+    (toggle)="verAvanzado.set($any($event.target).open)"
+  >
+    <summary>
+      Más parámetros
+      <small>detección, eficacia, población, duración, corte de vacunas y Monte Carlo</small>
+    </summary>
+    @for (seccion of avanzadas; track seccion.titulo) {
+      <ng-container *ngTemplateOutlet="bloque; context: { $implicit: seccion }" />
+    }
+  </details>
+
+  <ng-template #bloque let-seccion>
     <fieldset>
       <legend>{{ seccion.titulo }}</legend>
       <div class="field-grid">
@@ -66,28 +84,7 @@
         }
       </div>
     </fieldset>
-  }
-
-  <details
-    class="avanzado"
-    [open]="verAvanzado()"
-    (toggle)="verAvanzado.set($any($event.target).open)"
-  >
-    <summary>
-      Más parámetros
-      <small>población, duración, casos iniciales y corte de vacunas</small>
-    </summary>
-    @for (seccion of avanzadas; track seccion.titulo) {
-      <fieldset>
-        <legend>{{ seccion.titulo }}</legend>
-        <div class="field-grid">
-          @for (campo of seccion.campos; track campo.nombre) {
-            <ng-container *ngTemplateOutlet="entrada; context: { $implicit: campo }" />
-          }
-        </div>
-      </fieldset>
-    }
-  </details>
+  </ng-template>
 
   <ng-template #entrada let-campo>
     @let limite = limites(campo);
@@ -114,7 +111,8 @@
   </button>
   <p class="button-hint" [class.invalido]="formulario.invalid">
     @if (formulario.invalid) {
-      Hay valores fuera de rango: pasa el cursor sobre el campo para ver sus límites.
+      Hay valores fuera de rango: pasa el cursor sobre el campo para ver sus límites (revisa también
+      «Más parámetros»).
     } @else {
       Mismos brotes y mismo tope de presupuesto para todos los planes. Tarda unos 10 s.
     }

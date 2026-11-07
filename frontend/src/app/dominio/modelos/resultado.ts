@@ -61,10 +61,31 @@ export interface Veredicto {
 
 // Informe para el alcalde: el motor calcula y la IA (Amazon Bedrock) solo lo redacta.
 // Si la IA está apagada o falla, el backend responde con una plantilla fija (fuente "local").
+// Texto redactado por la IA a partir de una simulación (no cambia ninguna cifra).
+// Bedrock primero, Groq de respaldo y, si ninguno responde, una plantilla fija ("local").
 export interface InformeIa {
-  fuente: 'bedrock' | 'local';
+  fuente: 'bedrock' | 'groq' | 'local';
   modelo: string | null;
   texto: string;
+  // La IA se cortó a mitad de texto: lo que hay puede estar incompleto.
+  aviso?: string;
+}
+
+export type TareaIa = 'alcalde' | 'informe' | 'pregunta' | 'comparar';
+
+export interface MensajeIa {
+  rol: 'usuario' | 'asistente';
+  texto: string;
+}
+
+export interface PeticionIa {
+  tarea: TareaIa;
+  resultado: ResultadoSimulacion;
+  // Solo para «comparar»: la simulación de referencia.
+  anterior?: ResultadoSimulacion;
+  // Solo para «pregunta»: la pregunta y los mensajes anteriores (empezando por el usuario).
+  pregunta?: string;
+  conversacion?: MensajeIa[];
 }
 
 export interface ResultadoSimulacion {

@@ -13,7 +13,7 @@ describe('Informe para el alcalde', () => {
       parametros: () => Promise.resolve(parametrosDePrueba),
       simular: () => Promise.reject(new Error('no se usa')),
       historial: () => Promise.resolve([]),
-      informe: () => Promise.reject(new Error('no se usa')),
+      asistente: () => Promise.reject(new Error('no se usa')),
       difusion: () => Promise.reject(new Error('no se usa')),
     };
     TestBed.configureTestingModule({

@@ -10,7 +10,7 @@ class SimuladorFalso extends SimuladorRepositorio {
   parametros = async () => parametrosDePrueba;
   simular = async () => resultadoDePrueba;
   historial = async () => [];
-  informe = async () => {
+  asistente = async () => {
     throw new Error('no se usa en esta prueba');
   };
   difusion = async () => {

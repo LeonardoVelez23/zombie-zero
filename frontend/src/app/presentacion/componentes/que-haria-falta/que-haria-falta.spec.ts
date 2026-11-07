@@ -33,7 +33,7 @@ describe('Qué haría falta para ganar', () => {
         return Promise.resolve(respuesta(c));
       },
       historial: () => Promise.resolve([]),
-      informe: () => Promise.reject(new Error('no se usa')),
+      asistente: () => Promise.reject(new Error('no se usa')),
       difusion: () => Promise.reject(new Error('no se usa')),
     };
     TestBed.configureTestingModule({

@@ -651,62 +651,84 @@
   padding: 0 5px;
 }
 
-/* Mapa principal: selector entre el modelo de red y la EDP de contraste, y la comparación de ambos. */
+/* Opciones avanzadas: un único botón plegable al final del panel principal. */
+.avanzado-bloque {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.avanzado-toggle {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 15px 18px;
+  border: 1px dashed rgba(168, 85, 247, 0.45);
+  border-radius: 10px;
+  background: rgba(168, 85, 247, 0.06);
+  color: #e9d5ff;
+  text-align: left;
+  cursor: pointer;
+  scroll-margin-top: 16px;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.avanzado-toggle:hover {
+  background: rgba(168, 85, 247, 0.12);
+  border-color: var(--violet);
+}
+
+.avanzado-toggle:focus-visible {
+  outline: 2px solid var(--violet);
+  outline-offset: 2px;
+}
+
+.avanzado-toggle[aria-expanded='true'] {
+  border-style: solid;
+}
+
+.avanzado-icono {
+  font-size: 20px;
+  color: var(--violet);
+}
+
+.avanzado-texto {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.avanzado-texto strong {
+  font-size: 14px;
+}
+
+.avanzado-texto small {
+  color: #969abb;
+  font-size: 12px;
+}
+
+.avanzado-flecha {
+  font-size: 16px;
+  color: #b7bad3;
+}
+
+.avanzado-contenido {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+/* Modelo EDP de contraste y la comparación de ambos modelos. */
 .columna-mapa {
   display: flex;
   flex-direction: column;
   gap: 10px;
   min-width: 0;
-}
-
-.graficas {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  scroll-margin-top: 16px;
-}
-
-.selector-modelo {
-  display: inline-flex;
-  align-self: flex-start;
-  max-width: 100%;
-  border: 1px solid #282b4d;
-  border-radius: 4px;
-  overflow: hidden;
-  scroll-margin-top: 16px;
-}
-
-.modelo {
-  min-height: 36px;
-  padding: 0 14px;
-  border: 0;
-  border-right: 1px solid #282b4d;
-  background: #070a1d;
-  color: #b7bad3;
-  font-size: 11px;
-  font-weight: 700;
-  cursor: pointer;
-  transition:
-    background-color 0.15s ease,
-    color 0.15s ease;
-}
-
-.modelo:last-child {
-  border-right: 0;
-}
-
-.modelo.activo {
-  background: rgba(168, 85, 247, 0.22);
-  color: #f3e8ff;
-}
-
-.modelo:hover:not(.activo) {
-  background: rgba(168, 85, 247, 0.1);
-}
-
-.modelo:focus-visible {
-  outline: 2px solid var(--violet);
-  outline-offset: -2px;
 }
 
 .contraste table {
